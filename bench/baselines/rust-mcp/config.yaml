@@ -1,0 +1,26 @@
+# Apollo MCP Server configuration of the gql_mcp benchmarks. The Mojo
+# driver sets MCP_BENCH_ROOT (the repository), MCP_BENCH_DIR (the 200 operation files that it splits from
+# bench/fixtures/mcp-operations.graphql) and APOLLO_MCP_ENDPOINT (its stub
+# GraphQL endpoint). Logging is at warn level, so that no log line costs time.
+transport:
+  type: stdio
+operations:
+  source: local
+  paths:
+    - ${env.MCP_BENCH_DIR}/operations
+schema:
+  source: local
+  path: ${env.MCP_BENCH_ROOT}/bench/fixtures/github-schema.graphql
+overrides:
+  enable_output_schema: true
+introspection:
+  execute:
+    enabled: true
+  introspect:
+    enabled: true
+  search:
+    enabled: true
+  validate:
+    enabled: true
+logging:
+  level: warn

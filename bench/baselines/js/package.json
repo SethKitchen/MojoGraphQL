@@ -1,0 +1,14 @@
+{
+  "name": "mojographql-bench-graphql-js",
+  "version": "0.0.0",
+  "private": true,
+  "description": "graphql-js baseline for the MojoGraphQL benchmarks.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  },
+  "dependencies": {
+    "graphql": "16.14.2"
+  }
+}

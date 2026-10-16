@@ -1,0 +1,172 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@shareable", "@external", "@requires", "@provides", "@tag", "@inaccessible", "@override"])
+
+"The catalog of products, their variants, reviews and sellers."
+type Query {
+  "Find a product by its UPC."
+  product(upc: ID!): Product
+  products(first: Int = 10, after: String, filter: ProductFilter): ProductConnection!
+  categories: [Category!]!
+  category(slug: String!): Category
+  search(text: String!, first: Int = 20): [SearchResult!]!
+  seller(id: ID!): Seller
+  topReviews(first: Int = 5): [Review!]!
+}
+
+type Mutation {
+  createProduct(input: ProductInput!): Product
+  updatePrice(upc: ID!, price: MoneyInput!): Product
+  addReview(input: ReviewInput!): Review
+  deleteReview(id: ID!): Boolean
+}
+
+"A product that the catalog sells."
+type Product @key(fields: "upc") @key(fields: "sku") @tag(name: "public") {
+  upc: ID!
+  sku: String!
+  name: String!
+  description: String
+  price: Money!
+  weight: Float @shareable
+  dimensions: Dimensions
+  category: Category
+  variants: [Variant!]!
+  reviews(first: Int = 10): [Review!]!
+  averageRating: Float
+  seller: Seller @provides(fields: "name")
+  shippingEstimate: Int @requires(fields: "weight dimensions { width height depth }")
+  inStock: Boolean! @override(from: "inventory")
+  tags: [String!]!
+  createdAt: DateTime!
+  internalCode: String @inaccessible
+}
+
+type Variant @key(fields: "id") {
+  id: ID!
+  product: Product!
+  color: Color
+  size: Size
+  price: Money!
+  images: [Image!]!
+}
+
+type Image @shareable {
+  url: String!
+  altText: String
+  width: Int
+  height: Int
+}
+
+type Dimensions @shareable {
+  width: Float
+  height: Float
+  depth: Float
+}
+
+type Money @shareable {
+  amount: Int!
+  currency: Currency!
+}
+
+type Category @key(fields: "slug") {
+  slug: String!
+  name: String!
+  parent: Category
+  children: [Category!]!
+  products(first: Int = 10): ProductConnection!
+}
+
+type Review @key(fields: "id") {
+  id: ID!
+  body: String!
+  rating: Int!
+  author: User @provides(fields: "username")
+  product: Product!
+  createdAt: DateTime!
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  username: String @external
+  reviews: [Review!]!
+}
+
+type Seller @key(fields: "id") {
+  id: ID!
+  name: String @external
+  rating: Float
+  products(first: Int = 10): ProductConnection!
+}
+
+type ProductConnection {
+  edges: [ProductEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ProductEdge {
+  cursor: String!
+  node: Product!
+}
+
+type PageInfo @shareable {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+union SearchResult = Product | Category | Seller
+
+interface Node {
+  id: ID!
+}
+
+enum Color {
+  RED
+  GREEN
+  BLUE
+  BLACK
+  WHITE @deprecated(reason: "Use BLACK")
+}
+
+enum Size {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum Currency {
+  USD
+  EUR
+  GBP
+}
+
+scalar DateTime @specifiedBy(url: "https://tools.ietf.org/html/rfc3339")
+
+input ProductFilter {
+  category: String
+  minPrice: Int
+  maxPrice: Int
+  inStock: Boolean = true
+  tags: [String!]
+}
+
+input MoneyInput {
+  amount: Int!
+  currency: Currency = USD
+}
+
+input ProductInput {
+  upc: ID!
+  sku: String!
+  name: String!
+  price: MoneyInput!
+  category: String
+}
+
+input ReviewInput {
+  product: ID!
+  body: String!
+  rating: Int!
+}

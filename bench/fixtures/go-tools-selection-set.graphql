@@ -1,0 +1,18 @@
+{
+							  me {
+								... on Person @foo {
+									personID
+								}
+								...personFragment @bar
+								id
+								firstName
+								lastName
+								birthday {
+								  month
+								  day
+								}
+								friends {
+								  name
+								}
+							  }
+							}

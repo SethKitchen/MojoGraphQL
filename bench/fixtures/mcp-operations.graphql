@@ -1,0 +1,900 @@
+query Repository01($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User01($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories01($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues01($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search01($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License01($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit01 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node01($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic01($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer01 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository02($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User02($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories02($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues02($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search02($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License02($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit02 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node02($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic02($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer02 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository03($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User03($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories03($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues03($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search03($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License03($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit03 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node03($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic03($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer03 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository04($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User04($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories04($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues04($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search04($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License04($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit04 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node04($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic04($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer04 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository05($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User05($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories05($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues05($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search05($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License05($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit05 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node05($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic05($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer05 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository06($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User06($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories06($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues06($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search06($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License06($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit06 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node06($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic06($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer06 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository07($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User07($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories07($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues07($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search07($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License07($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit07 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node07($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic07($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer07 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository08($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User08($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories08($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues08($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search08($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License08($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit08 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node08($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic08($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer08 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository09($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User09($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories09($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues09($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search09($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License09($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit09 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node09($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic09($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer09 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository10($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User10($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories10($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues10($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search10($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License10($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit10 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node10($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic10($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer10 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository11($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User11($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories11($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues11($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search11($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License11($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit11 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node11($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic11($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer11 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository12($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User12($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories12($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues12($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search12($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License12($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit12 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node12($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic12($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer12 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository13($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User13($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories13($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues13($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search13($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License13($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit13 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node13($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic13($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer13 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository14($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User14($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories14($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues14($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search14($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License14($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit14 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node14($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic14($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer14 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository15($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User15($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories15($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues15($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search15($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License15($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit15 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node15($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic15($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer15 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository16($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User16($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories16($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues16($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search16($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License16($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit16 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node16($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic16($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer16 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository17($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User17($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories17($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues17($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search17($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License17($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit17 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node17($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic17($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer17 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository18($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User18($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories18($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues18($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search18($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License18($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit18 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node18($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic18($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer18 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository19($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User19($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories19($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues19($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search19($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License19($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit19 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node19($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic19($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer19 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+
+query Repository20($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) { id name description stargazers { totalCount } }
+}
+
+query User20($login: String!) {
+  user(login: $login) { id login name bio company location }
+}
+
+query OrganizationRepositories20($login: String!, $first: Int = 10) {
+  organization(login: $login) { name repositories(first: $first) { totalCount nodes { name } } }
+}
+
+query Issues20($owner: String!, $name: String!, $states: [IssueState!], $first: Int = 20) {
+  repository(owner: $owner, name: $name) {
+    issues(states: $states, first: $first) { nodes { number title state author { login } } }
+  }
+}
+
+query Search20($query: String!, $type: SearchType!, $first: Int) {
+  search(query: $query, type: $type, first: $first) {
+    issueCount
+    nodes { ... on Repository { nameWithOwner } ... on Issue { title } }
+  }
+}
+
+query License20($key: String!) {
+  license(key: $key) { name spdxId body }
+}
+
+query RateLimit20 {
+  rateLimit { limit remaining resetAt }
+}
+
+query Node20($id: ID!) {
+  node(id: $id) { id ... on User { login } }
+}
+
+query Topic20($name: String!) {
+  topic(name: $name) { name relatedTopics { name } }
+}
+
+query Viewer20 {
+  viewer { login email repositories(first: 5) { nodes { name isPrivate } } }
+}
+

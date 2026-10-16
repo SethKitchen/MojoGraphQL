@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Apollo MCP Server baseline of gql_mcp. build.sh clones Apollo MCP
+# Server 2.0.0 (MIT) at the pinned revision into upstream/, and builds its
+# release server, which the shared Mojo driver times over stdio. `tool`
+# times `Operation::from_raw` in process: no black box shows it, so
+# build.sh makes `Operation` and `RawOperation` public (a visibility-only
+# patch). The toolchain is the upstream pin, 1.92.0.
+
+[package]
+name = "mojographql-bench-mcp-rust"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+apollo-mcp-server = { path = "upstream/crates/apollo-mcp-server" }
+apollo-compiler = "=2.0.0-beta.1"
+
+[[bin]]
+name = "tool"
+path = "src/bin/tool.rs"

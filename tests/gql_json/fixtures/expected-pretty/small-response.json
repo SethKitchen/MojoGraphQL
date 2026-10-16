@@ -1,0 +1,156 @@
+{
+  "data": {
+    "repository": {
+      "id": "MDEwOlJlcG9zaXRvcnkxMjM0NTY3OA==",
+      "name": "graphql-js",
+      "nameWithOwner": "graphql/graphql-js",
+      "description": "A reference implementation of GraphQL for JavaScript",
+      "stargazerCount": 20184,
+      "forkCount": 2031,
+      "isArchived": false,
+      "isPrivate": false,
+      "primaryLanguage": {
+        "name": "TypeScript",
+        "color": "#3178c6"
+      },
+      "licenseInfo": {
+        "spdxId": "MIT",
+        "name": "MIT License"
+      },
+      "owner": {
+        "__typename": "Organization",
+        "login": "graphql",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/12972006?v=4"
+      },
+      "issues": {
+        "totalCount": 187,
+        "pageInfo": {
+          "hasNextPage": true,
+          "endCursor": "Y3Vyc29yOnYyOpHOAAAAAQ=="
+        },
+        "nodes": [
+          {
+            "number": 4123,
+            "title": "Support \"@oneOf\" input objects in validation",
+            "state": "OPEN",
+            "createdAt": "2024-06-01T12:30:00Z",
+            "comments": {
+              "totalCount": 12
+            },
+            "labels": {
+              "nodes": [
+                {
+                  "name": "enhancement",
+                  "color": "a2eeef"
+                },
+                {
+                  "name": "spec RFC",
+                  "color": "5319e7"
+                }
+              ]
+            },
+            "author": {
+              "login": "yaacovCR"
+            },
+            "score": 0.875,
+            "reactions": {
+              "thumbsUp": 42,
+              "heart": 7
+            }
+          },
+          {
+            "number": 4120,
+            "title": "Descriptions with line\nbreaks are printed with block strings",
+            "state": "CLOSED",
+            "createdAt": "2024-05-28T08:15:42Z",
+            "comments": {
+              "totalCount": 3
+            },
+            "labels": {
+              "nodes": [
+                {
+                  "name": "bug",
+                  "color": "d73a4a"
+                }
+              ]
+            },
+            "author": {
+              "login": "benjie"
+            },
+            "score": 0.5,
+            "reactions": {
+              "thumbsUp": 5,
+              "heart": 0
+            }
+          },
+          {
+            "number": 4117,
+            "title": "Übersetzung der Fehlermeldungen — ✓ ready",
+            "state": "OPEN",
+            "createdAt": "2024-05-20T19:02:11Z",
+            "comments": {
+              "totalCount": 0
+            },
+            "labels": {
+              "nodes": []
+            },
+            "author": null,
+            "score": 0.00125,
+            "reactions": {
+              "thumbsUp": 1,
+              "heart": 2
+            }
+          }
+        ]
+      },
+      "releases": {
+        "nodes": [
+          {
+            "tagName": "v16.14.2",
+            "publishedAt": "2025-01-14T10:00:00Z",
+            "isPrerelease": false,
+            "downloads": 1048576
+          },
+          {
+            "tagName": "v17.0.0-alpha.3",
+            "publishedAt": "2024-11-02T16:45:30Z",
+            "isPrerelease": true,
+            "downloads": 8192
+          }
+        ]
+      },
+      "defaultBranchRef": {
+        "name": "main",
+        "target": {
+          "__typename": "Commit",
+          "oid": "dca5b4d4507dc3d324dc83aa39f359db3ab1a141",
+          "messageHeadline": "Release 16.14.2",
+          "committedDate": "2025-01-14T09:58:12Z",
+          "additions": 12,
+          "deletions": 4,
+          "changedFilesIfAvailable": 3
+        }
+      },
+      "topics": [
+        "graphql",
+        "javascript",
+        "typescript",
+        "api",
+        "reference-implementation"
+      ],
+      "rating": 4.7,
+      "weight": -12.5
+    }
+  },
+  "extensions": {
+    "cost": {
+      "requestedQueryCost": 42,
+      "maximumAvailable": 5000
+    },
+    "tracing": {
+      "version": 1,
+      "startTime": "2025-01-14T10:00:00.000Z",
+      "duration": 1234567
+    }
+  }
+}

@@ -1,0 +1,172 @@
+<!--
+Copyright (c) 2026 Seth Kitchen, PE
+SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+-->
+
+# Third-party notices
+
+MojoGraphQL ports code from the open source projects below. Each project is
+used under the MIT License, or under the MIT arm of a dual license. The
+MojoGraphQL code is licensed under the terms in [LICENSE](LICENSE). Those
+terms do not change your rights in the upstream projects. You can always use
+the upstream projects directly, under their own licenses.
+
+MojoGraphQL ports no code that is only Apache-2.0 licensed, and no code under
+the Elastic License 2.0. The exclusions are listed with each project.
+
+## Projects and pinned revisions
+
+| Project | Repository | Pinned revision | License used | Copyright notice |
+| --- | --- | --- | --- | --- |
+| graphql-js | [graphql/graphql-js](https://github.com/graphql/graphql-js) | `v16.14.2` (`dca5b4d`) | MIT | Copyright (c) GraphQL Contributors |
+| apollo-rs | [apollographql/apollo-rs](https://github.com/apollographql/apollo-rs) | `b7eee5c` | MIT (dual MIT OR Apache-2.0) | Copyright 2021 Apollo Graph, Inc. |
+| @apollo/subgraph | [apollographql/federation](https://github.com/apollographql/federation), `subgraph-js/` only | `2.14.4` (`b95c124`) | MIT | Copyright (c) 2020- Apollo Graph, Inc.; Copyright (c) 2019-2020 Meteor Development Group, Inc. |
+| Apollo Server | [apollographql/apollo-server](https://github.com/apollographql/apollo-server) | `5.5.1` (`0c22029`) | MIT | Copyright (c) 2016-2020 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.) |
+| Apollo Client | [apollographql/apollo-client](https://github.com/apollographql/apollo-client) | `4.3.3` (`ae0dfce`) | MIT | Copyright (c) 2022 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.) |
+| Apollo Kotlin | [apollographql/apollo-kotlin](https://github.com/apollographql/apollo-kotlin) | `afe947c` | MIT | Copyright (c) 2016-2024 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.) |
+| Apollo MCP Server | [apollographql/apollo-mcp-server](https://github.com/apollographql/apollo-mcp-server) | `2.0.0` (`04e4e6e`) | MIT | Copyright (c) 2025 Apollo Graph, Inc. |
+| Rover | [apollographql/rover](https://github.com/apollographql/rover) | `1.0.0` (`39a041a`) | MIT (the repository default) | Copyright (c) 2021 Apollo Graph, Inc. |
+| Hive Federation Composition | [the-guild-org/federation](https://github.com/the-guild-org/federation) | `v0.27.0` (`6272ad8`) | MIT | Copyright (c) 2023 The Guild |
+| Hive Router | [graphql-hive/router](https://github.com/graphql-hive/router) | `1a29df9` | MIT | Copyright (c) 2018 Dotan Simha <dotan@the-guild.dev> |
+| graphql-go-tools | [wundergraph/graphql-go-tools](https://github.com/wundergraph/graphql-go-tools) | `9ef6e24` | MIT | Copyright (c) 2022 WunderGraph UG (haftungsbeschränkt) |
+| Apollo Federation subgraph compatibility | [apollographql/apollo-federation-subgraph-compatibility](https://github.com/apollographql/apollo-federation-subgraph-compatibility) | `f9520a4` | MIT | Copyright (c) 2022 Apollo Graph |
+
+## Exclusions
+
+- **apollographql/federation.** Only `subgraph-js/` is MIT. The rest of the
+  repository is Elastic License 2.0: `internals-js`, `composition-js`,
+  `query-planner-js`, `query-graphs-js`, `gateway-js` and the others.
+  MojoGraphQL ports none of it. `subgraph-js` imports
+  `@apollo/federation-internals`. The port implements that logic from the
+  public Apollo Federation specification and from Hive Federation
+  Composition, never from `internals-js`.
+- **apollo-rs.** The project is dual licensed MIT OR Apache-2.0. MojoGraphQL
+  uses it under the MIT License only.
+- **Apollo Kotlin.** These files are Apache-2.0 licensed and are not ported:
+  - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonReader.kt`
+  - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonWriter.kt`
+  - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/BufferedSinkJsonWriter.kt`
+  - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/BufferedSourceJsonReader.kt`
+  - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/internal/JsonScope.kt`
+  - `libraries/apollo-http-cache/src/main/kotlin/com/apollographql/apollo/cache/http/internal/DiskLruCache.kt`
+  - `libraries/apollo-http-cache/src/main/kotlin/com/apollographql/apollo/cache/http/internal/FaultHidingSink.kt`
+  - `libraries/apollo-runtime/src/commonMain/kotlin/com/apollographql/apollo/internal/MultipartReader.kt`
+- **Rover.** The repository default is MIT, and some parts are Elastic
+  License 2.0 by a file header or a subdirectory license. MojoGraphQL ports
+  only the MIT parts. The supergraph and router plugin binaries that Rover
+  downloads are Elastic License 2.0 and are excluded.
+- **Hive Router.** `apollo-router-workspace/` is a plugin for Apollo Router,
+  which is Elastic License 2.0. MojoGraphQL does not port it.
+- **Apollo Client.** `src/react/internal/compiler-runtime/` is a separate MIT
+  notice from Meta Platforms, Inc. MojoGraphQL ports no React code, so it
+  does not port that directory. `gql_client` ports these MIT files of
+  `4.3.3` (`ae0dfce`): `src/cache/inmemory/inMemoryCache.ts`,
+  `entityStore.ts`, `writeToStore.ts`, `readFromStore.ts`, `policies.ts`,
+  `helpers.ts` and `key-extractor.ts`; the cache methods of
+  `src/cache/core/cache.ts` and `MissingFieldError` of
+  `src/cache/core/types/common.ts`; and of `src/utilities`:
+  `canonicalStringify.ts`, `DeepMerger.ts`, `getStoreKeyName.ts`,
+  `storeKeyNameFromField.ts`, `valueToObjectRepresentation.ts`,
+  `argumentsObjectFromField.ts`, `shouldInclude.ts`, `checkDocument.ts`,
+  `getFragmentQueryDocument.ts`, `getOperationDefinition.ts` and
+  `addTypenameToDocument` of `graphql/transform.ts`. It does not port
+  `fragmentRegistry.ts`, `reactiveVars.ts`, `src/cache/core/Scalar.ts`, the
+  watch and broadcast parts of `inMemoryCache.ts`, or anything outside
+  `src/cache` and those utilities.
+- **Hive Federation Composition.** `gql_composition` ports these MIT files
+  of `v0.27.0` (`6272ad8`): `src/validate.ts` (the subgraph phase),
+  `src/specifications/` (`federation.ts`, `link.ts`, `tag.ts`,
+  `inaccessible.ts`, `authenticated.ts`, `policy.ts`, `requires-scopes.ts`,
+  `cost.ts`, `context.ts`), `src/subgraph/` (`state.ts`, `helpers.ts`,
+  `context.ts`, `validation/validate-subgraph.ts`,
+  `validation/validate-state.ts`, `validation/validation-context.ts`, and
+  every file of `validation/rules/` and `validation/rules/elements/`),
+  `src/graphql/printer.ts`, `src/graphql/type-node-info.ts`,
+  `moveSchemaAndDirectiveDefinitionsToTop` of `src/graphql/helpers.ts`,
+  `src/utils/auth.ts`, `src/utils/format.ts`, `src/utils/state.ts` and
+  `src/utils/version.ts`, and `constantCase` of the `constant-case` package
+  (MIT). It does not yet port `src/compose.ts`, `src/supergraph/`,
+  `src/contracts/`, `src/specifications/join.ts`, or the other files of
+  `src/graphql/` and `src/utils/`. The federation versions `v2.10` to
+  `v2.15` come from the public Apollo GraphOS documentation, not from code.
+
+## Benchmark baselines and fixtures
+
+- `bench/fixtures/kitchen-sink.graphql` and
+  `bench/fixtures/github-schema.graphql` are copied from the graphql-js
+  `v16.14.2` `benchmark/` directory. They are MIT licensed, Copyright (c)
+  GraphQL Contributors.
+- `bench/fixtures/github-query.graphql` is MojoGraphQL's own file, under the
+  license of this repository.
+- `bench/baselines/js/` installs the `graphql` npm package, version
+  `16.14.2`, which is graphql-js. It runs only as a benchmark baseline and is
+  not part of any MojoGraphQL package.
+- `bench/baselines/js-client/` installs the npm packages `@apollo/client`
+  `4.3.3` (MIT), `graphql` `16.14.2` (MIT) and its peer dependency `rxjs`
+  `7.8.2` (Apache-2.0). They run only as the benchmark baseline of
+  `gql_client` and are not part of any MojoGraphQL package; no `rxjs` code
+  is ported. `bench/fixtures/client-items-1000.json` is MojoGraphQL's own
+  file.
+- `bench/gql_validation/apollo_compiler.mojo` and the baselines build the
+  documents of the apollo-compiler 1.33.0 benchmarks
+  `benches/fields_validation.rs`, `benches/fragments_validation.rs` and
+  `benches/directives_validation.rs` with the same steps. apollo-rs is used
+  under the MIT License. `gql_validation` ports graphql-js `v16.14.2`
+  `src/validation` and `src/utilities/TypeInfo.ts`.
+- `bench/fixtures/hive-huge-schema/` and `bench/fixtures/hive-dgs/` are
+  byte-for-byte copies of `__tests__/fixtures/huge-schema/*.graphql` and
+  `__tests__/fixtures/dgs/*.graphql` of Hive Federation Composition
+  `v0.27.0` (`6272ad8`). `bench/fixtures/hive-stars-stuff/` holds the
+  string literals of `__tests__/fixtures/stars-stuff.ts`, and
+  `bench/fixtures/hive-basic/` the string literals of `basicServices` in
+  `benchmark.ts`, one file per subgraph. They are MIT licensed, Copyright
+  (c) 2023 The Guild.
+- `bench/baselines/js-composition/` installs the npm packages
+  `@theguild/federation-composition` `0.27.0` (MIT) and `graphql` `16.14.2`
+  (MIT). They run only as the benchmark baseline of `gql_composition` and
+  are not part of any MojoGraphQL package.
+
+## Test fixtures
+
+- `tests/gql_json/fixtures/test_parsing/` is a byte-for-byte copy of the
+  `y_`, `n_` and `i_` files of the JSONTestSuite
+  ([nst/JSONTestSuite](https://github.com/nst/JSONTestSuite)), revision
+  `1ef36fa` (2024-11-22). It is MIT licensed, Copyright (c) 2016 Nicolas
+  Seriot. The license text is in `tests/gql_json/fixtures/test_parsing/LICENSE`.
+  The files are test data only, and no MojoGraphQL package contains them.
+
+## MIT License
+
+Each project above is distributed under this license text, with its own
+copyright notice from the table in place of the copyright line.
+
+```text
+MIT License
+
+Copyright (c) <the copyright notice of the project, from the table above>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## Updating a pin
+
+When a port moves to a new upstream revision, update the revision in this
+file and in the `upstream` key of the package in `packages.toml`. Read the
+upstream license files again at the new revision. A license can change
+between revisions.

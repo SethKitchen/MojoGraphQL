@@ -1,0 +1,16 @@
+{
+  "name": "mojographql-bench-apollo-subgraph",
+  "version": "0.0.0",
+  "private": true,
+  "description": "@apollo/subgraph baseline for the MojoGraphQL gql_subgraph benchmarks.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  },
+  "dependencies": {
+    "@apollo/subgraph": "2.14.4",
+    "graphql": "16.14.2",
+    "graphql-tag": "2.12.6"
+  }
+}

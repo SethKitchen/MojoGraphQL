@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Rust HTTP baselines. `hyper-server` is a hyper 1 server on a tokio
+# runtime with one thread: the HTTP stack of Hive Router. `httparse` times
+# the httparse request parser, which hyper uses. hyper, hyper-util, tokio
+# and http-body-util are MIT; httparse is MIT OR Apache-2.0, used under MIT.
+
+[package]
+name = "mojographql-bench-http-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+bytes = "1"
+tokio = { version = "1", features = ["rt", "net", "macros", "signal"] }
+httparse = "1"
+
+[[bin]]
+name = "hyper-server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "httparse"
+path = "src/bin/parse.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

@@ -1,0 +1,15 @@
+{
+  "name": "mojographql-bench-apollo-server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Apollo Server standalone baseline for the MojoGraphQL gql_server benchmarks.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  },
+  "dependencies": {
+    "@apollo/server": "5.5.1",
+    "graphql": "16.14.2"
+  }
+}

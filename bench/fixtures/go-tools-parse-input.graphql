@@ -1,0 +1,77 @@
+	schema @foo @bar(baz: "bal") {
+								query: Query
+								mutation: Mutation
+								subscription: Subscription 
+							}
+
+							"""
+							Person type description
+							"""
+							type Person implements Foo & Bar {
+								name: String
+								"age of the person"
+								age: Int
+								"""
+								date of birth
+								"""
+								dateOfBirth: Date
+							}
+
+							type PersonWithArgs { 
+								"name description"
+								name(
+									a: String!
+									"b description"
+									b: Int
+									"""
+									c description
+									"""
+									c: Float
+								): String
+							}
+
+							"scalars"
+							scalar JSON
+
+							"inputs"
+							input Person {
+								name: String = "Gopher"
+							}
+
+							"unions"
+							union SearchResult = Photo | Person
+
+							"interfaces"
+							interface NamedEntity @foo {
+ 								name: String
+							}
+
+							"enums"
+							enum Direction {
+							  NORTH
+							  EAST
+							  SOUTH
+							  WEST
+							}
+
+							"directives"
+							directive @example on FIELD | SCALAR | SCHEMA
+
+							query MyQuery {
+							  me {
+								... on Person @foo {
+									personID
+								}
+								...personFragment @bar
+								id
+								firstName
+								lastName
+								birthday {
+								  month
+								  day
+								}
+								friends {
+								  name
+								}
+							  }
+							}

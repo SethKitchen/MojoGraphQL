@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The serde_json baseline: the JSON layer of Hive Router and of most Rust
+# GraphQL servers. serde_json is MIT OR Apache-2.0; MojoGraphQL uses it
+# under MIT.
+
+[package]
+name = "mojographql-bench-json-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+# preserve_order keeps the members in source order, as JSON.parse and
+# the Mojo document do; the default map sorts the keys.
+serde_json = { version = "=1.0.154", features = ["preserve_order"] }
+
+[[bin]]
+name = "serde-json"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

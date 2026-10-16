@@ -1,0 +1,2 @@
+./loop: No such file or directory.
+warning: cmds.gdb: No such file or directory

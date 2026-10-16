@@ -1,0 +1,150 @@
+# A report on one repository, its owner and a search, for the GitHub schema.
+query LargeRepositoryReport(
+  $owner: String!
+  $name: String!
+  $issueOrder: IssueOrder = {field: CREATED_AT, direction: DESC}
+  $issueLabels: [String!] = ["bug", "help wanted"]
+  $issueStates: [IssueState!] = [OPEN]
+  $issueFilters: IssueFilters = {assignee: "*", states: [OPEN, CLOSED]}
+  $issuesFirst: Int = 20
+  $issuesAfter: String
+  $prOrder: IssueOrder
+  $prStates: [PullRequestState!] = [OPEN, MERGED]
+  $prBaseRef: String
+  $prHeadRef: String
+  $prLabels: [String!]
+  $prFirst: Int = 10
+  $languageOrder: LanguageOrder
+  $languagesFirst: Int = 5
+  $starOrder: StarOrder
+  $stargazersFirst: Int = 5
+  $refOrder: RefOrder
+  $refPrefix: String = "refs/heads/"
+  $refsFirst: Int = 10
+  $milestoneOrder: MilestoneOrder
+  $milestonesFirst: Int = 5
+  $searchQuery: String!
+  $searchType: SearchType = REPOSITORY
+  $searchFirst: Int = 10
+  $login: String!
+  $repositoryOrder: RepositoryOrder
+  $repositoryPrivacy: RepositoryPrivacy
+  $ownerAffiliations: [RepositoryAffiliation] = [OWNER]
+  $isFork: Boolean = false
+  $projectsOrder: ProjectOrder
+  $projectStates: [ProjectState!]
+  $topicName: String = "graphql"
+  $dryRun: Boolean = false
+  $labelName: String = "bug"
+  $issueNumber: Int!
+  $nodeIds: [ID!]!
+) {
+  repository(owner: $owner, name: $name) {
+    ...RepositoryFields
+    issues(orderBy: $issueOrder, labels: $issueLabels, states: $issueStates, filterBy: $issueFilters, first: $issuesFirst, after: $issuesAfter) {
+      totalCount
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        number
+        title
+        body
+        state
+        createdAt
+        author { login avatarUrl url ... on User { name company } }
+        labels(first: 5) { nodes { name color description } }
+        comments(first: 3) { totalCount nodes { body createdAt author { login } } }
+      }
+    }
+    pullRequests(orderBy: $prOrder, states: $prStates, baseRefName: $prBaseRef, headRefName: $prHeadRef, labels: $prLabels, first: $prFirst) {
+      totalCount
+      nodes {
+        number
+        title
+        state
+        merged
+        mergedAt
+        additions
+        deletions
+        changedFiles
+        baseRefName
+        headRefName
+        author { login }
+        reviews(first: 3) { nodes { state author { login } } }
+      }
+    }
+    languages(orderBy: $languageOrder, first: $languagesFirst) {
+      totalSize
+      edges { size node { name color } }
+    }
+    stargazers(orderBy: $starOrder, first: $stargazersFirst) {
+      totalCount
+      nodes { login name }
+    }
+    refs(refPrefix: $refPrefix, orderBy: $refOrder, first: $refsFirst) {
+      nodes { name prefix target { oid abbreviatedOid ... on Commit { message committedDate } } }
+    }
+    milestones(orderBy: $milestoneOrder, first: $milestonesFirst) {
+      nodes { number title state dueOn description }
+    }
+    projects(orderBy: $projectsOrder, states: $projectStates, first: 5) {
+      nodes { name number state body }
+    }
+    label(name: $labelName) { name color description }
+    issue(number: $issueNumber) { number title state closed closedAt }
+    licenseInfo { key name spdxId url }
+    owner { login url ... on Organization { name description } ... on User { bio location } }
+    parent { nameWithOwner }
+  }
+  search(query: $searchQuery, type: $searchType, first: $searchFirst) {
+    issueCount
+    repositoryCount
+    userCount
+    nodes {
+      __typename
+      ... on Repository { ...RepositoryFields }
+      ... on Issue { number title state }
+      ... on PullRequest { number title merged }
+      ... on User { login userName: name }
+      ... on Organization { login organizationName: name }
+    }
+  }
+  user(login: $login) {
+    login
+    name
+    bio
+    company
+    location
+    email
+    websiteUrl
+    createdAt
+    followers { totalCount }
+    following { totalCount }
+    repositories(orderBy: $repositoryOrder, privacy: $repositoryPrivacy, ownerAffiliations: $ownerAffiliations, isFork: $isFork, first: 10) {
+      totalCount
+      nodes { ...RepositoryFields }
+    }
+  }
+  topic(name: $topicName) { name relatedTopics { name } }
+  rateLimit(dryRun: $dryRun) { cost limit remaining resetAt }
+  nodes(ids: $nodeIds) { id ... on Repository { nameWithOwner } ... on User { login } }
+}
+
+fragment RepositoryFields on Repository {
+  id
+  name
+  nameWithOwner
+  description
+  url
+  homepageUrl
+  createdAt
+  updatedAt
+  pushedAt
+  diskUsage
+  forkCount
+  isArchived
+  isFork
+  isPrivate
+  hasIssuesEnabled
+  hasWikiEnabled
+  primaryLanguage { name color }
+}

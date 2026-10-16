@@ -1,0 +1,704 @@
+# A repository dashboard, written against github-schema.graphql.
+# It is an executable document: operations, variables with defaults,
+# arguments of every literal kind but float and null, aliases, directives,
+# fragments and inline fragments, nested four to six levels deep.
+
+query RepositoryDashboard(
+  $owner: String!
+  $name: String!
+  $issueCount: Int = 25
+  $pullRequestCount: Int = 20
+  $commitCount: Int = 30
+  $after: String
+  $labels: [String!] = ["bug", "enhancement", "help wanted"]
+  $includeReviews: Boolean = true
+  $skipHistory: Boolean = false
+  $avatarSize: Int = 64
+) {
+  rateLimit {
+    ...RateLimitFields
+  }
+  repository(owner: $owner, name: $name) {
+    ...RepositoryHeader
+    owner {
+      __typename
+      login
+      ownerAvatar: avatarUrl(size: $avatarSize)
+      ... on Organization {
+        name
+        description
+        websiteUrl
+        membersWithRole(first: 5) {
+          totalCount
+          nodes {
+            ...UserSummary
+          }
+        }
+      }
+      ... on User {
+        ...UserSummary
+        company
+        location
+      }
+    }
+    defaultBranchRef {
+      name
+      prefix
+      target {
+        __typename
+        oid
+        ... on Commit {
+          ...CommitFields
+          history(first: $commitCount, after: $after) @skip(if: $skipHistory) {
+            totalCount
+            pageInfo {
+              ...PageInfoFields
+            }
+            edges {
+              cursor
+              node {
+                ...CommitFields
+                parents(first: 2) {
+                  totalCount
+                  nodes {
+                    oid
+                    abbreviatedOid
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    openIssues: issues(
+      first: $issueCount
+      states: [OPEN]
+      labels: $labels
+      orderBy: { field: UPDATED_AT, direction: DESC }
+    ) {
+      totalCount
+      pageInfo {
+        ...PageInfoFields
+      }
+      edges {
+        cursor
+        node {
+          ...IssueFields
+        }
+      }
+    }
+    closedIssues: issues(states: [CLOSED]) {
+      totalCount
+    }
+    openPullRequests: pullRequests(
+      first: $pullRequestCount
+      states: [OPEN]
+      orderBy: { field: CREATED_AT, direction: DESC }
+    ) {
+      totalCount
+      nodes {
+        ...PullRequestFields
+        reviews(first: 10) @include(if: $includeReviews) {
+          totalCount
+          nodes {
+            ...ReviewFields
+          }
+        }
+      }
+    }
+    mergedPullRequests: pullRequests(states: [MERGED], last: 5) {
+      totalCount
+      nodes {
+        number
+        title
+        mergedAt
+        mergedBy {
+          ...ActorFields
+        }
+        mergeCommit {
+          oid
+          abbreviatedOid
+        }
+      }
+    }
+    labels(first: 50) {
+      totalCount
+      nodes {
+        ...LabelFields
+        issues(states: [OPEN]) {
+          totalCount
+        }
+      }
+    }
+    milestones(
+      first: 10
+      states: [OPEN]
+      orderBy: { field: DUE_DATE, direction: ASC }
+    ) {
+      totalCount
+      nodes {
+        ...MilestoneFields
+      }
+    }
+    languages(first: 10, orderBy: { field: SIZE, direction: DESC }) {
+      totalCount
+      totalSize
+      edges {
+        size
+        node {
+          name
+          color
+        }
+      }
+    }
+    releases(last: 5) {
+      totalCount
+      nodes {
+        name
+        tagName: tag {
+          name
+        }
+        isDraft
+        isPrerelease
+        publishedAt
+        description
+        url
+        author {
+          ...UserSummary
+        }
+        releaseAssets(first: 10) {
+          totalCount
+          nodes {
+            name
+            contentType
+            size
+            downloadCount
+            downloadUrl
+          }
+        }
+      }
+    }
+    refs(refPrefix: "refs/heads/", first: 20, direction: DESC) {
+      totalCount
+      nodes {
+        name
+        target {
+          oid
+          ... on Commit {
+            committedDate
+            messageHeadline
+          }
+        }
+        associatedPullRequests(first: 1, states: [OPEN]) {
+          totalCount
+          nodes {
+            number
+            title
+          }
+        }
+      }
+    }
+    collaborators(first: 20, affiliation: DIRECT) {
+      totalCount
+      edges {
+        permission
+        node {
+          ...UserSummary
+        }
+      }
+    }
+    recentStargazers: stargazers(first: 5, orderBy: { field: STARRED_AT, direction: DESC }) {
+      totalCount
+      edges {
+        starredAt
+        node {
+          ...UserSummary
+        }
+      }
+    }
+    watchers {
+      totalCount
+    }
+    forks(first: 5, orderBy: { field: STARGAZERS, direction: DESC }) {
+      totalCount
+      nodes {
+        ...RepositoryHeader
+      }
+    }
+    repositoryTopics(first: 20) {
+      nodes {
+        topic {
+          name
+          relatedTopics {
+            name
+          }
+        }
+        url
+      }
+    }
+    licenseInfo {
+      key
+      name
+      spdxId
+      url
+      permissions {
+        key
+        label
+      }
+      conditions {
+        key
+        label
+      }
+      limitations {
+        key
+        label
+      }
+    }
+    codeOfConduct {
+      key
+      name
+      url
+    }
+    branchProtectionRules(first: 10) {
+      totalCount
+      nodes {
+        pattern
+        requiresApprovingReviews
+        requiredApprovingReviewCount
+        requiresStatusChecks
+        requiredStatusCheckContexts
+        requiresStrictStatusChecks
+        isAdminEnforced
+        creator {
+          ...ActorFields
+        }
+      }
+    }
+  }
+}
+
+query SearchIssues(
+  $query: String! = "is:open is:issue label:bug sort:updated-desc"
+  $first: Int = 50
+  $after: String
+) {
+  search(query: $query, type: ISSUE, first: $first, after: $after) {
+    issueCount
+    repositoryCount
+    userCount
+    pageInfo {
+      ...PageInfoFields
+    }
+    edges {
+      cursor
+      textMatches {
+        fragment
+        property
+        highlights {
+          beginIndice
+          endIndice
+          text
+        }
+      }
+      node {
+        __typename
+        ... on Issue {
+          ...IssueFields
+          repository {
+            ...RepositoryHeader
+          }
+        }
+        ... on PullRequest {
+          ...PullRequestFields
+        }
+        ... on Repository {
+          ...RepositoryHeader
+        }
+        ... on User {
+          ...UserSummary
+        }
+      }
+    }
+  }
+}
+
+query ViewerProfile($avatarSize: Int = 128, $repositoryCount: Int = 10) {
+  viewer {
+    ...UserSummary
+    bio
+    company
+    location
+    websiteUrl
+    createdAt
+    isHireable
+    followers {
+      totalCount
+    }
+    following {
+      totalCount
+    }
+    starredRepositories {
+      totalCount
+    }
+    avatar: avatarUrl(size: $avatarSize)
+    repositories(
+      first: $repositoryCount
+      privacy: PUBLIC
+      isFork: false
+      ownerAffiliations: [OWNER, COLLABORATOR]
+      orderBy: { field: PUSHED_AT, direction: DESC }
+    ) {
+      totalCount
+      totalDiskUsage
+      nodes {
+        ...RepositoryHeader
+        pushedAt
+      }
+    }
+    organizations(first: 10) {
+      nodes {
+        login
+        name
+        avatarUrl(size: 32)
+        viewerCanAdminister
+      }
+    }
+    contributionsCollection {
+      totalCommitContributions
+      totalIssueContributions
+      totalPullRequestContributions
+      totalPullRequestReviewContributions
+      contributionCalendar {
+        totalContributions
+        weeks {
+          firstDay
+          contributionDays {
+            date
+            weekday
+            contributionCount
+            color
+          }
+        }
+      }
+    }
+  }
+}
+
+mutation AddCommentAndReact(
+  $subjectId: ID!
+  $body: String! = """
+  Thanks for the report.
+
+  Can you attach a minimal reproduction? A "hello world" project is enough.
+  """
+  $content: ReactionContent = HOORAY
+) {
+  addComment(input: { subjectId: $subjectId, body: $body, clientMutationId: "dashboard" }) {
+    clientMutationId
+    commentEdge {
+      cursor
+      node {
+        id
+        body
+        createdAt
+        author {
+          ...ActorFields
+        }
+      }
+    }
+    subject {
+      id
+    }
+  }
+  addReaction(input: { subjectId: $subjectId, content: $content }) {
+    reaction {
+      content
+      createdAt
+    }
+    subject {
+      id
+      viewerCanReact
+      reactionGroups {
+        content
+        viewerHasReacted
+        users {
+          totalCount
+        }
+      }
+    }
+  }
+}
+
+fragment RateLimitFields on RateLimit {
+  limit
+  cost
+  remaining
+  resetAt
+  nodeCount
+}
+
+fragment PageInfoFields on PageInfo {
+  hasNextPage
+  hasPreviousPage
+  startCursor
+  endCursor
+}
+
+fragment ActorFields on Actor {
+  __typename
+  login
+  avatarUrl(size: 40)
+  url
+  ... on User {
+    id
+    name
+  }
+  ... on Bot {
+    id
+  }
+}
+
+fragment UserSummary on User {
+  id
+  login
+  displayName: name
+  email
+  url
+  avatarUrl(size: 48)
+  isViewer
+  viewerIsFollowing
+}
+
+fragment RepositoryHeader on Repository {
+  id
+  name
+  nameWithOwner
+  description
+  url
+  homepageUrl
+  isPrivate
+  isFork
+  isArchived
+  isMirror
+  forkCount
+  createdAt
+  updatedAt
+  diskUsage
+  primaryLanguage {
+    name
+    color
+  }
+  stargazers {
+    totalCount
+  }
+  viewerHasStarred
+  viewerPermission
+  viewerSubscription
+}
+
+fragment LabelFields on Label {
+  id
+  name
+  color
+  description
+  isDefault
+}
+
+fragment MilestoneFields on Milestone {
+  id
+  number
+  title
+  description
+  state
+  dueOn
+  url
+  creator {
+    ...ActorFields
+  }
+}
+
+fragment CommitFields on Commit {
+  oid
+  abbreviatedOid
+  messageHeadline
+  messageBody
+  committedDate
+  authoredDate
+  additions
+  deletions
+  changedFiles
+  url
+  author {
+    name
+    email
+    date
+    user {
+      ...UserSummary
+    }
+  }
+  committer {
+    name
+    email
+  }
+  signature {
+    isValid
+    state
+    signer {
+      login
+    }
+  }
+  status {
+    state
+    contexts {
+      context
+      state
+      description
+      targetUrl
+      createdAt
+    }
+  }
+}
+
+fragment ReactionSummary on Reactable {
+  viewerCanReact
+  reactionGroups {
+    content
+    viewerHasReacted
+    users {
+      totalCount
+    }
+  }
+  thumbsUp: reactions(content: THUMBS_UP) {
+    totalCount
+  }
+}
+
+fragment IssueFields on Issue {
+  id
+  number
+  title
+  issueState: state
+  url
+  createdAt
+  updatedAt
+  closedAt
+  locked
+  activeLockReason
+  bodyText
+  author {
+    ...ActorFields
+  }
+  authorAssociation
+  assignees(first: 5) {
+    totalCount
+    nodes {
+      ...UserSummary
+    }
+  }
+  labels(first: 10) {
+    nodes {
+      ...LabelFields
+    }
+  }
+  milestone {
+    ...MilestoneFields
+  }
+  comments(last: 3) {
+    totalCount
+    nodes {
+      id
+      bodyText
+      createdAt
+      author {
+        ...ActorFields
+      }
+      ...ReactionSummary
+    }
+  }
+  participants(first: 10) {
+    totalCount
+    nodes {
+      login
+      avatarUrl(size: 24)
+    }
+  }
+  ...ReactionSummary
+  viewerSubscription
+  viewerCanUpdate
+}
+
+fragment PullRequestFields on PullRequest {
+  id
+  number
+  title
+  pullRequestState: state
+  url
+  createdAt
+  updatedAt
+  additions
+  deletions
+  changedFiles
+  mergeable
+  baseRefName
+  headRefName
+  headRepository {
+    nameWithOwner
+  }
+  author {
+    ...ActorFields
+  }
+  labels(first: 10) {
+    nodes {
+      ...LabelFields
+    }
+  }
+  commits(last: 1) {
+    totalCount
+    nodes {
+      commit {
+        oid
+        status {
+          state
+        }
+      }
+    }
+  }
+  reviewRequests(first: 5) {
+    totalCount
+    nodes {
+      requestedReviewer {
+        __typename
+        ... on User {
+          login
+        }
+        ... on Team {
+          name
+          slug
+        }
+      }
+    }
+  }
+  ...ReactionSummary
+}
+
+fragment ReviewFields on PullRequestReview {
+  id
+  state
+  bodyText
+  submittedAt
+  author {
+    ...ActorFields
+  }
+  comments(first: 5) {
+    totalCount
+    nodes {
+      id
+      path
+      position
+      diffHunk
+      bodyText
+      createdAt
+    }
+  }
+}

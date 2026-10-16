@@ -1,0 +1,11 @@
+{
+  "name": "mojographql-bench-http-js",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Node.js node:http and llhttp baselines for the MojoGraphQL gql_http benchmarks.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  }
+}

@@ -1,0 +1,67 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+#
+# The package graph. Every top-level Mojo package is listed here with the
+# packages it imports. `make packages-check` refuses an import of a package
+# that is not listed, a cycle, and a package directory that is not listed.
+# A user can build and install one package and only its dependencies:
+#
+#     make package PKG=gql_language
+#
+# `upstream` names the MIT sources each package ports, at the pinned
+# version. THIRD-PARTY-NOTICES.md holds their license texts.
+
+[packages.gql_language]
+summary = "Source, lexer, parser, AST, printer and visitor"
+depends = []
+upstream = ["graphql-js 16.14.2 src/language and the AST utilities of src/utilities (MIT)"]
+
+[packages.gql_json]
+summary = "JSON values, a fast parser and a serializer, for variables and responses"
+depends = []
+upstream = ["RFC 8259; serialization as ECMAScript JSON.stringify, which graphql-js responses use"]
+
+[packages.gql_http]
+summary = "HTTP/1.1 server and client over POSIX sockets"
+depends = []
+upstream = ["RFC 9110 and RFC 9112; the GraphQL over HTTP specification"]
+
+[packages.gql_schema]
+summary = "Type system: build a schema from SDL, extend, print and validate it"
+depends = ["gql_language", "gql_json"]
+upstream = ["graphql-js 16.14.2 src/type and src/utilities (MIT)"]
+
+[packages.gql_validation]
+summary = "Validation of executable documents against a schema: TypeInfo and every specified rule"
+depends = ["gql_language", "gql_schema"]
+upstream = ["graphql-js 16.14.2 src/validation and src/utilities/TypeInfo.ts (MIT)"]
+
+[packages.gql_execution]
+summary = "Execution of operations with resolvers, and introspection"
+depends = ["gql_language", "gql_schema", "gql_json"]
+upstream = ["graphql-js 16.14.2 src/execution, src/type/introspection.ts and the introspection utilities of src/utilities (MIT)"]
+
+[packages.gql_client]
+summary = "Normalized client cache: InMemoryCache, type and field policies"
+depends = ["gql_language", "gql_json"]
+upstream = ["Apollo Client 4.3.3 (ae0dfce) src/cache/inmemory: inMemoryCache.ts, entityStore.ts, writeToStore.ts, readFromStore.ts, policies.ts, helpers.ts, key-extractor.ts; src/cache/core/cache.ts; the src/utilities helpers they use (MIT)"]
+
+[packages.gql_composition]
+summary = "Apollo Federation composition: validation of subgraphs"
+depends = ["gql_language"]
+upstream = ["Hive Federation Composition v0.27.0 6272ad8 (MIT)"]
+
+[packages.gql_mcp]
+summary = "Model Context Protocol server: GraphQL operations as tools, introspect, search, execute and validate"
+depends = ["gql_language", "gql_json", "gql_schema", "gql_validation", "gql_http"]
+upstream = ["Apollo MCP Server 2.0.0 (04e4e6e) crates/apollo-mcp-server/src: operations/, schema_tree_shake.rs, introspection/, graphql.rs; crates/apollo-schema-index/src (MIT)"]
+
+[packages.gql_subgraph]
+summary = "Apollo Federation subgraphs: buildSubgraphSchema, printSubgraphSchema and entity resolution"
+depends = ["gql_language", "gql_schema", "gql_execution", "gql_json"]
+upstream = ["@apollo/subgraph 2.14.4 (b95c124) subgraph-js/src: buildSubgraphSchema.ts, printSubgraphSchema.ts, types.ts, schema-helper/buildSchemaFromSDL.ts (MIT); the Apollo Federation subgraph specification and federation/v2.x specifications; Hive Federation Composition v0.27.0 (MIT) as the reference for the federation-internals behavior"]
+
+[packages.gql_server]
+summary = "GraphQL server: the Apollo Server request pipeline, HTTP handling and a standalone server"
+depends = ["gql_language", "gql_json", "gql_schema", "gql_validation", "gql_execution", "gql_http"]
+upstream = ["Apollo Server 5.5.1 (0c22029) packages/server/src: ApolloServer.ts, requestPipeline.ts, runHttpQuery.ts, httpBatching.ts, preventCsrf.ts, errorNormalize.ts, internalErrorClasses.ts, errors/index.ts, cachePolicy.ts, utils/HeaderMap.ts, validationRules/NoIntrospection.ts, the header part of plugin/cacheControl, plugin/disableSuggestions, standalone/index.ts (MIT); negotiator 1.1.0, content-type 2.1.0, whatwg-mimetype 4.0.0, cors 2.8.6, body-parser 2.3.0, finalhandler 2.1.1 and @apollo/utils.keyvaluecache 4.0.0, as Apollo Server uses them (MIT)"]
