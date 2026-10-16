@@ -46,3 +46,5 @@ bench/baselines/rust/target/
 bench/baselines/go/bench-go
 bench/baselines/js-client/node_modules/
 bench/baselines/js-subgraph/node_modules/
+
+node_modules/
