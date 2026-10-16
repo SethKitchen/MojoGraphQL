@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# Mojo toolchain, installed per-checkout by `uv pip install mojo`.
+# The README covers recreating it; it must never be committed.
+.venv/
+.venv-mojo10/
+
+# Instrumented copies of the sources, plus the manifest and captured probe
+# records. Regenerated from scratch by every `make coverage`.
+coverage/build/
+
+# Generated outputs. Existing tracked PNG figures still update normally.
+# Add new documentation images explicitly after compression and review.
+/out/*
+*.ppm
+
+# Compiled binaries from `mojo build`.
+*.o
+*.dylib
+*.so
+
+# Agent skills vendored from github per skills-lock.json. The lockfile is
+# committed so the versions are reproducible; the fetched content is not,
+# the same way a lockfile is tracked but its packages are not.
+.claude/skills/
+.agents/skills/
+
+# Editor and OS noise. .vscode/settings.json is deliberately NOT ignored: it
+# carries the mojo.lsp.includeDirs fix every contributor needs.
+.vscode/*
+!.vscode/settings.json
+.idea/
+.DS_Store
+*.swp
+
+# Python bytecode, from the formatter's dependencies.
+__pycache__/
+*.py[cod]
+.cache/
+
+# Benchmark baselines: installed packages and built programs. The manifests
+# and lockfiles (package-lock.json, Cargo.lock, go.sum) are committed.
+bench/baselines/js/node_modules/
+bench/baselines/rust/target/
+bench/baselines/go/bench-go
+bench/baselines/js-client/node_modules/
+bench/baselines/js-subgraph/node_modules/
