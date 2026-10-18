@@ -113,3 +113,19 @@ If you change one of them, run `make bench` again, because the old results are t
 - `buildSubgraphSchema` of `@apollo/subgraph` 2.14.4 accepts it, with all its federation checks.
 
 If you change it, check that `@apollo/subgraph` still accepts it. Then run `make bench` again, because the old results are then not comparable.
+
+## The Hive Router execution files
+
+The files in `hive-router-exec/` are the inputs of the `hive-router/execute` workload. The Hive Router baseline in `bench/baselines/rust-router/` reads them. They are recorded from the bench subgraphs of Hive Router (MIT) at `1a29df9`, for `TestQuery` of `hive-router-qp/operation.graphql`.
+
+- `responses.json` is a JSON array with one object per subgraph request of the query plan, in the order that the router sends them. Each object has `subgraph`, `query` (the query string that the router sends), `variables` (the `variables` object that the router sends, or `null`) and `response` (the body of the subgraph response, byte for byte).
+- `expected_response.json` is the body that `execute_query_plan` produces from these responses, byte for byte. It is the same as upstream `bench/expected_response.json`.
+
+To make the files again, do these steps:
+
+1. In `bench/baselines/rust-router/`, run `./build.sh`.
+2. In `bench/baselines/rust-router/upstream/`, run `cargo build --release -p subgraphs --features hive-router/graphiql`.
+3. Start `./target/release/subgraphs` in `upstream/`. It serves the subgraphs on port 4200.
+4. In `bench/baselines/rust-router/`, run `./target/release/mojographql-bench-router-rust --record`.
+
+Then run `make bench` again, because the old results are then not comparable.

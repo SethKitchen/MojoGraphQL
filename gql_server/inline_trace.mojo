@@ -37,6 +37,8 @@ field.
 - There is no query plan, so `queryPlan` is not set.
 """
 
+from std.memory import OwnedPointer
+
 from gql_json.parser import parse as parse_json
 from gql_json.value import NO_NODE as NO_JSON
 from gql_schema.definition import NO_TYPE, Schema, TypeKind
@@ -159,8 +161,12 @@ struct InlineTracePlugin(Movable):
         Raises:
             Error: Never; the timing starts once.
         """
-        if not self.enabled:
-            return
+        if self.enabled:
+            self._start(ctx)
+
+    @no_inline
+    def _start(self, mut ctx: GraphQLRequestContext) raises:
+        """Start the trace when the request asks for one."""
         if (
             not ctx.request.http
             or ctx.request.http.value()
@@ -178,7 +184,7 @@ struct InlineTracePlugin(Movable):
         )
         builder.start_timing()
         ctx.will_resolve_field = True
-        ctx.inline_trace = builder^
+        ctx.inline_trace = OwnedPointer(builder^)
 
     def did_encounter_errors(
         self, mut ctx: GraphQLRequestContext, schema: Schema
@@ -192,16 +198,8 @@ struct InlineTracePlugin(Movable):
         Raises:
             Error: When a `transform` function raises.
         """
-        if not ctx.inline_trace:
-            return
-        var builder = ctx.inline_trace.take()
-        try:
-            _record_fields(builder, ctx, schema)
-            builder.did_encounter_errors(ctx.errors)
-        except e:
-            ctx.inline_trace = builder^
-            raise e^
-        ctx.inline_trace = builder^
+        if ctx.inline_trace:
+            _add_errors(ctx, schema)
 
     def will_send_response(
         self, mut ctx: GraphQLRequestContext, schema: Schema
@@ -217,24 +215,42 @@ struct InlineTracePlugin(Movable):
             Error: `The ftv1 extension was already present.` when another
                 plugin set `extensions.ftv1`.
         """
-        if not ctx.inline_trace:
-            return
-        var builder = ctx.inline_trace.take()
-        _record_fields(builder, ctx, schema)
-        builder.stop_timing()
-        var encoded = base64_encode(builder.trace.encode())
-        var member = '"ftv1":"' + encoded + '"'
-        if not ctx.response.extensions:
-            ctx.response.extensions = "{" + member + "}"
-            return
-        var text = String(ctx.response.extensions.value().strip())
-        var extensions = parse_json(text)
-        if extensions.find(extensions.root, "ftv1") != NO_JSON:
-            raise Error("The `ftv1` extension was already present.")
-        var head = String(text[byte = 0 : text.byte_length() - 1])
-        if extensions.length(extensions.root) > 0:
-            head += ","
-        ctx.response.extensions = head + member + "}"
+        if ctx.inline_trace:
+            _send_trace(ctx, schema)
+
+
+@no_inline
+def _add_errors(mut ctx: GraphQLRequestContext, schema: Schema) raises:
+    """Give the field timings and the errors to the builder."""
+    var builder = ctx.inline_trace.take()
+    try:
+        _record_fields(builder[], ctx, schema)
+        builder[].did_encounter_errors(ctx.errors)
+    except e:
+        ctx.inline_trace = builder^
+        raise e^
+    ctx.inline_trace = builder^
+
+
+@no_inline
+def _send_trace(mut ctx: GraphQLRequestContext, schema: Schema) raises:
+    """Stop the trace and put its base64 in `extensions.ftv1`."""
+    var builder = ctx.inline_trace.take()
+    _record_fields(builder[], ctx, schema)
+    builder[].stop_timing()
+    var encoded = base64_encode(builder[].trace.encode())
+    var member = '"ftv1":"' + encoded + '"'
+    if not ctx.response.extensions:
+        ctx.response.extensions = "{" + member + "}"
+        return
+    var text = String(ctx.response.extensions.value().strip())
+    var extensions = parse_json(text)
+    if extensions.find(extensions.root, "ftv1") != NO_JSON:
+        raise Error("The `ftv1` extension was already present.")
+    var head = String(text[byte = 0 : text.byte_length() - 1])
+    if extensions.length(extensions.root) > 0:
+        head += ","
+    ctx.response.extensions = head + member + "}"
 
 
 def _record_fields(

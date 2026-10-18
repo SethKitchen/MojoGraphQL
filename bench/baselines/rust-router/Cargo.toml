@@ -4,7 +4,8 @@
 # The Hive Router baseline of gql_router. build.sh clones Hive Router
 # (MIT) at the pinned revision 1a29df9 into upstream/, and this program
 # links its query planner from upstream/bin/router. It times the
-# `query_plan` workload of upstream bin/router/benches/qp_benches.rs.
+# `query_plan` workload of upstream bin/router/benches/qp_benches.rs, and
+# the `execute` workload: one `execute_query_plan` with canned subgraphs.
 # The toolchain is the upstream pin, 1.98.1.
 
 [package]
@@ -18,6 +19,12 @@ license = "PolyForm-Noncommercial-1.0.0"
 # The `graphiql` feature embeds the static GraphiQL page instead of running
 # `npm install` for the Laboratory page. The query planner is the same.
 hive-router = { path = "upstream/bin/router", features = ["graphiql"] }
+# The `hive-router/execute` workload needs the two types that hive-router
+# does not re-export: `Bytes` (subgraph response bytes) and `BoxStream` (the
+# `SubgraphExecutor::subscribe` signature). The requirements are the ones
+# of the upstream workspace; Cargo.lock pins the versions upstream locks.
+bytes = "1.11.1"
+futures = "0.3.31"
 
 [profile.release]
 opt-level = 3

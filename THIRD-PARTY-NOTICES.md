@@ -25,6 +25,7 @@ the Elastic License 2.0. The exclusions are listed with each project.
 | Apollo Client | [apollographql/apollo-client](https://github.com/apollographql/apollo-client) | `4.3.3` (`ae0dfce`) | MIT | Copyright (c) 2022 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.) |
 | Apollo Kotlin | [apollographql/apollo-kotlin](https://github.com/apollographql/apollo-kotlin) | `afe947c` | MIT | Copyright (c) 2016-2024 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.) |
 | Apollo MCP Server | [apollographql/apollo-mcp-server](https://github.com/apollographql/apollo-mcp-server) | `2.0.0` (`04e4e6e`) | MIT | Copyright (c) 2025 Apollo Graph, Inc. |
+| apollo-federation-types | [apollographql/federation-rs](https://github.com/apollographql/federation-rs) | crate `0.18.0-rc.1` | MIT | Copyright (c) 2021 Apollo Graph, Inc. |
 | Rover | [apollographql/rover](https://github.com/apollographql/rover) | `1.0.0` (`39a041a`) | MIT (the repository default) | Copyright (c) 2021 Apollo Graph, Inc. |
 | Hive Federation Composition | [the-guild-org/federation](https://github.com/the-guild-org/federation) | `v0.27.0` (`6272ad8`) | MIT | Copyright (c) 2023 The Guild |
 | Hive Router | [graphql-hive/router](https://github.com/graphql-hive/router) | `1a29df9` | MIT | Copyright (c) 2018 Dotan Simha <dotan@the-guild.dev> |
@@ -53,8 +54,27 @@ the Elastic License 2.0. The exclusions are listed with each project.
   - `libraries/apollo-runtime/src/commonMain/kotlin/com/apollographql/apollo/internal/MultipartReader.kt`
 - **Rover.** The repository default is MIT, and some parts are Elastic
   License 2.0 by a file header or a subdirectory license. MojoGraphQL ports
-  only the MIT parts. The supergraph and router plugin binaries that Rover
-  downloads are Elastic License 2.0 and are excluded.
+  only the MIT parts. `gql_seamstress` ports these parts of `39a041a`:
+  `src/cli.rs`, `src/command/supergraph/compose/`,
+  `src/composition/supergraph/config/` (the subgraph resolution),
+  `src/command/subgraph/introspect.rs`, `src/command/graph/introspect.rs`,
+  `src/command/output.rs`, `src/options/output.rs`, `src/error/`,
+  `src/federation.rs`, `src/utils/parsers.rs`, the
+  `crates/rover-client/src/operations/subgraph/introspect/` and
+  `graph/introspect/` operations, and `crates/rover-graphql/src/lib.rs`.
+  The tests of `tests/gql_seamstress/` port the tests of those files.
+  These parts are excluded:
+  - `src/utils/expansion.rs`, which is Elastic License 2.0 by its file
+    header. `gql_seamstress` does not expand environment variables in a
+    supergraph configuration.
+  - The `supergraph` and `router` plugin binaries that Rover downloads,
+    which are Elastic License 2.0. `gql_seamstress` composes with
+    `gql_composition`, and never runs the `supergraph` binary.
+  - The commands that need GraphOS, and `rover dev`.
+- **apollo-federation-types and apollo-compiler.** `gql_seamstress` also
+  ports `src/config/` and `src/rover/` of apollo-federation-types `0.18.0-rc.1`
+  (MIT), and `src/ast/serialize.rs` and the built-in introspection types of
+  apollo-compiler `1.33.0` (the MIT arm of MIT OR Apache-2.0).
 - **Hive Router.** `apollo-router-workspace/` is a plugin for Apollo Router,
   which is Elastic License 2.0. MojoGraphQL does not port it. `gql_router`
   ports these MIT parts of `1a29df9`: the query planner of

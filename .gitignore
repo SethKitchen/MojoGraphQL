@@ -45,8 +45,9 @@ bench/baselines/js/node_modules/
 bench/baselines/rust/target/
 bench/baselines/go/bench-go
 bench/baselines/go-http/bench-http-go
-bench/baselines/rust-router/upstream/
-bench/baselines/rust-rover/upstream/
+bench/baselines/*/upstream
+bench/baselines/*/upstream/
+bench/baselines/rust-seamstress/upstream/
 bench/baselines/js-client/node_modules/
 bench/baselines/js-subgraph/node_modules/
 

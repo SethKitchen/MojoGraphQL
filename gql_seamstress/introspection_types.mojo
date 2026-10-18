@@ -1,0 +1,275 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+# Noncommercial use is free; commercial use requires a paid license.
+# See LICENSE, LICENSE-COMMERCIAL.md and THIRD-PARTY-NOTICES.md.
+
+"""The built-in introspection results of apollo-compiler 1.33.0.
+
+`rover graph introspect --format json` runs the introspection query with
+apollo-compiler. Its introspection types and its built-in directives are
+fixed, and differ from the graphql-js ones that `gql_execution` gives: for
+example, `__Type` has no `isOneOf`, and `__Directive` has no `isDeprecated`.
+These are the results of the Rover introspection query for them, as
+apollo-compiler 1.33.0 (MIT arm of MIT OR Apache-2.0) gives them.
+"""
+
+comptime INTROSPECTION_TYPES_JSON = (
+    '{"kind":"OBJECT","name":"__Schema","description":"A GraphQL Schema def'
+    "ines the capabilities of a GraphQL server. It exposes all available ty"
+    "pes and directives on the server, as well as the entry points for quer"
+    'y, mutation, and subscription operations.","fields":[{"name":"descript'
+    'ion","description":null,"args":[],"type":{"kind":"SCALAR","name":"Stri'
+    'ng","ofType":null},"isDeprecated":false,"deprecationReason":null},{"na'
+    'me":"types","description":"A list of all types supported by this serve'
+    'r.","args":[],"type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"'
+    'LIST","name":null,"ofType":{"kind":"NON_NULL","name":null,"ofType":{"k'
+    'ind":"OBJECT","name":"__Type","ofType":null}}}},"isDeprecated":false,"'
+    'deprecationReason":null},{"name":"queryType","description":"The type t'
+    'hat query operations will be rooted at.","args":[],"type":{"kind":"NON'
+    '_NULL","name":null,"ofType":{"kind":"OBJECT","name":"__Type","ofType":'
+    'null}},"isDeprecated":false,"deprecationReason":null},{"name":"mutatio'
+    'nType","description":"If this server supports mutation, the type that '
+    'mutation operations will be rooted at.","args":[],"type":{"kind":"OBJE'
+    'CT","name":"__Type","ofType":null},"isDeprecated":false,"deprecationRe'
+    'ason":null},{"name":"subscriptionType","description":"If this server s'
+    "upport subscription, the type that subscription operations will be roo"
+    'ted at.","args":[],"type":{"kind":"OBJECT","name":"__Type","ofType":nu'
+    'll},"isDeprecated":false,"deprecationReason":null},{"name":"directives'
+    '","description":"A list of all directives supported by this server.","'
+    'args":[],"type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"LIST"'
+    ',"name":null,"ofType":{"kind":"NON_NULL","name":null,"ofType":{"kind":'
+    '"OBJECT","name":"__Directive","ofType":null}}}},"isDeprecated":false,"'
+    'deprecationReason":null}],"inputFields":null,"interfaces":[],"enumValu'
+    'es":null,"possibleTypes":null},{"kind":"OBJECT","name":"__Type","descr'
+    'iption":"The fundamental unit of any GraphQL Schema is the type. There'
+    " are many kinds of types in GraphQL as represented by the `__TypeKind`"
+    " enum.\\n\\nDepending on the kind of a type, certain fields describe inf"
+    "ormation about that type. Scalar types provide no information beyond a"
+    " name, description and optional `specifiedByURL`, while Enum types pro"
+    "vide their values. Object and Interface types provide the fields they "
+    "describe. Abstract types, Union and Interface, provide the Object type"
+    's possible at runtime. List and NonNull types compose other types.","f'
+    'ields":[{"name":"kind","description":null,"args":[],"type":{"kind":"NO'
+    'N_NULL","name":null,"ofType":{"kind":"ENUM","name":"__TypeKind","ofTyp'
+    'e":null}},"isDeprecated":false,"deprecationReason":null},{"name":"name'
+    '","description":null,"args":[],"type":{"kind":"SCALAR","name":"String"'
+    ',"ofType":null},"isDeprecated":false,"deprecationReason":null},{"name"'
+    ':"description","description":null,"args":[],"type":{"kind":"SCALAR","n'
+    'ame":"String","ofType":null},"isDeprecated":false,"deprecationReason":'
+    'null},{"name":"fields","description":null,"args":[{"name":"includeDepr'
+    'ecated","description":null,"type":{"kind":"SCALAR","name":"Boolean","o'
+    'fType":null},"defaultValue":"false","isDeprecated":false,"deprecationR'
+    'eason":null}],"type":{"kind":"LIST","name":null,"ofType":{"kind":"NON_'
+    'NULL","name":null,"ofType":{"kind":"OBJECT","name":"__Field","ofType":'
+    'null}}},"isDeprecated":false,"deprecationReason":null},{"name":"interf'
+    'aces","description":null,"args":[],"type":{"kind":"LIST","name":null,"'
+    'ofType":{"kind":"NON_NULL","name":null,"ofType":{"kind":"OBJECT","name'
+    '":"__Type","ofType":null}}},"isDeprecated":false,"deprecationReason":n'
+    'ull},{"name":"possibleTypes","description":null,"args":[],"type":{"kin'
+    'd":"LIST","name":null,"ofType":{"kind":"NON_NULL","name":null,"ofType"'
+    ':{"kind":"OBJECT","name":"__Type","ofType":null}}},"isDeprecated":fals'
+    'e,"deprecationReason":null},{"name":"enumValues","description":null,"a'
+    'rgs":[{"name":"includeDeprecated","description":null,"type":{"kind":"S'
+    'CALAR","name":"Boolean","ofType":null},"defaultValue":"false","isDepre'
+    'cated":false,"deprecationReason":null}],"type":{"kind":"LIST","name":n'
+    'ull,"ofType":{"kind":"NON_NULL","name":null,"ofType":{"kind":"OBJECT",'
+    '"name":"__EnumValue","ofType":null}}},"isDeprecated":false,"deprecatio'
+    'nReason":null},{"name":"inputFields","description":null,"args":[{"name'
+    '":"includeDeprecated","description":null,"type":{"kind":"SCALAR","name'
+    '":"Boolean","ofType":null},"defaultValue":"false","isDeprecated":false'
+    ',"deprecationReason":null}],"type":{"kind":"LIST","name":null,"ofType"'
+    ':{"kind":"NON_NULL","name":null,"ofType":{"kind":"OBJECT","name":"__In'
+    'putValue","ofType":null}}},"isDeprecated":false,"deprecationReason":nu'
+    'll},{"name":"ofType","description":null,"args":[],"type":{"kind":"OBJE'
+    'CT","name":"__Type","ofType":null},"isDeprecated":false,"deprecationRe'
+    'ason":null},{"name":"specifiedByURL","description":null,"args":[],"typ'
+    'e":{"kind":"SCALAR","name":"String","ofType":null},"isDeprecated":fals'
+    'e,"deprecationReason":null}],"inputFields":null,"interfaces":[],"enumV'
+    'alues":null,"possibleTypes":null},{"kind":"ENUM","name":"__TypeKind","'
+    'description":"An enum describing what kind of type a given `__Type` is'
+    '.","fields":null,"inputFields":null,"interfaces":null,"enumValues":[{"'
+    'name":"SCALAR","description":"Indicates this type is a scalar.","isDep'
+    'recated":false,"deprecationReason":null},{"name":"OBJECT","description'
+    '":"Indicates this type is an object. `fields` and `interfaces` are val'
+    'id fields.","isDeprecated":false,"deprecationReason":null},{"name":"IN'
+    'TERFACE","description":"Indicates this type is an interface. `fields`,'
+    ' `interfaces`, and `possibleTypes` are valid fields.","isDeprecated":f'
+    'alse,"deprecationReason":null},{"name":"UNION","description":"Indicate'
+    's this type is a union. `possibleTypes` is a valid field.","isDeprecat'
+    'ed":false,"deprecationReason":null},{"name":"ENUM","description":"Indi'
+    'cates this type is an enum. `enumValues` is a valid field.","isDepreca'
+    'ted":false,"deprecationReason":null},{"name":"INPUT_OBJECT","descripti'
+    'on":"Indicates this type is an input object. `inputFields` is a valid '
+    'field.","isDeprecated":false,"deprecationReason":null},{"name":"LIST",'
+    '"description":"Indicates this type is a list. `ofType` is a valid fiel'
+    'd.","isDeprecated":false,"deprecationReason":null},{"name":"NON_NULL",'
+    '"description":"Indicates this type is a non-null. `ofType` is a valid '
+    'field.","isDeprecated":false,"deprecationReason":null}],"possibleTypes'
+    '":null},{"kind":"OBJECT","name":"__Field","description":"Object and In'
+    "terface types are described by a list of Fields, each of which has a n"
+    'ame, potentially a list of arguments, and a return type.","fields":[{"'
+    'name":"name","description":null,"args":[],"type":{"kind":"NON_NULL","n'
+    'ame":null,"ofType":{"kind":"SCALAR","name":"String","ofType":null}},"i'
+    'sDeprecated":false,"deprecationReason":null},{"name":"description","de'
+    'scription":null,"args":[],"type":{"kind":"SCALAR","name":"String","ofT'
+    'ype":null},"isDeprecated":false,"deprecationReason":null},{"name":"arg'
+    's","description":null,"args":[{"name":"includeDeprecated","description'
+    '":null,"type":{"kind":"SCALAR","name":"Boolean","ofType":null},"defaul'
+    'tValue":"false","isDeprecated":false,"deprecationReason":null}],"type"'
+    ':{"kind":"NON_NULL","name":null,"ofType":{"kind":"LIST","name":null,"o'
+    'fType":{"kind":"NON_NULL","name":null,"ofType":{"kind":"OBJECT","name"'
+    ':"__InputValue","ofType":null}}}},"isDeprecated":false,"deprecationRea'
+    'son":null},{"name":"type","description":null,"args":[],"type":{"kind":'
+    '"NON_NULL","name":null,"ofType":{"kind":"OBJECT","name":"__Type","ofTy'
+    'pe":null}},"isDeprecated":false,"deprecationReason":null},{"name":"isD'
+    'eprecated","description":null,"args":[],"type":{"kind":"NON_NULL","nam'
+    'e":null,"ofType":{"kind":"SCALAR","name":"Boolean","ofType":null}},"is'
+    'Deprecated":false,"deprecationReason":null},{"name":"deprecationReason'
+    '","description":null,"args":[],"type":{"kind":"SCALAR","name":"String"'
+    ',"ofType":null},"isDeprecated":false,"deprecationReason":null}],"input'
+    'Fields":null,"interfaces":[],"enumValues":null,"possibleTypes":null},{'
+    '"kind":"OBJECT","name":"__InputValue","description":"Arguments provide'
+    "d to Fields or Directives and the input fields of an InputObject are r"
+    "epresented as Input Values which describe their type and optionally a "
+    'default value.","fields":[{"name":"name","description":null,"args":[],'
+    '"type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name"'
+    ':"String","ofType":null}},"isDeprecated":false,"deprecationReason":nul'
+    'l},{"name":"description","description":null,"args":[],"type":{"kind":"'
+    'SCALAR","name":"String","ofType":null},"isDeprecated":false,"deprecati'
+    'onReason":null},{"name":"type","description":null,"args":[],"type":{"k'
+    'ind":"NON_NULL","name":null,"ofType":{"kind":"OBJECT","name":"__Type",'
+    '"ofType":null}},"isDeprecated":false,"deprecationReason":null},{"name"'
+    ':"defaultValue","description":"A GraphQL-formatted string representing'
+    ' the default value for this input value.","args":[],"type":{"kind":"SC'
+    'ALAR","name":"String","ofType":null},"isDeprecated":false,"deprecation'
+    'Reason":null},{"name":"isDeprecated","description":null,"args":[],"typ'
+    'e":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name":"Bo'
+    'olean","ofType":null}},"isDeprecated":false,"deprecationReason":null},'
+    '{"name":"deprecationReason","description":null,"args":[],"type":{"kind'
+    '":"SCALAR","name":"String","ofType":null},"isDeprecated":false,"deprec'
+    'ationReason":null}],"inputFields":null,"interfaces":[],"enumValues":nu'
+    'll,"possibleTypes":null},{"kind":"OBJECT","name":"__EnumValue","descri'
+    'ption":"One possible value for a given Enum. Enum values are unique va'
+    "lues, not a placeholder for a string or numeric value. However an Enum"
+    ' value is returned in a JSON response as a string.","fields":[{"name":'
+    '"name","description":null,"args":[],"type":{"kind":"NON_NULL","name":n'
+    'ull,"ofType":{"kind":"SCALAR","name":"String","ofType":null}},"isDepre'
+    'cated":false,"deprecationReason":null},{"name":"description","descript'
+    'ion":null,"args":[],"type":{"kind":"SCALAR","name":"String","ofType":n'
+    'ull},"isDeprecated":false,"deprecationReason":null},{"name":"isDepreca'
+    'ted","description":null,"args":[],"type":{"kind":"NON_NULL","name":nul'
+    'l,"ofType":{"kind":"SCALAR","name":"Boolean","ofType":null}},"isDeprec'
+    'ated":false,"deprecationReason":null},{"name":"deprecationReason","des'
+    'cription":null,"args":[],"type":{"kind":"SCALAR","name":"String","ofTy'
+    'pe":null},"isDeprecated":false,"deprecationReason":null}],"inputFields'
+    '":null,"interfaces":[],"enumValues":null,"possibleTypes":null},{"kind"'
+    ':"OBJECT","name":"__Directive","description":"A Directive provides a w'
+    "ay to describe alternate runtime execution and type validation behavio"
+    "r in a GraphQL document.\\n\\nIn some cases, you need to provide options"
+    " to alter GraphQL's execution behavior in ways field arguments will no"
+    "t suffice, such as conditionally including or skipping a field. Direct"
+    "ives provide this by describing additional information to the executor"
+    '.","fields":[{"name":"name","description":null,"args":[],"type":{"kind'
+    '":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name":"String","of'
+    'Type":null}},"isDeprecated":false,"deprecationReason":null},{"name":"d'
+    'escription","description":null,"args":[],"type":{"kind":"SCALAR","name'
+    '":"String","ofType":null},"isDeprecated":false,"deprecationReason":nul'
+    'l},{"name":"locations","description":null,"args":[],"type":{"kind":"NO'
+    'N_NULL","name":null,"ofType":{"kind":"LIST","name":null,"ofType":{"kin'
+    'd":"NON_NULL","name":null,"ofType":{"kind":"ENUM","name":"__DirectiveL'
+    'ocation","ofType":null}}}},"isDeprecated":false,"deprecationReason":nu'
+    'll},{"name":"args","description":null,"args":[{"name":"includeDeprecat'
+    'ed","description":null,"type":{"kind":"SCALAR","name":"Boolean","ofTyp'
+    'e":null},"defaultValue":"false","isDeprecated":false,"deprecationReaso'
+    'n":null}],"type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"LIST'
+    '","name":null,"ofType":{"kind":"NON_NULL","name":null,"ofType":{"kind"'
+    ':"OBJECT","name":"__InputValue","ofType":null}}}},"isDeprecated":false'
+    ',"deprecationReason":null},{"name":"isRepeatable","description":null,"'
+    'args":[],"type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALA'
+    'R","name":"Boolean","ofType":null}},"isDeprecated":false,"deprecationR'
+    'eason":null}],"inputFields":null,"interfaces":[],"enumValues":null,"po'
+    'ssibleTypes":null},{"kind":"ENUM","name":"__DirectiveLocation","descri'
+    'ption":"A Directive can be adjacent to many parts of the GraphQL langu'
+    'age, a __DirectiveLocation describes one such possible adjacencies.","'
+    'fields":null,"inputFields":null,"interfaces":null,"enumValues":[{"name'
+    '":"QUERY","description":"Location adjacent to a query operation.","isD'
+    'eprecated":false,"deprecationReason":null},{"name":"MUTATION","descrip'
+    'tion":"Location adjacent to a mutation operation.","isDeprecated":fals'
+    'e,"deprecationReason":null},{"name":"SUBSCRIPTION","description":"Loca'
+    'tion adjacent to a subscription operation.","isDeprecated":false,"depr'
+    'ecationReason":null},{"name":"FIELD","description":"Location adjacent '
+    'to a field.","isDeprecated":false,"deprecationReason":null},{"name":"F'
+    'RAGMENT_DEFINITION","description":"Location adjacent to a fragment def'
+    'inition.","isDeprecated":false,"deprecationReason":null},{"name":"FRAG'
+    'MENT_SPREAD","description":"Location adjacent to a fragment spread.","'
+    'isDeprecated":false,"deprecationReason":null},{"name":"INLINE_FRAGMENT'
+    '","description":"Location adjacent to an inline fragment.","isDeprecat'
+    'ed":false,"deprecationReason":null},{"name":"VARIABLE_DEFINITION","des'
+    'cription":"Location adjacent to a variable definition.","isDeprecated"'
+    ':false,"deprecationReason":null},{"name":"SCHEMA","description":"Locat'
+    'ion adjacent to a schema definition.","isDeprecated":false,"deprecatio'
+    'nReason":null},{"name":"SCALAR","description":"Location adjacent to a '
+    'scalar definition.","isDeprecated":false,"deprecationReason":null},{"n'
+    'ame":"OBJECT","description":"Location adjacent to an object type defin'
+    'ition.","isDeprecated":false,"deprecationReason":null},{"name":"FIELD_'
+    'DEFINITION","description":"Location adjacent to a field definition.","'
+    'isDeprecated":false,"deprecationReason":null},{"name":"ARGUMENT_DEFINI'
+    'TION","description":"Location adjacent to an argument definition.","is'
+    'Deprecated":false,"deprecationReason":null},{"name":"INTERFACE","descr'
+    'iption":"Location adjacent to an interface definition.","isDeprecated"'
+    ':false,"deprecationReason":null},{"name":"UNION","description":"Locati'
+    'on adjacent to a union definition.","isDeprecated":false,"deprecationR'
+    'eason":null},{"name":"ENUM","description":"Location adjacent to an enu'
+    'm definition.","isDeprecated":false,"deprecationReason":null},{"name":'
+    '"ENUM_VALUE","description":"Location adjacent to an enum value definit'
+    'ion.","isDeprecated":false,"deprecationReason":null},{"name":"INPUT_OB'
+    'JECT","description":"Location adjacent to an input object type definit'
+    'ion.","isDeprecated":false,"deprecationReason":null},{"name":"INPUT_FI'
+    'ELD_DEFINITION","description":"Location adjacent to an input object fi'
+    'eld definition.","isDeprecated":false,"deprecationReason":null}],"poss'
+    'ibleTypes":null}'
+)
+"""The eight introspection types, joined by commas, in apollo-compiler order."""
+
+comptime SKIP_JSON = (
+    '{"name":"skip","description":"Directs the executor to skip this field '
+    'or fragment when the `if` argument is true.","locations":["FIELD","FRA'
+    'GMENT_SPREAD","INLINE_FRAGMENT"],"args":[{"name":"if","description":"S'
+    'kipped when true.","type":{"kind":"NON_NULL","name":null,"ofType":{"ki'
+    'nd":"SCALAR","name":"Boolean","ofType":null}},"defaultValue":null,"isD'
+    'eprecated":false,"deprecationReason":null}]}'
+)
+"""The `@skip` directive."""
+
+comptime INCLUDE_JSON = (
+    '{"name":"include","description":"Directs the executor to include this '
+    'field or fragment only when the `if` argument is true.","locations":["'
+    'FIELD","FRAGMENT_SPREAD","INLINE_FRAGMENT"],"args":[{"name":"if","desc'
+    'ription":"Included when true.","type":{"kind":"NON_NULL","name":null,"'
+    'ofType":{"kind":"SCALAR","name":"Boolean","ofType":null}},"defaultValu'
+    'e":null,"isDeprecated":false,"deprecationReason":null}]}'
+)
+"""The `@include` directive."""
+
+comptime DEPRECATED_JSON = (
+    '{"name":"deprecated","description":"Marks an element of a GraphQL sche'
+    'ma as no longer supported.","locations":["FIELD_DEFINITION","ARGUMENT_'
+    'DEFINITION","INPUT_FIELD_DEFINITION","ENUM_VALUE"],"args":[{"name":"re'
+    'ason","description":"Explains why this element was deprecated, usually'
+    " also including a suggestion for how to access supported similar data."
+    " Formatted using the Markdown syntax, as specified by [CommonMark](htt"
+    'ps://commonmark.org/).","type":{"kind":"SCALAR","name":"String","ofTyp'
+    'e":null},"defaultValue":"\\"No longer supported\\"","isDeprecated":false'
+    ',"deprecationReason":null}]}'
+)
+"""The `@deprecated` directive."""
+
+comptime SPECIFIEDBY_JSON = (
+    '{"name":"specifiedBy","description":"Exposes a URL that specifies the '
+    'behavior of this scalar.","locations":["SCALAR"],"args":[{"name":"url"'
+    ',"description":"The URL that specifies the behavior of this scalar.","'
+    'type":{"kind":"NON_NULL","name":null,"ofType":{"kind":"SCALAR","name":'
+    '"String","ofType":null}},"defaultValue":null,"isDeprecated":false,"dep'
+    'recationReason":null}]}'
+)
+"""The `@specifiedBy` directive."""

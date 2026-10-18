@@ -121,7 +121,7 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_codegen`](https://github.com/SethKitchen/MojoGraphQL/wiki/Codegen): code generation in the style of Apollo Kotlin. It writes Mojo models for operations.
 - [x] [`gql_mcp`](https://github.com/SethKitchen/MojoGraphQL/wiki/Mcp): a port of Apollo MCP Server.
 - [ ] `gql_rover`: a port of the MIT parts of the Rover CLI.
-- [x] [Compatibility](https://github.com/SethKitchen/MojoGraphQL/wiki/Compatibility): the Apollo Federation subgraph compatibility suite, as tests of `gql_subgraph`. Every check passes except federated tracing (`ftv1`).
+- [x] [Compatibility](https://github.com/SethKitchen/MojoGraphQL/wiki/Compatibility): the Apollo Federation subgraph compatibility suite, as tests of `gql_subgraph`. Every check passes, federated tracing (`ftv1`) included.
 
 The `@apollo/subgraph` port does not use `@apollo/federation-internals`, which is Elastic licensed. It implements the public federation specification instead, with Hive Federation Composition as the MIT reference.
 

@@ -1,0 +1,15 @@
+{
+  "name": "mojographql-bench-rover",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hive Federation Composition baseline for the MojoGraphQL gql_rover supergraph compose benchmark.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  },
+  "dependencies": {
+    "@theguild/federation-composition": "0.27.0",
+    "graphql": "16.14.2"
+  }
+}

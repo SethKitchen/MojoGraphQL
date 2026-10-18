@@ -260,13 +260,13 @@ def baselines() -> List[Baseline]:
         )
     )
     # Rover composes with an Elastic licensed plugin, so `supergraph
-    # compose` is compared with Hive `composeServices`, which gql_rover
+    # compose` is compared with Hive `composeServices`, which gql_seamstress
     # runs. The introspection commands run the Rover program itself, under
-    # the same process driver as the gql_rover program.
+    # the same process driver as the seamstress program.
     out.append(
         Baseline(
             "Hive Federation Composition 0.27.0 composeServices (Node.js)",
-            "bench/baselines/js-rover",
+            "bench/baselines/js-seamstress",
             "[ -d node_modules ] || npm ci --no-audit --no-fund",
             "node bench.mjs",
         )
@@ -274,9 +274,12 @@ def baselines() -> List[Baseline]:
     out.append(
         Baseline(
             "Apollo Rover 1.0.0 (Rust)",
-            "bench/baselines/rust-rover",
+            "bench/baselines/rust-seamstress",
             "./build.sh",
-            "../../../.cache/bin/rover_driver ./target/release/rover ../../..",
+            (
+                "../../../.cache/bin/seamstress_driver ./target/release/rover"
+                " ../../.."
+            ),
         )
     )
     return out^

@@ -29,6 +29,22 @@ summary = "HTTP/1.1 server and client over POSIX sockets"
 depends = []
 upstream = ["RFC 9110 and RFC 9112; the GraphQL over HTTP specification"]
 
+[packages.gql_http2]
+summary = "HTTP/2 (RFC 9113) and HPACK (RFC 7541) server and client: h2c, the h2c upgrade and a Transport for TLS"
+depends = ["gql_http"]
+test_depends = ["gql_json"]
+upstream = ["h2 v0.4.20 (b0e8908) src/hpack, src/frame, src/proto, src/server.rs, src/client.rs, and the tests of tests/h2-tests and src/hpack/test (MIT); RFC 9113, RFC 7541 and RFC 7540 section 3.2"]
+
+[packages.gql_tls]
+summary = "TLS 1.3 and ALPN through the system OpenSSL, loaded at run time; HTTPS/1.1 server and client"
+depends = ["gql_http"]
+upstream = ["RFC 8446 and RFC 7301; OpenSSL 3 (Apache-2.0) is loaded with dlopen at run time, and no OpenSSL code is ported"]
+
+[packages.gql_http3]
+summary = "HTTP/3 and QPACK over QUIC from the system OpenSSL; Alt-Svc and the client fallback chain"
+depends = ["gql_http", "gql_tls"]
+upstream = ["hyperium/h3 h3-v0.0.8 (22c1aa3) h3/src/qpack and h3/src/proto (MIT); RFC 9114, RFC 9204, RFC 9000 section 16 and RFC 7838; the QUIC API of OpenSSL 3.5 (Apache-2.0) is loaded with dlopen at run time, and no OpenSSL code is ported"]
+
 [packages.gql_schema]
 summary = "Type system: build a schema from SDL, extend, print and validate it"
 depends = ["gql_language", "gql_json"]
@@ -67,7 +83,7 @@ upstream = ["@apollo/subgraph 2.14.4 (b95c124) subgraph-js/src: buildSubgraphSch
 
 [packages.gql_router]
 summary = "Hive Router: the query planner, operation cache, authorization and null bubbling"
-depends = ["gql_language", "gql_json"]
+depends = ["gql_language", "gql_json", "gql_http"]
 upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, executor/headers/request.rs, executor/headers/response.rs, pipeline/authorization, executor/operation_filter.rs, executor/execution/error_masking.rs, executor/execution/operation_name.rs, executor/execution/rewrites.rs, executor/response/merge.rs, executor/response/graphql_error.rs, executor/response/storage.rs, executor/response/subgraph_response.rs, and executor/execution/plan.rs (`select_fetch_variables`, `condition_node_by_variables`, `execute_plan_node`, `prepare_batch_fetch_job_state`), executor/utils/traverse.rs, `partition_batch_errors_by_alias`, `collect_batched_entities_by_alias`, and `merge_batch_alias_entities`; query_planner/consumer_schema, tests/generated.rs and apollo-router-workspace are excluded"]
 
 [packages.gql_server]
@@ -80,3 +96,7 @@ summary = "Code generation: Mojo models, documents and operation ids for GraphQL
 depends = ["gql_language", "gql_schema", "gql_validation", "gql_json"]
 upstream = ["Apollo Kotlin afe947c (5.2.1-SNAPSHOT; the benchmark runs the published 5.2.0) libraries/apollo-compiler: ApolloCompiler.kt, Options.kt, Strings.kt, UsedCoordinates.kt, ir/IrOperationsBuilder.kt, ir/OperationBasedModelGroupBuilder.kt, ir/BooleanExpression.kt, ir/usedFragments.kt, internal/ApolloExecutableDocumentTransform.kt, internal/Inflector.kt, internal/checkCapitalizedFields.kt, internal/checkApolloInlineFragmentsHaveTypeCondition.kt, internal/DefaultApolloCompilerRegistry.kt (sha256); libraries/apollo-ast: SDLWriter.kt, gql.kt (writeInternal), gqlstrings.kt, QueryDocumentMinifier.kt, Schema.kt (type relations), Issue.kt (MIT)"]
 
+[packages.gql_seamstress]
+summary = "seamstress: the offline Apollo Rover commands supergraph compose, subgraph introspect and graph introspect"
+depends = ["gql_language", "gql_json", "gql_schema", "gql_execution", "gql_http", "gql_composition"]
+upstream = ["Apollo Rover 1.0.0 (39a041a) MIT parts: src/command/supergraph/compose, src/composition/supergraph/config (subgraph resolution), src/command/subgraph/introspect.rs, src/command/graph/introspect.rs, src/command/output.rs, src/options/output.rs, src/error, src/federation.rs, src/utils/parsers.rs, src/cli.rs; crates/rover-client/src/operations/subgraph/introspect and graph/introspect; crates/rover-graphql/src/lib.rs; apollo-federation-types 0.18.0-rc.1 src/config and src/rover (MIT); apollo-compiler 1.33.0 src/ast/serialize.rs and its built-in introspection types (MIT arm of MIT OR Apache-2.0). src/utils/expansion.rs (Elastic License 2.0) and the supergraph plugin are excluded"]

@@ -23,7 +23,7 @@ Port of Apollo Server 5.5.1 `externalTypes/graphql.ts` (`GraphQLRequest`,
   keeps that state in the plugin and in the `willResolveField` hook.
 """
 
-from std.memory import ArcPointer
+from std.memory import ArcPointer, OwnedPointer
 
 from gql_execution.execute import FieldTiming
 from gql_execution.value import UNDEFINED, Values
@@ -216,7 +216,7 @@ struct GraphQLRequestContext(Movable):
     upstream plugin that returns a `willResolveField` hook."""
     var field_timings: List[FieldTiming]
     """The field timings of execution, when `will_resolve_field` is set."""
-    var inline_trace: Optional[TraceTreeBuilder]
+    var inline_trace: Optional[OwnedPointer[TraceTreeBuilder]]
     """The trace of the inline trace plugin, when the request asks for
     one."""
 

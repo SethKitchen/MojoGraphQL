@@ -233,7 +233,7 @@ def _now_ns() -> Int:
     return Int(perf_counter_ns())
 
 
-struct Client(Movable):
+struct Client(Movable, ResponseSource):
     """An HTTP/1.1 client with a pool of keep-alive connections."""
 
     var config: ClientConfig
@@ -245,6 +245,7 @@ struct Client(Movable):
     var _hosts: List[_Resolved]
     var _retry: Bool
     var _got: Int
+    var _fd: Int
 
     def __init__(out self, config: ClientConfig = ClientConfig()):
         """Make a client with an empty pool.
@@ -259,6 +260,7 @@ struct Client(Movable):
         self._hosts = List[_Resolved]()
         self._retry = False
         self._got = 0
+        self._fd = -1
 
     def __deinit__(deinit self):
         """Close the idle connections."""
@@ -573,16 +575,31 @@ struct Client(Movable):
                 )
             sent += n
 
-    def _read(
-        mut self, fd: Int, mut data: List[UInt8], mut end: Int, deadline: Int
+    def read_more(
+        mut self, mut data: List[UInt8], mut end: Int, deadline: Int
     ) raises HttpError -> Int:
-        """Read more bytes into `data` at `end`: the count, or 0 at the end
-        of the stream."""
+        """Read more bytes of the response into `data` at `end`.
+
+        `read_response` calls it, on the connection of the request that
+        the client sends now.
+
+        Args:
+            data: The buffer; it grows when it has little room.
+            end: The count of bytes in `data`; it grows by the result.
+            deadline: The deadline, from `perf_counter_ns`.
+
+        Returns:
+            The count of bytes, or 0 at the end of the stream.
+
+        Raises:
+            HttpError: `TIMEOUT` at the deadline; `CLOSED` when `recv`
+                fails.
+        """
         if len(data) - end < 4096:
             data.resize(max(len(data) * 2, end + 16384), 0)
         while True:
             var n = self.sys.recv(
-                fd, data.unsafe_ptr().unsafe_offset(end), len(data) - end
+                self._fd, data.unsafe_ptr().unsafe_offset(end), len(data) - end
             )
             if n > 0:
                 end += n
@@ -591,7 +608,7 @@ struct Client(Movable):
             if n == 0:
                 return 0
             if n == -EAGAIN:
-                self._wait(fd, POLLIN, deadline)
+                self._wait(self._fd, POLLIN, deadline)
             elif n != -EINTR:
                 raise HttpError(
                     ErrorKind.CLOSED, "recv failed: errno " + String(-n), -n
@@ -602,97 +619,158 @@ struct Client(Movable):
     ) raises HttpError -> Bool:
         """Read a whole response; return whether the connection can stay
         open."""
-        var limits = self.config.limits
+        self._fd = fd
         self._got = 0
-        var data = List[UInt8]()
-        var end = 0
-        var scanned = 0
-        while True:
-            if find_byte(data.unsafe_ptr(), scanned, end, LF) == end:
-                scanned = end
-                if self._read(fd, data, end, deadline) == 0:
-                    raise HttpError(
-                        ErrorKind.CLOSED,
-                        "the connection closed before the response",
-                        0,
-                    )
-                continue
-            var head = parse_response_head(
-                data.unsafe_ptr(), end, limits, response.head
-            )
-            if head.state == ParseState.ERROR:
-                raise HttpError(ErrorKind.PROTOCOL, "invalid response head", 0)
-            if head.state == ParseState.INCOMPLETE:
-                scanned = end
-                continue
-            if not response.head.status.is_informational():
-                break
-            if response.head.status == Status.SWITCHING_PROTOCOLS:
-                raise HttpError(
-                    ErrorKind.PROTOCOL, "the server switched protocols", 0
-                )
-            # Drop a 100 Continue or another interim response.
-            move_down(data.unsafe_ptr(), 0, head.size, end - head.size)
-            end -= head.size
-            scanned = 0
-        var head_size = response.head.head_size
-        var kind = response.head.body_kind(method)
-        var message_end = head_size
-        var body_end = head_size
-        if kind == BodyKind.LENGTH:
-            var length = response.head.content_length
-            if length > limits.max_body_bytes:
-                raise HttpError(ErrorKind.LIMIT, "the response is too large", 0)
-            while end - head_size < length:
-                if self._read(fd, data, end, deadline) == 0:
-                    raise HttpError(
-                        ErrorKind.CLOSED,
-                        "the connection closed in the content",
-                        0,
-                    )
-            message_end = head_size + length
-            body_end = message_end
-        elif kind == BodyKind.CHUNKED:
-            var decoder = ChunkedDecoder()
-            decoder.reset(head_size)
-            while True:
-                var result = decoder.feed(data.unsafe_ptr(), end, limits)
-                if result.state == ParseState.COMPLETE:
-                    message_end = result.size
-                    break
-                if result.state == ParseState.ERROR:
-                    if result.status == Status.CONTENT_TOO_LARGE:
-                        raise HttpError(
-                            ErrorKind.LIMIT, "the response is too large", 0
-                        )
-                    raise HttpError(
-                        ErrorKind.PROTOCOL, "invalid chunked content", 0
-                    )
-                if self._read(fd, data, end, deadline) == 0:
-                    raise HttpError(
-                        ErrorKind.CLOSED,
-                        "the connection closed in the content",
-                        0,
-                    )
-            body_end = decoder.write
-        elif kind == BodyKind.CLOSE:
-            # The first read can bring the whole body with the head.
-            while end - head_size <= limits.max_body_bytes:
-                if self._read(fd, data, end, deadline) == 0:
-                    break
-            if end - head_size > limits.max_body_bytes:
-                raise HttpError(ErrorKind.LIMIT, "the response is too large", 0)
-            message_end = end
-            body_end = end
-        var keep = (
-            response.head.keep_alive
-            and kind != BodyKind.CLOSE
-            and end == message_end
+        return read_response(
+            self, method, self.config.limits, deadline, response
         )
-        data.resize(body_end, 0)
-        response.data = data^
-        response.status = response.head.status
-        response.version = response.head.version
-        response._body_start = head_size
-        response._body_end = body_end
-        return keep
+
+
+trait ResponseSource:
+    """Where `read_response` reads the bytes of a response: a socket, or a
+    TLS stream."""
+
+    def read_more(
+        mut self, mut data: List[UInt8], mut end: Int, deadline: Int
+    ) raises HttpError -> Int:
+        """Read more bytes of the response into `data` at `end`.
+
+        Args:
+            data: The buffer; it grows when it has little room.
+            end: The count of bytes in `data`; it grows by the result.
+            deadline: The deadline, from `perf_counter_ns`.
+
+        Returns:
+            The count of bytes, or 0 at the end of the stream.
+
+        Raises:
+            HttpError: `TIMEOUT` at the deadline; `CLOSED` when the
+                connection fails.
+        """
+        ...
+
+
+def read_response[
+    S: ResponseSource
+](
+    mut source: S,
+    method: Method,
+    limits: Limits,
+    deadline: Int,
+    mut response: Response,
+) raises HttpError -> Bool:
+    """Read a whole response: the head, then content by its framing.
+
+    Interim responses, such as `100 Continue`, are dropped.
+
+    Args:
+        source: Where the bytes come from.
+        method: The method of the request; a `HEAD` response has no
+            content.
+        limits: The size limits of the response.
+        deadline: The deadline, from `perf_counter_ns`.
+        response: The response to fill.
+
+    Returns:
+        Whether the connection can stay open.
+
+    Raises:
+        HttpError: `CLOSED` when the stream ends early, `PROTOCOL` for an
+            invalid response, `LIMIT` for one that is too large, and the
+            errors of `source`.
+
+    Parameters:
+        S: The type of the source.
+    """
+    var data = List[UInt8]()
+    var end = 0
+    var scanned = 0
+    while True:
+        if find_byte(data.unsafe_ptr(), scanned, end, LF) == end:
+            scanned = end
+            if source.read_more(data, end, deadline) == 0:
+                raise HttpError(
+                    ErrorKind.CLOSED,
+                    "the connection closed before the response",
+                    0,
+                )
+            continue
+        var head = parse_response_head(
+            data.unsafe_ptr(), end, limits, response.head
+        )
+        if head.state == ParseState.ERROR:
+            raise HttpError(ErrorKind.PROTOCOL, "invalid response head", 0)
+        if head.state == ParseState.INCOMPLETE:
+            scanned = end
+            continue
+        if not response.head.status.is_informational():
+            break
+        if response.head.status == Status.SWITCHING_PROTOCOLS:
+            raise HttpError(
+                ErrorKind.PROTOCOL, "the server switched protocols", 0
+            )
+        # Drop a 100 Continue or another interim response.
+        move_down(data.unsafe_ptr(), 0, head.size, end - head.size)
+        end -= head.size
+        scanned = 0
+    var head_size = response.head.head_size
+    var kind = response.head.body_kind(method)
+    var message_end = head_size
+    var body_end = head_size
+    if kind == BodyKind.LENGTH:
+        var length = response.head.content_length
+        if length > limits.max_body_bytes:
+            raise HttpError(ErrorKind.LIMIT, "the response is too large", 0)
+        while end - head_size < length:
+            if source.read_more(data, end, deadline) == 0:
+                raise HttpError(
+                    ErrorKind.CLOSED,
+                    "the connection closed in the content",
+                    0,
+                )
+        message_end = head_size + length
+        body_end = message_end
+    elif kind == BodyKind.CHUNKED:
+        var decoder = ChunkedDecoder()
+        decoder.reset(head_size)
+        while True:
+            var result = decoder.feed(data.unsafe_ptr(), end, limits)
+            if result.state == ParseState.COMPLETE:
+                message_end = result.size
+                break
+            if result.state == ParseState.ERROR:
+                if result.status == Status.CONTENT_TOO_LARGE:
+                    raise HttpError(
+                        ErrorKind.LIMIT, "the response is too large", 0
+                    )
+                raise HttpError(
+                    ErrorKind.PROTOCOL, "invalid chunked content", 0
+                )
+            if source.read_more(data, end, deadline) == 0:
+                raise HttpError(
+                    ErrorKind.CLOSED,
+                    "the connection closed in the content",
+                    0,
+                )
+        body_end = decoder.write
+    elif kind == BodyKind.CLOSE:
+        # The first read can bring the whole body with the head.
+        while end - head_size <= limits.max_body_bytes:
+            if source.read_more(data, end, deadline) == 0:
+                break
+        if end - head_size > limits.max_body_bytes:
+            raise HttpError(ErrorKind.LIMIT, "the response is too large", 0)
+        message_end = end
+        body_end = end
+    var keep = (
+        response.head.keep_alive
+        and kind != BodyKind.CLOSE
+        and end == message_end
+    )
+    data.resize(body_end, 0)
+    response.data = data^
+    response.status = response.head.status
+    response.version = response.head.version
+    response._body_start = head_size
+    response._body_end = body_end
+    return keep

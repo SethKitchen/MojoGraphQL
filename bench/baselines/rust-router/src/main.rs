@@ -12,9 +12,34 @@
 //! the query plan. The fixtures are upstream `bench/supergraph.graphql` and
 //! `bench/operation.graphql`, copied to `bench/fixtures/hive-router-qp/`.
 //!
+//! `hive-router/execute` is one upstream `execute_query_plan` call
+//! (`bin/router/src/executor/execution/plan.rs`) for the plan of the same
+//! `TestQuery`. It prepares the fetches and the entity representations,
+//! builds each subgraph request body, turns canned response bytes into a
+//! `SubgraphResponse` with `SubgraphResponse::deserialize_from_bytes`,
+//! merges, and projects the final response with the projection plan. The
+//! subgraphs answer in-process, with no network. The planner, the
+//! normalized operation, the query plan, the projection plan, the schema
+//! metadata, the executor map and the plugin state are built once, in the
+//! style of upstream `bin/router/benches/executor_benches.rs`. See
+//! `execute.rs` for how a plugin injects the canned responses. Before the
+//! timing, the program checks once that the body equals
+//! `bench/fixtures/hive-router-exec/expected_response.json` byte for byte.
+//!
+//! `--record` regenerates `bench/fixtures/hive-router-exec/` from the real
+//! upstream bench subgraphs (`upstream/bench/subgraphs`, port 4200):
+//!
+//! ```sh
+//! (cd upstream && cargo build --release -p subgraphs --features hive-router/graphiql \
+//!   && ./target/release/subgraphs &)
+//! ./target/release/mojographql-bench-router-rust --record
+//! ```
+//!
 //! The timing method is the one of bench/gql_language/_harness.mojo: warm
 //! up, then rounds of at least `ROUND_NS` each, and report the fastest
 //! round as `BENCH <workload> <ns per op>`.
+
+mod execute;
 
 use std::hint::black_box;
 use std::path::PathBuf;
@@ -39,8 +64,13 @@ const WARMUP_NS: u128 = 200_000_000;
 /// Read a fixture from bench/fixtures/. The program runs from
 /// bench/baselines/rust-router/, as tools/bench.mojo runs it.
 fn fixture(name: &str) -> String {
-    let path = PathBuf::from("../../fixtures").join(name);
+    let path = fixture_path(name);
     std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+}
+
+/// The path of a fixture in bench/fixtures/.
+fn fixture_path(name: &str) -> PathBuf {
+    PathBuf::from("../../fixtures").join(name)
 }
 
 fn run(work: &mut dyn FnMut() -> usize, iterations: u64) -> u128 {
@@ -78,6 +108,37 @@ fn measure(name: &str, mut work: impl FnMut() -> usize) {
 }
 
 fn main() {
+    hive_router::init_rustls_crypto_provider();
+    // One current-thread runtime, built outside the timed loop.
+    let rt = hive_router::tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("tokio runtime");
+    let _guard = rt.enter();
+    if std::env::args().any(|arg| arg == "--record") {
+        execute::record(&rt);
+        return;
+    }
+    query_plan();
+
+    let execution = execute::Execution::canned();
+    let body = rt.block_on(execution.run());
+    let expected = fixture(execute::EXPECTED);
+    assert!(
+        body == expected.as_bytes(),
+        "the canned execution does not produce {}",
+        execute::EXPECTED
+    );
+    measure("hive-router/execute", || {
+        let body = rt.block_on(black_box(&execution).run());
+        let len = body.len();
+        black_box(body);
+        len
+    });
+}
+
+/// The `hive-router/query_plan` workload.
+fn query_plan() {
     let schema = parse_schema(&fixture("hive-router-qp/supergraph.graphql"));
     let supergraph_state = SupergraphState::new(&schema);
     let graph = Graph::graph_from_supergraph_state(&supergraph_state).expect("graph");
