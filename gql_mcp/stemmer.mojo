@@ -69,14 +69,11 @@ def _encode(chars: _Chars) -> String:
 
 def _is_v(c: UInt32) -> Bool:
     """Whether a code point is in the grouping `v`: `aeiouy`."""
-    return (
-        c == 97 or c == 101 or c == 105 or c == 111 or c == 117 or c == 121
-    )
+    return c == 97 or c == 101 or c == 105 or c == 111 or c == 117 or c == 121
 
 
 def _is_v_wxy(c: UInt32) -> Bool:
-    """Whether a code point is in the grouping `v_WXY`: `v`, `w`, `x`, `Y`.
-    """
+    """Whether a code point is in the grouping `v_WXY`: `v`, `w`, `x`, `Y`."""
     return _is_v(c) or c == 119 or c == 120 or c == 89
 
 

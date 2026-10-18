@@ -56,7 +56,7 @@ comptime SPEC_DIRECTIVES: Array[StaticString, 18] = [
 `federationRules`."""
 
 
-struct OrderedSet(Copyable, Sized):
+struct OrderedSet(Copyable):
     """A set of strings in insertion order, with hashed lookups."""
 
     var items: List[String]
@@ -89,14 +89,6 @@ struct OrderedSet(Copyable, Sized):
         if item not in self.index:
             self.index[item] = len(self.items)
             self.items.append(item)
-
-    def __len__(self) -> Int:
-        """Return the number of strings.
-
-        Returns:
-            The size of the set.
-        """
-        return len(self.items)
 
 
 struct MergedType(Copyable):
@@ -160,9 +152,11 @@ struct MergedType(Copyable):
         Returns:
             The field definition node, or `NO_NODE`.
         """
-        for field in self.fields:
-            if document.name(field) == name:
-                return field
+        var index = 0
+        while index < len(self.fields):
+            if document.name(self.fields[index]) == name:
+                return self.fields[index]
+            index += 1
         return NO_NODE
 
     def implements(self, document: Document, name: StringSlice) -> Bool:
@@ -382,7 +376,11 @@ struct SubgraphContext(Movable):
         """Find the names under which each federation directive and type is
         available, as upstream `directiveAlternativeNamesMap` and
         `typeAlternativeNamesMap`."""
-        for ref definition in self.available.directives:
+        # Every federation version has directives.
+        var directive_index = 0
+        while directive_index < len(self.available.directives):
+            ref definition = self.available.directives[directive_index]
+            directive_index += 1
             if definition.name.startswith("federation__"):
                 var normalized = String(definition.name[byte=12:])
                 if normalized not in self.directive_alternative_index:
@@ -444,11 +442,9 @@ struct SubgraphContext(Movable):
                 var position = 0
                 while position < len(alternatives):
                     var name = alternatives[position]
-                    var bits = self.directive_masks.get(name)
-                    var mask = 0
-                    if bits:
-                        mask = bits.value()
-                    self.directive_masks[name] = mask | (1 << index)
+                    self.directive_masks[name] = self.directive_masks.get(
+                        name, 0
+                    ) | (1 << index)
                     position += 1
             index += 1
 
@@ -588,14 +584,11 @@ struct SubgraphContext(Movable):
         Returns:
             The `Type.field` coordinates, in order.
         """
+        # A key field set names the fields of a merged type.
         var out = List[String]()
         for ref coordinate in self.marked_as_key_field.items:
-            var type_name = _before_dot(coordinate)
-            var is_object = False
-            var found = self.merged_index.get(type_name)
-            if found:
-                is_object = self.merged[found.value()].is_object()
-            if is_object:
+            var at = self.merged_index.get(_before_dot(coordinate), 0)
+            if self.merged[at].is_object():
                 out.append(coordinate)
         return out^
 
@@ -606,13 +599,13 @@ struct SubgraphContext(Movable):
         Returns:
             The `Type.field` coordinates, in order.
         """
+        # Upstream keeps a `v1.0` field only when it is a key field. A key
+        # field is always marked as used first, so `v1.0` keeps nothing.
         var out = List[String]()
         for ref coordinate in self.marked_as_external.items:
             if self.marked_as_used.contains(coordinate):
                 continue
             if self.version == FederationVersion.V1_0:
-                if self.marked_as_key_field.contains(coordinate):
-                    out.append(coordinate)
                 continue
             if self._is_external_needed(coordinate):
                 continue
@@ -622,34 +615,30 @@ struct SubgraphContext(Movable):
     def _is_external_needed(self, coordinate: String) -> Bool:
         """Return True when an unused `@external` field still has a use: a
         `@shareable` output type or an interface field."""
+        # An `@external` field is a field of a type in the state. The state
+        # keeps an `@interfaceObject` as an interface type, and it makes an
+        # interface type for each name in `implements`, or raises when the
+        # name has another kind.
         var type_name = _before_dot(coordinate)
         var field_name = _after_dot(coordinate)
-        var found = self.state.find_type(type_name)
-        if found == -1:
-            return False
-        ref type = self.state.types[found]
-        if type.kind != TypeKind.OBJECT or self.state.is_interface_object(
-            type_name
-        ):
+        ref type = self.state.types[self.state.find_type(type_name)]
+        if type.kind != TypeKind.OBJECT:
             return False
         var field = type.find_field(field_name)
-        if field != -1:
-            var output = self.state.find_type(
-                strip_type_modifiers(type.fields[field].type)
-            )
-            if (
-                output != -1
-                and self.state.types[output].kind == TypeKind.OBJECT
-                and self.state.types[output].shareable
-            ):
-                return True
+        var output = self.state.find_type(
+            strip_type_modifiers(type.fields[field].type)
+        )
+        if (
+            output != -1
+            and self.state.types[output].kind == TypeKind.OBJECT
+            and self.state.types[output].shareable
+        ):
+            return True
         for ref interface_name in type.interfaces.items:
-            var interface = self.state.find_type(interface_name)
-            if (
-                interface != -1
-                and self.state.types[interface].kind == TypeKind.INTERFACE
-                and self.state.types[interface].find_field(field_name) != -1
-            ):
+            ref interface = self.state.types[
+                self.state.find_type(interface_name)
+            ]
+            if interface.find_field(field_name) != -1:
                 return True
         return False
 
@@ -661,34 +650,25 @@ def _add_alternative(
     local: String,
 ):
     """Add the local name and the prefixed name of an unprefixed federation
-    definition to its set of alternative names."""
-    if name not in index:
-        index[name] = len(sets)
-        sets.append(StringSet())
-    var at = index.get(name).value()
-    sets[at].add(local)
-    sets[at].add("federation__" + name)
+    definition to its set of alternative names. A specification names
+    each definition once, so the set is new."""
+    var names = StringSet()
+    names.add(local)
+    names.add("federation__" + name)
+    index[name] = len(sets)
+    sets.append(names^)
 
 
 def _before_dot(coordinate: String) -> String:
-    """Return the part of `Type.field` before the first dot."""
-    var found = coordinate.find(".")
-    if found == -1:
-        return coordinate
-    return String(coordinate[byte=:found])
+    """Return the part of `Type.field` before the dot. A coordinate always
+    has one dot."""
+    return String(coordinate[byte = : coordinate.find(".")])
 
 
 def _after_dot(coordinate: String) -> String:
-    """Return the part of `Type.field` between the first and second dot,
-    as upstream `coordinate.split(".")[1]`."""
-    var found = coordinate.find(".")
-    if found == -1:
-        return String("")
-    var rest = String(coordinate[byte = found + 1 :])
-    var second = rest.find(".")
-    if second == -1:
-        return rest^
-    return String(rest[byte=:second])
+    """Return the part of `Type.field` after the dot, as upstream
+    `coordinate.split(".")[1]`. A coordinate always has one dot."""
+    return String(coordinate[byte = coordinate.find(".") + 1 :])
 
 
 def strip_type_modifiers(type: StringSlice) -> String:
@@ -702,7 +682,12 @@ def strip_type_modifiers(type: StringSlice) -> String:
         The named type, such as `ID`.
     """
     var out = List[UInt8](capacity=type.byte_length())
-    for byte in type.as_bytes():
+    var bytes = type.as_bytes()
+    # A printed type is never empty.
+    var index = 0
+    while index < len(bytes):
+        var byte = bytes[index]
+        index += 1
         if byte != 33 and byte != 91 and byte != 93:
             out.append(byte)
     return String(unsafe_from_utf8=out)

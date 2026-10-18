@@ -136,9 +136,9 @@ def print_node(document: Document, node: Int) -> String:
     if kind == Kind.VARIABLE:
         return "$" + String(document.name(node))
     if kind == Kind.LIST:
-        return "[" + _join_children(document, node, Role.LIST_ITEM) + "]"
+        return "[" + _join_children(document, node) + "]"
     if kind == Kind.OBJECT:
-        return "{" + _join_children(document, node, Role.FIELD) + "}"
+        return "{" + _join_children(document, node) + "}"
     if kind == Kind.OBJECT_FIELD or kind == Kind.ARGUMENT:
         return (
             String(document.name(node))
@@ -158,17 +158,20 @@ def print_node(document: Document, node: Int) -> String:
     return String("")
 
 
-def _join_children(document: Document, node: Int, role: Role) -> String:
-    """Print the children of a node with a role, joined by `, `."""
+def _join_children(document: Document, node: Int) -> String:
+    """Print the children of a list or an object value, joined by `, `.
+
+    Every child of a list value is an item, and every child of an object
+    value is a field.
+    """
     var out = String("")
     var child = document.first_child(node)
     var first = True
     while child != NO_NODE:
-        if document.role(child) == role:
-            if not first:
-                out += ", "
-            out += print_node(document, child)
-            first = False
+        if not first:
+            out += ", "
+        out += print_node(document, child)
+        first = False
         child = document.next_sibling(child)
     return out^
 

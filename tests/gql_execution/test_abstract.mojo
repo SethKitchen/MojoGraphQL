@@ -195,6 +195,28 @@ def test_resolve_interface_type_using_typename_on_source_object() raises:
     assert_equal(run(INTERFACE_SDL, PETS_QUERY, TYPENAME_ROOT), PETS_DATA)
 
 
+def test_a_list_of_alternating_runtime_types() raises:
+    # Not upstream: each item after the first two finds the subfields that
+    # the executor collected for its type.
+    assert_equal(
+        run(
+            UNION_SDL,
+            PETS_QUERY,
+            (
+                '{"pets": [{"__typename": "Dog", "name": "A", "woofs": true},'
+                ' {"__typename": "Cat", "name": "B", "meows": false},'
+                ' {"__typename": "Cat", "name": "C", "meows": true},'
+                ' {"__typename": "Dog", "name": "D", "woofs": false}]}'
+            ),
+        ),
+        (
+            '{"data":{"pets":[{"name":"A","woofs":true},{"name":"B",'
+            '"meows":false},{"name":"C","meows":true},{"name":"D",'
+            '"woofs":false}]}}'
+        ),
+    )
+
+
 comptime ERROR_SDL = """
       type Query {
         pet: Pet

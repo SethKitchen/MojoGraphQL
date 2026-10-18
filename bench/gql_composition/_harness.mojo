@@ -18,7 +18,7 @@ from std.time import perf_counter_ns
 
 from gql_language.ast import Document
 from gql_language.parser import parse
-from gql_composition.validate import Subgraph, validate_subgraphs
+from gql_composition.validate import Subgraph, validate_subgraph_phase
 
 comptime FIXTURES = "bench/fixtures/"
 """The directory of the fixtures, from the repository root."""
@@ -183,7 +183,7 @@ struct ValidateSubgraphs(Movable, Workload):
             Error: If a subgraph does not parse, or is not valid.
         """
         self.subgraphs = fixture_subgraphs(directory)
-        var errors = validate_subgraphs(self.subgraphs)
+        var errors = validate_subgraph_phase(self.subgraphs)
         if len(errors) != 0:
             raise Error(
                 directory + " has subgraph errors: " + String(errors[0])
@@ -198,4 +198,4 @@ struct ValidateSubgraphs(Movable, Workload):
         Raises:
             Error: If validation raises.
         """
-        return len(validate_subgraphs(self.subgraphs)) + 1
+        return len(validate_subgraph_phase(self.subgraphs)) + 1

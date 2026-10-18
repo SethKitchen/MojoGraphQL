@@ -156,6 +156,16 @@ struct Values(Movable):
         self.nodes = List[ValueNode](capacity=64)
         self.bytes = List[UInt8](capacity=256)
 
+    def __init__(out self, *, capacity: Int):
+        """Start an empty arena with room for some values.
+
+        Args:
+            capacity: How many values fit before the arena grows; zero
+                allocates nothing, for an arena that only holds a place.
+        """
+        self.nodes = List[ValueNode](capacity=capacity)
+        self.bytes = List[UInt8](capacity=capacity * 4)
+
     # --- building -------------------------------------------------------
 
     @always_inline

@@ -14,19 +14,29 @@ to the apq cache set call` and its pair spy on a custom cache, which is
 not an option; `test_lru.mojo` tests the time to live.
 """
 
-from std.testing import TestSuite, assert_equal, assert_true
+from std.testing import TestSuite, assert_equal, assert_false, assert_true
+from std.time import perf_counter_ns
 from _helpers import (
+    SDL,
     check,
     error_body,
     json_post,
     make_server,
     options,
     preflight_get,
+    resolvers,
     run,
 )
+from gql_server.errors import ServerError
+from gql_server.plugin import ServerPlugin
+from gql_server.request_pipeline import APQ_CACHE_PREFIX
+from gql_server.server import ApolloServer
+from gql_server.types import GraphQLRequestContext
 from gql_server.sha256 import sha256_hex
 
-comptime HASH = "c9249f0e3e3d70411aa80001fdeae3ee8f59057bb59ca0df53a8cdf9fb82ca2b"
+comptime HASH = (
+    "c9249f0e3e3d70411aa80001fdeae3ee8f59057bb59ca0df53a8cdf9fb82ca2b"
+)
 """The SHA-256 of `{testString}`."""
 comptime OK_STRING = '{"data":{"testString":"it works"}}'
 """The result of `{testString}`."""
@@ -36,7 +46,11 @@ comptime PRIVATE = "private, no-cache, must-revalidate"
 
 def _extensions(version: String, hash: String) -> String:
     return (
-        '{"persistedQuery":{"version":' + version + ',"sha256Hash":"' + hash + '"}}'
+        '{"persistedQuery":{"version":'
+        + version
+        + ',"sha256Hash":"'
+        + hash
+        + '"}}'
     )
 
 
@@ -47,9 +61,15 @@ def test_hash_is_sha256() raises:
 def test_not_found_then_found() raises:
     var server = make_server()
     var lookup = '{"extensions":' + _extensions("1", HASH) + "}"
-    var not_found = error_body("PersistedQueryNotFound", "PERSISTED_QUERY_NOT_FOUND")
+    var not_found = error_body(
+        "PersistedQueryNotFound", "PERSISTED_QUERY_NOT_FOUND"
+    )
     check(run(server, json_post(lookup)), 200, PRIVATE, not_found)
-    var get = "?extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + HASH + "%22%7D%7D"
+    var get = (
+        "?extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22"
+        + HASH
+        + "%22%7D%7D"
+    )
     check(run(server, preflight_get(get)), 200, PRIVATE, not_found)
     var register = (
         '{"query":"{testString}","extensions":' + _extensions("1", HASH) + "}"
@@ -64,11 +84,17 @@ def test_hash_mismatch() raises:
     check(
         run(
             server,
-            json_post('{"query":"{testString}","extensions":' + _extensions("1", "abc") + "}"),
+            json_post(
+                '{"query":"{testString}","extensions":'
+                + _extensions("1", "abc")
+                + "}"
+            ),
         ),
         400,
         "no-store",
-        error_body("provided sha does not match query", "INTERNAL_SERVER_ERROR"),
+        error_body(
+            "provided sha does not match query", "INTERNAL_SERVER_ERROR"
+        ),
     )
     # A hash that is not a string never matches.
     check(
@@ -81,7 +107,9 @@ def test_hash_mismatch() raises:
         ),
         400,
         "no-store",
-        error_body("provided sha does not match query", "INTERNAL_SERVER_ERROR"),
+        error_body(
+            "provided sha does not match query", "INTERNAL_SERVER_ERROR"
+        ),
     )
 
 
@@ -99,7 +127,11 @@ def test_unsupported_versions() raises:
         check(
             run(
                 server,
-                json_post('{"query":"{testString}","extensions":' + String(extensions) + "}"),
+                json_post(
+                    '{"query":"{testString}","extensions":'
+                    + String(extensions)
+                    + "}"
+                ),
             ),
             400,
             "no-store",
@@ -133,7 +165,9 @@ def test_not_supported() raises:
         "PersistedQueryNotSupported", "PERSISTED_QUERY_NOT_SUPPORTED"
     )
     check(
-        run(server, json_post('{"extensions":' + _extensions("1", "abc") + "}")),
+        run(
+            server, json_post('{"extensions":' + _extensions("1", "abc") + "}")
+        ),
         200,
         PRIVATE,
         expected,
@@ -159,12 +193,18 @@ def test_batched_persisted_queries() raises:
     var response = run(
         server,
         json_post(
-            '[{"extensions":' + _extensions("1", HASH) + '},{"query":"{testString}"}]'
+            '[{"extensions":'
+            + _extensions("1", HASH)
+            + '},{"query":"{testString}"}]'
         ),
     )
     assert_equal(response.status, 200)
     assert_equal(response.headers.get("cache-control").value(), PRIVATE)
-    assert_true(response.body.startswith('[{"errors":[{"message":"PersistedQueryNotFound"'))
+    assert_true(
+        response.body.startswith(
+            '[{"errors":[{"message":"PersistedQueryNotFound"'
+        )
+    )
 
 
 def test_empty_registered_query_is_not_found() raises:
@@ -173,11 +213,56 @@ def test_empty_registered_query_is_not_found() raises:
     var register = '{"query":"","extensions":' + _extensions("1", empty) + "}"
     # An empty query passes the hash check and is stored.
     _ = run(server, json_post(register))
+    # An empty text in the cache is not a query, as in JavaScript.
+    server.internals.cache.set(
+        APQ_CACHE_PREFIX + empty,
+        String(""),
+        0,
+        Int(perf_counter_ns()),
+        server.internals.persisted_query_ttl,
+    )
     check(
-        run(server, json_post('{"extensions":' + _extensions("1", empty) + "}")),
+        run(
+            server, json_post('{"extensions":' + _extensions("1", empty) + "}")
+        ),
         200,
         PRIVATE,
         error_body("PersistedQueryNotFound", "PERSISTED_QUERY_NOT_FOUND"),
+    )
+
+
+struct Registers(ServerPlugin):
+    """Marks the request as a registration, as a plugin can do with
+    `requestContext.metrics` upstream."""
+
+    def __init__(out self):
+        pass
+
+    def did_resolve_operation(
+        mut self, mut ctx: GraphQLRequestContext
+    ) raises ServerError:
+        ctx.metrics.persisted_query_register = True
+
+
+def test_no_registration_when_persisted_queries_are_off() raises:
+    var opts = options()
+    opts.persisted_queries = False
+    var server = ApolloServer[Registers].from_type_defs(
+        SDL, resolvers(), opts^, Registers()
+    )
+    server.start()
+    check(
+        run(server, json_post('{"query":"{testString}"}')),
+        0,
+        "no-store",
+        OK_STRING,
+    )
+    assert_false(
+        Bool(
+            server.internals.cache.get(
+                APQ_CACHE_PREFIX + HASH, Int(perf_counter_ns())
+            )
+        )
     )
 
 

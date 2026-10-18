@@ -1,0 +1,6 @@
+query HeroName {
+  hero {
+    # ERROR: Unknown directive '@required'
+    name @required
+  }
+}

@@ -177,7 +177,9 @@ def _validate_tag(
     assert_service_sdl(
         schema, start + directives + "\n\n" + TAG_PRINTED + "\n\n" + types
     )
-    var printed = String("") if printed_header == "" else printed_header + "\n\n"
+    var printed = (
+        String("") if printed_header == "" else printed_header + "\n\n"
+    )
     assert_equal(print_subgraph_schema(schema), printed + TAG_PRINTED)
 
 

@@ -30,6 +30,7 @@ from gql_composition.rules_from_context import (
     index_context_owners,
 )
 from gql_composition.error_code import CompositionError, ErrorCode
+from gql_composition.later_versions import GraphFacts, graph_facts
 from gql_composition.federation_spec import (
     FederationSpec,
     SpecCache,
@@ -191,17 +192,14 @@ def _enter_node(
 
 
 def _unlink(mut document: Document, parent: Int, child: Int):
-    """Remove a child from the children of its parent."""
+    """Remove a child from the children of its parent. The child is a
+    field, so it is never the first child: the name comes before it."""
     var previous = NO_NODE
     var current = document.first_child(parent)
     while current != child:
         previous = current
         current = document.next_sibling(current)
-    var after = document.nodes[child].next
-    if previous == NO_NODE:
-        document.nodes[parent].first = after
-    else:
-        document.nodes[previous].next = after
+    document.nodes[previous].next = document.nodes[child].next
     if document.nodes[parent].last == Int32(child):
         document.nodes[parent].last = Int32(previous)
 
@@ -243,7 +241,10 @@ def clean_subgraph_spec(
     """
     var query = _query_type_name(document, definitions)
     var kept = List[Int]()
-    for definition in definitions:
+    var index = 0
+    while index < len(definitions):
+        var definition = definitions[index]
+        index += 1
         var kind = document.kind(definition)
         var name = document.name(definition)
         if (
@@ -383,6 +384,7 @@ def validate_subgraph(
     id: String,
     federation: FederationSpec,
     var state: SubgraphState,
+    mut facts: List[GraphFacts],
 ) raises -> List[CompositionError]:
     """Validate one subgraph, as upstream `validateSubgraph`.
 
@@ -395,6 +397,7 @@ def validate_subgraph(
         id: The id of the subgraph.
         federation: The federation version and imports.
         state: The state that `create_state` started.
+        facts: Receives the facts the `v2.14` and `v2.15` checks read.
 
     Returns:
         The errors, each with the `[<name>] ` prefix and the subgraph
@@ -447,4 +450,5 @@ def validate_subgraph(
         if not error.subgraph_name:
             error.message = "[" + name + "] " + error.message
             error.subgraph_name = name
+    facts.append(graph_facts(context.state, context.document))
     return errors^

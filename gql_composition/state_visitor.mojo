@@ -17,6 +17,7 @@ from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_composition.context import SubgraphContext
 from gql_composition.federation_spec import is_specified_scalar
 from gql_composition.helpers import argument_value, named_type_node
+from gql_composition.later_versions import description_block, graphql_escape
 from gql_composition.printer import print_node
 from gql_composition.state import (
     Deprecated,
@@ -26,6 +27,28 @@ from gql_composition.state import (
     TypeKind,
 )
 from gql_composition.version import FederationVersion
+
+
+def _printed_const(document: Document, node: Int) -> String:
+    """Print a constant value the way Hive's supergraph printer does.
+
+    A regular string uses JSON escaping. A delete character and the
+    characters U+0080 to U+009F stay in the text. A block string is always
+    printed on multiple lines.
+
+    Args:
+        document: The subgraph document.
+        node: The constant value.
+
+    Returns:
+        The printed value.
+    """
+    if document.kind(node) == Kind.STRING:
+        var value = document.string_value(node)
+        if document.is_block(node):
+            return description_block(value)
+        return '"' + graphql_escape(value) + '"'
+    return print_node(document, node)
 
 
 def _is_object(kind: Kind) -> Bool:
@@ -136,10 +159,10 @@ def enter_input_value_definition(
     Raises:
         Error: When the state has a conflict of kinds.
     """
+    # An input value is always in a type or a directive definition, and
+    # the walk keeps the input value itself as the field when it is not an
+    # argument of a field.
     var type_def = context.info.type_def
-    var field_def = context.info.field_def
-    if type_def == NO_NODE:
-        return
     ref document = context.document
     var type_kind = document.kind(type_def)
     var type_name = String(document.name(type_def))
@@ -152,7 +175,7 @@ def enter_input_value_definition(
     var default_node = document.child(node, Role.DEFAULT_VALUE)
     var default = Optional[String](None)
     if default_node != NO_NODE:
-        default = print_node(document, default_node)
+        default = _printed_const(document, default_node)
     if _is_input_object(type_kind):
         var at = context.state.input_value_at(
             TypeKind.INPUT_OBJECT, type_name, name
@@ -167,11 +190,9 @@ def enter_input_value_definition(
                 at.field
             ].default_value = default
         return
-    if field_def == NO_NODE or (
-        not _is_object(type_kind) and not _is_interface(type_kind)
-    ):
+    if not _is_object(type_kind) and not _is_interface(type_kind):
         return
-    var field_name = String(document.name(field_def))
+    var field_name = String(document.name(context.info.field_def))
     var at = context.state.owner_field(
         type_name, field_name, _is_interface(type_kind)
     )
@@ -389,7 +410,7 @@ def enter_directive_definition(mut context: SubgraphContext, node: Int) raises:
             )
             var default = document.child(child, Role.DEFAULT_VALUE)
             if default != NO_NODE:
-                argument.default_value = print_node(document, default)
+                argument.default_value = _printed_const(document, default)
         child = document.next_sibling(child)
 
 
@@ -411,10 +432,10 @@ def enter_description(
     var description = Description(
         context.document.string_value(node), context.document.is_block(node)
     )
-    if (
-        parent_kind == Kind.SCALAR_TYPE_DEFINITION
-        or parent_kind == Kind.SCALAR_TYPE_EXTENSION
-    ):
+    # A type extension has no description. The walk is in the innermost
+    # definition that the description describes: the argument, else the
+    # field or input value, else the type.
+    if parent_kind == Kind.SCALAR_TYPE_DEFINITION:
         var name = String(context.document.name(parent))
         var index = context.state.get_or_create(
             TypeKind.SCALAR, name, "a scalar type"
@@ -431,21 +452,21 @@ def enter_description(
         var interface = _is_interface(kind)
         var arg_def = context.info.arg_def
         var field_def = context.info.field_def
-        if arg_def != NO_NODE and arg_def == parent:
+        if arg_def != NO_NODE:
             var field_name = String(context.document.name(field_def))
             var at = context.state.owner_field(type_name, field_name, interface)
             var arg = context.state.arg_index(at, parent_name)
             context.state.types[at.type].fields[at.field].args[
                 arg
             ].description = (description^)
-        elif field_def != NO_NODE and field_def == parent:
+        elif field_def != NO_NODE:
             var at = context.state.owner_field(
                 type_name, parent_name, interface
             )
             context.state.types[at.type].fields[at.field].description = (
                 description^
             )
-        elif type_def == parent:
+        else:
             var index: Int
             if interface or context.state.is_interface_object(type_name):
                 index = context.state.interface_type(type_name)
@@ -453,17 +474,14 @@ def enter_description(
                 index = context.state.object_type(type_name)
             context.state.types[index].description = description^
     elif _is_input_object(kind):
-        if (
-            context.info.field_def != NO_NODE
-            and context.info.field_def == parent
-        ):
+        if context.info.field_def != NO_NODE:
             var at = context.state.input_value_at(
                 TypeKind.INPUT_OBJECT, type_name, parent_name
             )
             context.state.types[at.type].input_fields[at.field].description = (
                 description^
             )
-        elif type_def == parent:
+        else:
             var index = context.state.get_or_create(
                 TypeKind.INPUT_OBJECT, type_name, "an input object type"
             )
@@ -474,19 +492,16 @@ def enter_description(
             context.state.types[at.type].values[at.field].description = (
                 description^
             )
-        elif type_def == parent:
+        else:
             var index = context.state.get_or_create(
                 TypeKind.ENUM, type_name, "an enum type"
             )
             context.state.types[index].description = description^
-    elif (
-        kind == Kind.UNION_TYPE_DEFINITION or kind == Kind.UNION_TYPE_EXTENSION
-    ):
-        if type_def == parent:
-            var index = context.state.get_or_create(
-                TypeKind.UNION, type_name, "a union type"
-            )
-            context.state.types[index].description = description^
+    elif kind == Kind.UNION_TYPE_DEFINITION:
+        var index = context.state.get_or_create(
+            TypeKind.UNION, type_name, "a union type"
+        )
+        context.state.types[index].description = description^
 
 
 def enter_directive(mut context: SubgraphContext, node: Int) raises:
@@ -511,7 +526,11 @@ def enter_directive(mut context: SubgraphContext, node: Int) raises:
     var field_name = String("")
     if field_def != NO_NODE:
         field_name = String(context.document.name(field_def))
-    if context.state.composed_directives.contains(name):
+    if context.state.composed_directives.contains(
+        name
+    ) or context.is_available_directive("cacheTag", name):
+        if context.is_available_directive("cacheTag", name):
+            _ensure_cache_tag(context, name)
         _add_composed(context, node, kind, type_name, field_name)
     elif name == "specifiedBy":
         if (
@@ -610,6 +629,34 @@ def _set_one_of(mut context: SubgraphContext, type_name: String) raises:
     context.state.types[input].is_one_of = True
 
 
+def _ensure_cache_tag(mut context: SubgraphContext, name: String) raises:
+    """Record `@cacheTag` as a composed directive definition.
+
+    The federation specification defines the directive. The subgraph
+    document does not repeat that definition, so the supergraph printer
+    needs the definition from the application.
+
+    Args:
+        context: The context.
+        name: The local directive name.
+
+    Raises:
+        Error: When the state has a conflict of kinds.
+    """
+    var index = context.state.get_or_create(
+        TypeKind.DIRECTIVE, name, "a directive"
+    )
+    ref directive = context.state.types[index]
+    directive.composed = True
+    directive.repeatable = True
+    directive.locations.add("FIELD_DEFINITION")
+    directive.locations.add("OBJECT")
+    var at = context.state.input_value_at(TypeKind.DIRECTIVE, name, "format")
+    ref argument = context.state.types[at.type].input_fields[at.field]
+    if argument.type == "MISSING":
+        argument.type = String("String!")
+
+
 def _add_composed(
     mut context: SubgraphContext,
     node: Int,
@@ -649,7 +696,9 @@ def _add_composed(
             context.state.types[at.type].input_fields[
                 at.field
             ].directives.append(node)
-        elif owner == TypeKind.INPUT_OBJECT:
+        else:
+            # A directive definition holds directives only on its
+            # arguments, so this is an input object type.
             var index = context.state.get_or_create(
                 owner, type_name, "an input object type"
             )

@@ -94,9 +94,7 @@ struct ApolloServerErrorCode(Equatable, ImplicitlyCopyable, Writable):
 
 
 @fieldwise_init
-struct ApolloServerValidationErrorCode(
-    Equatable, ImplicitlyCopyable, Writable
-):
+struct ApolloServerValidationErrorCode(Equatable, ImplicitlyCopyable, Writable):
     """A validation error code: upstream
     `ApolloServerValidationErrorCode`."""
 
@@ -353,7 +351,9 @@ def operation_resolution_error(var error: ServerError) -> ServerError:
         The error.
     """
     error.http = HTTPGraphQLHead(400)
-    return _with_code(error^, ApolloServerErrorCode.OPERATION_RESOLUTION_FAILURE)
+    return _with_code(
+        error^, ApolloServerErrorCode.OPERATION_RESOLUTION_FAILURE
+    )
 
 
 def _persisted_query_error(
@@ -361,7 +361,9 @@ def _persisted_query_error(
 ) -> ServerError:
     var error = ServerError(message, stack_name)
     error.http = HTTPGraphQLHead(200)
-    error.http.headers.set("cache-control", "private, no-cache, must-revalidate")
+    error.http.headers.set(
+        "cache-control", "private, no-cache, must-revalidate"
+    )
     return _with_code(error^, code)
 
 

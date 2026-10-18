@@ -29,7 +29,8 @@ from gql_json.parser import parse
 from gql_json.value import JsonDocument, JsonKind, NO_NODE
 from gql_language.ast import OperationType
 from gql_schema.definition import NO_TYPE, Schema
-from gql_validation.validate import validate
+from gql_validation.rules import specified_rules
+from gql_validation.validate import ValidationOptions, validate
 from gql_mcp.call_result import CallToolResult
 from gql_mcp.graphql import normalized_json
 from gql_language.error import GraphQLError
@@ -122,14 +123,20 @@ def run_introspect(
 
 
 def run_validate(
-    schema: Schema, document: JsonDocument, arguments: Int
+    schema: Schema,
+    document: JsonDocument,
+    arguments: Int,
+    schema_is_valid: Bool = False,
 ) -> CallToolResult:
     """Call `validate`: check one operation against the schema.
 
     Args:
-        schema: The schema; it must be valid.
+        schema: The schema.
         document: The request document.
         arguments: The `arguments` object, or `NO_NODE`.
+        schema_is_valid: Whether the schema is known to be valid, as the
+            `Valid<Schema>` of upstream is. Then it is not checked again
+            for each operation.
 
     Returns:
         `Operation is valid`, or an error result with the problems.
@@ -149,8 +156,12 @@ def run_validate(
     if not defs:
         return CallToolResult.error("Invalid operation type")
     var errors: List[GraphQLError]
+    var options = ValidationOptions()
+    options.assume_valid_schema = schema_is_valid
     try:
-        errors = validate(schema, defs.value().document)
+        errors = validate(
+            schema, defs.value().document, specified_rules(), options
+        )
     except e:
         return CallToolResult.error(String(e))
     if len(errors) == 0:

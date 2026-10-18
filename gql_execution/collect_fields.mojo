@@ -74,14 +74,15 @@ struct FieldCollector(Movable):
             schema: The schema.
             document: The document; its fragment definitions are indexed.
         """
-        self.plans = List[FieldPlan]()
-        self.groups = List[FieldGroup]()
-        self.nodes = List[Int32]()
+        # Room for a small operation, so that it grows no list.
+        self.plans = List[FieldPlan](capacity=8)
+        self.groups = List[FieldGroup](capacity=16)
+        self.nodes = List[Int32](capacity=16)
         self.fragments = Dict[String, Int]()
         self.skip = schema.directive_named("skip")
         self.include = schema.directive_named("include")
-        self._pending = List[Int32]()
-        self._links = List[Int32]()
+        self._pending = List[Int32](capacity=48)
+        self._links = List[Int32](capacity=32)
         self._visited = List[String]()
         var definition = document.child(document.root, Role.DEFINITION)
         while definition != NO_NODE:

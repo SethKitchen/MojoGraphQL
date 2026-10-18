@@ -21,60 +21,144 @@ def test_v2_0_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -85,29 +169,48 @@ def test_v2_0_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -117,14 +220,24 @@ def test_v2_0_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -135,14 +248,28 @@ def test_v2_0_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -153,15 +280,37 @@ def test_v2_0_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -171,18 +320,45 @@ def test_v2_0_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -193,60 +369,144 @@ def test_v2_1_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -257,29 +517,48 @@ def test_v2_1_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -289,14 +568,24 @@ def test_v2_1_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -307,14 +596,28 @@ def test_v2_1_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -325,15 +628,37 @@ def test_v2_1_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -343,18 +668,45 @@ def test_v2_1_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -365,60 +717,144 @@ def test_v2_2_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -429,29 +865,48 @@ def test_v2_2_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -461,14 +916,24 @@ def test_v2_2_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -479,14 +944,28 @@ def test_v2_2_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -497,15 +976,37 @@ def test_v2_2_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -515,18 +1016,45 @@ def test_v2_2_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -537,60 +1065,144 @@ def test_v2_3_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -601,29 +1213,48 @@ def test_v2_3_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -633,14 +1264,24 @@ def test_v2_3_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -651,14 +1292,28 @@ def test_v2_3_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -669,15 +1324,37 @@ def test_v2_3_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -687,18 +1364,45 @@ def test_v2_3_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -709,60 +1413,144 @@ def test_v2_4_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -773,29 +1561,48 @@ def test_v2_4_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -805,14 +1612,24 @@ def test_v2_4_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -823,14 +1640,28 @@ def test_v2_4_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -841,15 +1672,37 @@ def test_v2_4_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -859,18 +1712,45 @@ def test_v2_4_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -881,60 +1761,144 @@ def test_v2_5_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -945,29 +1909,48 @@ def test_v2_5_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -977,14 +1960,24 @@ def test_v2_5_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -995,14 +1988,28 @@ def test_v2_5_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1013,15 +2020,37 @@ def test_v2_5_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1031,18 +2060,45 @@ def test_v2_5_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -1053,60 +2109,144 @@ def test_v2_6_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -1117,29 +2257,48 @@ def test_v2_6_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1149,14 +2308,24 @@ def test_v2_6_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1167,14 +2336,28 @@ def test_v2_6_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1185,15 +2368,37 @@ def test_v2_6_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1203,18 +2408,45 @@ def test_v2_6_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -1225,60 +2457,144 @@ def test_v2_7_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -1289,29 +2605,48 @@ def test_v2_7_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1321,14 +2656,24 @@ def test_v2_7_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1339,14 +2684,28 @@ def test_v2_7_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1357,15 +2716,37 @@ def test_v2_7_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1375,18 +2756,45 @@ def test_v2_7_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -1397,60 +2805,144 @@ def test_v2_8_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -1461,29 +2953,48 @@ def test_v2_8_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1493,14 +3004,24 @@ def test_v2_8_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1511,14 +3032,28 @@ def test_v2_8_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1529,15 +3064,37 @@ def test_v2_8_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1547,18 +3104,45 @@ def test_v2_8_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
         ],
     )
 
@@ -1569,60 +3153,144 @@ def test_v2_9_invalid_field_sharing_set_of_tests() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  users:'
+                    ' [User]\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " profile: Profile\n}\n\ntype Profile @shareable {\n  name:"
+                    " String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}\n\ntype Profile @shareable {\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  profile: Profile\n}\n\ntype Profile"
+                    " @shareable {\n  name: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.profile" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  user: User\n}\n\ntype User {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  user: User\n}\n\ntype User'
+                    " {\n  id: ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID!\n  comments: [String]\n}\n\ntype Query {\n "
+                    " users: [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                ' subgraph "users"'
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\nextend type Query {\n  foo: Foo\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\nextend type Query {\n  foo:'
+                    ' Foo\n}\n\ntype Foo @shareable @key(fields: "id") {\n  id:'
+                    " ID!\n  name: String\n}"
+                ),
             ),
             sg(
                 "feed",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\", \"@override\"])\n\nextend type Query {\n  foo: Foo @override(from: \"noop\")\n}\n\ntype Foo @shareable @key(fields: \"id\") {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable", "@override"])\n\nextend type Query'
+                    ' {\n  foo: Foo @override(from: "noop")\n}\n\ntype Foo'
+                    ' @shareable @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "noop",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  noop: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  noop:'
+                    " String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.foo" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "feed" and "users" and defined as non-shareable in'
+                " all of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String! @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\nextend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String! @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\nextend type Note {\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String! @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.name" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
 
@@ -1633,29 +3301,48 @@ def test_v2_9_invalid_field_sharing_fed_v1() raises:
         [
             sg(
                 "foo",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note {\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    "extend type Note {\n  url: String!\n}\n\ntype Note {\n "
+                    " name: String!\n}\n\ntype Query {\n  bar: String!\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Note.url" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "bar" and "foo" and defined as non-shareable in all'
+                " of them"
+            ),
         ],
     )
     check(
         [
             sg(
                 "foo",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  foo: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  foo: String!\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend type Note @key(fields: \"id\") {\n  id: ID!\n  url: String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype Query {\n  bar: String!\n}",
+                (
+                    'extend type Note @key(fields: "id") {\n  id: ID!\n  url:'
+                    " String!\n}\n\ntype Note {\n  name: String!\n}\n\ntype"
+                    " Query {\n  bar: String!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1665,14 +3352,24 @@ def test_v2_9_invalid_field_sharing_subscription_fields_fed_v1() raises:
         [
             sg(
                 "foo",
-                "type Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  foo: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
             sg(
                 "bar",
-                "type Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String\n}",
+                (
+                    "type Query {\n  bar: String\n}\n\ntype Subscription {\n "
+                    " event: String\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1683,14 +3380,28 @@ def test_v2_9_invalid_field_sharing_subscription_fields() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\ntype Query {\n  foo: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  foo: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\ntype Query {\n  bar: String\n}\n\ntype Subscription {\n  event: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  bar: String\n}\n\ntype'
+                    " Subscription {\n  event: String @shareable\n}"
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_FIELD_SHARING] Fields on root level subscription"
+                " object cannot be marked as shareable"
+            ),
         ],
     )
 
@@ -1701,15 +3412,37 @@ def test_v2_9_invalid_field_sharing_nested_key_fields() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype A @key(fields: \"id\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype A @key(fields: "id", resolvable: true)'
+                    ' @key(fields: "pId", resolvable: false) @key(fields:'
+                    ' "compositeId { one two }", resolvable: false)'
+                    ' @key(fields: "id compositeId { two three }", resolvable:'
+                    " false) {\n  id: ID!\n  pId: ID!\n  compositeId:"
+                    " CompositeID!\n  name: String!\n}\n\ntype CompositeID {\n "
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@requires\", \"@external\"])\n\ntype Query {\n  b: B\n}\n\ntype B @key(fields: \"id\") {\n  id: ID!\n  a: [A!]!\n}\n\ntype A @key(fields: \"compositeId { one two }\", resolvable: false) @key(fields: \"id compositeId { two three }\", resolvable: true) @key(fields: \"pId\", resolvable: false) @key(fields: \"id\", resolvable: false) {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n  name: String! @external\n  nameInB: String! @requires(fields: \"name\")\n}\n\ntype CompositeID {\n  one: ID!\n  two: ID!\n  three: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@requires", "@external"])\n\ntype Query {\n  b:'
+                    ' B\n}\n\ntype B @key(fields: "id") {\n  id: ID!\n  a:'
+                    ' [A!]!\n}\n\ntype A @key(fields: "compositeId { one two'
+                    ' }", resolvable: false) @key(fields: "id compositeId { two'
+                    ' three }", resolvable: true) @key(fields: "pId",'
+                    ' resolvable: false) @key(fields: "id", resolvable: false)'
+                    " {\n  id: ID!\n  pId: ID!\n  compositeId: CompositeID!\n "
+                    " name: String! @external\n  nameInB: String!"
+                    ' @requires(fields: "name")\n}\n\ntype CompositeID {\n '
+                    " one: ID!\n  two: ID!\n  three: ID!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1719,18 +3452,181 @@ def test_v2_9_non_shareable_field_in_interfaceobject_and_interface_implementatio
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: String\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id", resolvable: false) @interfaceObject'
+                    " {\n  id: ID!\n  field: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "MyType.field" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" (through @interfaceObject field'
+                ' "MyInterface.field") and defined as non-shareable in all of'
+                " them"
+            ),
+        ],
+    )
+
+
+def test_hive_case_fs1() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { a: User'
+                    ' }\ntype User @key(fields: "id") { id: ID! }'
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { b: User'
+                    ' }\ntype User @key(fields: "name") { id: ID! name:'
+                    " String! }"
+                ),
+            ),
+        ],
+        [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "b" and defined as non-shareable in'
+                ' subgraph "b"'
+            ),
+        ],
+    )
+
+
+def test_hive_case_fs2() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { f: String'
+                    " @shareable }"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { f: String }'
+                ),
+            ),
+            sg(
+                "c",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { f: String }'
+                ),
+            ),
+        ],
+        [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "Query.f" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a", "b" and "c" and defined as non-shareable'
+                ' in subgraphs "b" and "c"'
+            ),
+        ],
+    )
+
+
+def test_hive_case_fs3() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { n: Node'
+                    ' }\ninterface Node @key(fields: "id") { id: ID! }\ntype'
+                    ' User implements Node @key(fields: "id") { id: ID! }'
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Node @interfaceObject'
+                    ' @key(fields: "id") { id: ID! }'
+                ),
+            ),
+            sg(
+                "c",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { u: User'
+                    " }\ntype User { id: ID! }"
+                ),
+            ),
+        ],
+        [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.id" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" and defined as non-shareable in'
+                ' subgraph "c"'
+            ),
         ],
     )
 

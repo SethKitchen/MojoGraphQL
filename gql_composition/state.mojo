@@ -791,16 +791,11 @@ struct SpecsUsed(Copyable):
 
 def _is_subset(subset: List[String], superset: List[String]) -> Bool:
     """Return True if every string of one list is in another."""
-    if len(subset) > len(superset):
-        return False
-    for ref item in subset:
-        var found = False
-        for ref other in superset:
-            if other == item:
-                found = True
-                break
-        if not found:
+    var index = 0
+    while index < len(subset):
+        if subset[index] not in superset:
             return False
+        index += 1
     return True
 
 
@@ -874,23 +869,26 @@ def merge_scope_policies(
         return left.copy()
     var keys = List[String]()
     var merged = List[List[String]]()
-    for ref group_a in left:
-        for ref group_b in right:
+    var index_a = 0
+    while index_a < len(left):
+        var index_b = 0
+        while index_b < len(right):
             var union = List[String]()
-            _add_unique(union, group_a)
-            _add_unique(union, group_b)
+            _add_unique(union, left[index_a])
+            _add_unique(union, right[index_b])
+            index_b += 1
             _sort_strings(union)
             var key = _joined(union)
-            var found = -1
-            for index in range(len(keys)):
-                if keys[index] == key:
-                    found = index
-            if found == -1:
+            if key not in keys:
                 keys.append(key)
                 merged.append(union^)
+        index_a += 1
     _sort_groups(merged, False)
     var final_groups = List[List[String]]()
-    for ref candidate in merged:
+    var index_c = 0
+    while index_c < len(merged):
+        ref candidate = merged[index_c]
+        index_c += 1
         var redundant = False
         for ref existing in final_groups:
             if _is_subset(existing, candidate):
@@ -923,6 +921,8 @@ struct SubgraphState(Movable):
     """The name that the schema definition gives each root kind."""
     var links: List[Link]
     """The links, other than federation, that import directives."""
+    var core_links: List[Link]
+    """Every `@link`, in source order, including federation."""
     var specs: SpecsUsed
     """The linked specifications that the subgraph uses."""
     var federation_imports: List[LinkImport]
@@ -962,6 +962,7 @@ struct SubgraphState(Movable):
             String("Subscription"),
         ]
         self.links = List[Link]()
+        self.core_links = List[Link]()
         self.specs = SpecsUsed()
         self.federation_imports = List[LinkImport]()
         self.composed_directives = StringSet()

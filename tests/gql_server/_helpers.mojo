@@ -161,7 +161,9 @@ def options() -> ApolloServerOptions:
 
 def make_server(var opts: ApolloServerOptions) raises -> ApolloServer[NoPlugin]:
     """A started server with the schema and some options."""
-    var server = ApolloServer.from_type_defs(SDL, resolvers(), opts^, NoPlugin())
+    var server = ApolloServer.from_type_defs(
+        SDL, resolvers(), opts^, NoPlugin()
+    )
     server.start()
     return server^
 
@@ -207,7 +209,9 @@ def preflight_get(search: String) raises -> HTTPGraphQLRequest:
 
 def run[
     P: ServerPlugin
-](mut server: ApolloServer[P], var request: HTTPGraphQLRequest) raises -> HTTPGraphQLResponse:
+](
+    mut server: ApolloServer[P], var request: HTTPGraphQLRequest
+) raises -> HTTPGraphQLResponse:
     """Answer a request with the context of the tests."""
     return server.execute_http_graphql_request(request^, context)
 
@@ -232,8 +236,12 @@ def check(
             does not.
     """
     assert_equal(response.status, status)
-    assert_equal(response.headers.get("content-type").or_else("-"), content_type)
-    assert_equal(response.headers.get("cache-control").or_else(""), cache_control)
+    assert_equal(
+        response.headers.get("content-type").or_else("-"), content_type
+    )
+    assert_equal(
+        response.headers.get("cache-control").or_else(""), cache_control
+    )
     assert_equal(response.body, body + ("\n" if final_newline else ""))
 
 

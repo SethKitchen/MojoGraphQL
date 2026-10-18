@@ -21,11 +21,25 @@ def test_v2_0_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -36,11 +50,25 @@ def test_v2_1_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -51,11 +79,25 @@ def test_v2_2_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -66,11 +108,25 @@ def test_v2_3_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -81,11 +137,25 @@ def test_v2_4_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -96,11 +166,25 @@ def test_v2_5_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -111,11 +195,25 @@ def test_v2_6_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -126,11 +224,25 @@ def test_v2_7_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -141,11 +253,25 @@ def test_v2_8_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 
@@ -156,11 +282,25 @@ def test_v2_9_root_mutation_used() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Mutation {\n  users: [User!]!\n}\n\nschema {\n  mutation: RootMutation\n}\n\ntype RootMutation {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Mutation {\n  users:'
+                    " [User!]!\n}\n\nschema {\n  mutation:"
+                    " RootMutation\n}\n\ntype RootMutation {\n  users:"
+                    ' [User!]!\n}\n\ntype User @key(fields: "id") {\n  id: ID\n'
+                    "  friends: [User!]!\n}"
+                ),
             ),
         ],
         [
-            "[ROOT_MUTATION_USED] [users] The schema has a type named \"Mutation\" but it is not set as the mutation root type (\"RootMutation\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                "[ROOT_MUTATION_USED] [users] The schema has a type named"
+                ' "Mutation" but it is not set as the mutation root type'
+                ' ("RootMutation" is instead): this is not supported by'
+                " federation. If a root type does not use its default name,"
+                " there should be no other type with that default name."
+            ),
         ],
     )
 

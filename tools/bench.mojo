@@ -27,6 +27,8 @@ or prints no results also fails the run: a missing comparison is not a pass.
 
 The baselines need Node.js and npm, Cargo, and Go. The tool looks for them
 on `PATH`, then in `~/node/bin`, `~/.cargo/bin` and `~/go-sdk/go/bin`.
+`bench/baselines/kotlin-codegen` needs a JDK 21 in `$JAVA_HOME` or
+`~/jdk`, and Gradle in `$GRADLE` or `~/gradle/gradle-8.14.3`.
 """
 
 from std.os import listdir
@@ -205,6 +207,28 @@ def baselines() -> List[Baseline]:
             + " ./target/release/hyper-server && ./target/release/httparse",
         )
     )
+    # The HTTP workload of Apollo Server runs under the same Mojo load
+    # generator as the gql_server one.
+    out.append(
+        Baseline(
+            "Apollo Server 5.5.1 (Node.js)",
+            "bench/baselines/js-server",
+            "([ -d node_modules ] || npm ci --no-audit --no-fund) && "
+            + HTTP_LOADGEN_BUILD,
+            (
+                "node bench.mjs && ../../../.cache/bin/http_loadgen"
+                " server/http-post-small node bench.mjs server"
+            ),
+        )
+    )
+    out.append(
+        Baseline(
+            "@apollo/subgraph 2.14.4 (Node.js)",
+            "bench/baselines/js-subgraph",
+            "[ -d node_modules ] || npm ci --no-audit --no-fund",
+            "node bench.mjs",
+        )
+    )
     # The MCP servers run under the Mojo stdio driver of gql_mcp, so that
     # only the server differs from the Mojo benchmark.
     out.append(
@@ -215,6 +239,44 @@ def baselines() -> List[Baseline]:
             "./target/release/tool && "
             + MCP_DRIVER
             + " ./target/release/apollo-mcp-server config.yaml",
+        )
+    )
+    out.append(
+        Baseline(
+            "Hive Router 1a29df9 query planner (Rust)",
+            "bench/baselines/rust-router",
+            "./build.sh",
+            "./target/release/mojographql-bench-router-rust",
+        )
+    )
+    # The JVM baseline runs on a portable JDK 21 in ~/jdk, with Gradle in
+    # ~/gradle; its scripts cap the heap at 4 GiB.
+    out.append(
+        Baseline(
+            "Apollo Kotlin 5.2.0 apollo-compiler (JVM)",
+            "bench/baselines/kotlin-codegen",
+            "./build.sh",
+            "./run.sh",
+        )
+    )
+    # Rover composes with an Elastic licensed plugin, so `supergraph
+    # compose` is compared with Hive `composeServices`, which gql_rover
+    # runs. The introspection commands run the Rover program itself, under
+    # the same process driver as the gql_rover program.
+    out.append(
+        Baseline(
+            "Hive Federation Composition 0.27.0 composeServices (Node.js)",
+            "bench/baselines/js-rover",
+            "[ -d node_modules ] || npm ci --no-audit --no-fund",
+            "node bench.mjs",
+        )
+    )
+    out.append(
+        Baseline(
+            "Apollo Rover 1.0.0 (Rust)",
+            "bench/baselines/rust-rover",
+            "./build.sh",
+            "../../../.cache/bin/rover_driver ./target/release/rover ../../..",
         )
     )
     return out^
@@ -524,6 +586,13 @@ def machine(mojo: String) raises -> String:
     out += (
         "- Go: "
         + first_line(TOOL_PATH + "cd bench/baselines/go && go version")
+        + "\n"
+    )
+    out += (
+        "- JVM: "
+        + first_line(
+            '"${JAVA_HOME:-$HOME/jdk}/bin/java" -version 2>&1 | sed -n 2p'
+        )
         + "\n"
     )
     return out^
@@ -918,6 +987,7 @@ def in_suite_order(workloads: List[String]) -> List[String]:
         "apollo-parser",
         "apollo-compiler",
         "go-tools",
+        "apollo-kotlin",
     ]
     var out = List[String]()
     for ref suite in suites:

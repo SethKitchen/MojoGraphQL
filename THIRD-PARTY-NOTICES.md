@@ -56,7 +56,26 @@ the Elastic License 2.0. The exclusions are listed with each project.
   only the MIT parts. The supergraph and router plugin binaries that Rover
   downloads are Elastic License 2.0 and are excluded.
 - **Hive Router.** `apollo-router-workspace/` is a plugin for Apollo Router,
-  which is Elastic License 2.0. MojoGraphQL does not port it.
+  which is Elastic License 2.0. MojoGraphQL does not port it. `gql_router`
+  ports these MIT parts of `1a29df9`: the query planner of
+  `bin/router/src/query_planner/` (`ast/`, `federation_spec/`, `graph/`,
+  `planner/`, `state/` and `utils/`), and its tests in `tests/` with the
+  supergraph fixtures of `bin/router/fixture/` and `bench/`; `cache_state.rs`
+  and `config/cache.rs`; `http_utils/headers.rs`; `pipeline/authorization/`;
+  and `executor/operation_filter.rs`. `query_planner/consumer_schema/` is
+  not ported. Of the planner tests, `generated.rs`
+  is excluded, because it needs the generator of `bin/differential`, and
+  `preparing_a_plan_preserves_its_wire_form` of `tests/mod.rs` is excluded,
+  because the port has no JSON form of a plan.
+- **Apollo Server.** `gql_server` ports these MIT files of `5.5.1`
+  (`0c22029`) for inline traces: `packages/server/src/plugin/inlineTrace/index.ts`,
+  `plugin/traceTreeBuilder.ts`, `plugin/schemaIsSubgraph.ts`, the inline
+  trace part of `plugin/disabled/index.ts`, and the `Trace` message of
+  `packages/usage-reporting-protobuf/src/reports.proto`. Its tests port
+  `src/__tests__/plugin/inlineTrace/inlineTracePlugin.test.ts` and the
+  `Federated tracing` cases of
+  `packages/integration-testsuite/src/apolloServerTests.ts`. The usage
+  reporting plugin and the rest of `reports.proto` are not ported.
 - **Apollo Client.** `src/react/internal/compiler-runtime/` is a separate MIT
   notice from Meta Platforms, Inc. MojoGraphQL ports no React code, so it
   does not port that directory. `gql_client` ports these MIT files of
@@ -125,6 +144,13 @@ the Elastic License 2.0. The exclusions are listed with each project.
   `@theguild/federation-composition` `0.27.0` (MIT) and `graphql` `16.14.2`
   (MIT). They run only as the benchmark baseline of `gql_composition` and
   are not part of any MojoGraphQL package.
+- `bench/baselines/kotlin-codegen/` resolves the Maven artifact
+  `com.apollographql.apollo:apollo-compiler` `5.2.0` (MIT, Apollo Kotlin)
+  and its dependencies with Gradle. It runs only as the benchmark baseline
+  of `gql_codegen` and is not part of any MojoGraphQL package.
+  `gql_codegen` ports `libraries/apollo-compiler` and parts of
+  `libraries/apollo-ast` of Apollo Kotlin at `afe947c`; it ports none of the
+  Apache-2.0 files listed in [Exclusions](#exclusions).
 
 ## Test fixtures
 
@@ -134,6 +160,31 @@ the Elastic License 2.0. The exclusions are listed with each project.
   `1ef36fa` (2024-11-22). It is MIT licensed, Copyright (c) 2016 Nicolas
   Seriot. The license text is in `tests/gql_json/fixtures/test_parsing/LICENSE`.
   The files are test data only, and no MojoGraphQL package contains them.
+- `tests/gql_codegen/fixtures/` holds copies of Apollo Kotlin (`afe947c`)
+  test files: `TestOperation.graphql`, `schema.graphqls` and
+  `used-coordinates.json.expected` of
+  `libraries/apollo-compiler/src/test/graphql/com/example/`, the shared
+  `src/test/graphql/schema.graphqls`, the fixtures of
+  `src/test/validation/operation/capitalized_fields/`, and the top-level
+  fixtures of `libraries/apollo-ast/test-fixtures/validation/executable/`.
+  `operation_ids.tsv` holds the `OPERATION_ID` and `OPERATION_DOCUMENT` of
+  the expected `operationBased` outputs. They are MIT licensed, Copyright
+  (c) 2016-2024 Apollo Graph, Inc. `fixtures/golden/` is MojoGraphQL's own.
+  `_fixture_data.mojo` holds the same files as Mojo code. The files are test
+  data only, and no MojoGraphQL package contains them.
+- `tests/gql_subgraph/_products.mojo` holds the `products` schema of the
+  Apollo Federation subgraph compatibility suite
+  ([apollographql/apollo-federation-subgraph-compatibility](https://github.com/apollographql/apollo-federation-subgraph-compatibility)),
+  revision `f9520a4`: `implementations/apollo-server/products.graphql`, with
+  the data and the resolvers of `implementations/apollo-server/index.js`.
+  `tests/gql_subgraph/test_compatibility.mojo` and `_compat.mojo` port the
+  jest tests of `packages/compatibility/src/tests/` and `compareSchemas` of
+  `packages/compatibility/src/utils/schemaComparison.ts`.
+  `bench/compat/products.mojo` serves the schema. The suite is MIT licensed,
+  Copyright (c) 2022 Apollo Graph. The files are test data and an example
+  program only, and no MojoGraphQL package contains them. `ftv1.test.ts`,
+  the router, the `users` and `inventory` subgraphs and the Docker and
+  `rover` tooling are not ported.
 
 ## MIT License
 

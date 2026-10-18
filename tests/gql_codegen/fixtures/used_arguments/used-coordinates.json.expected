@@ -1,0 +1,22 @@
+{
+    "typeToFieldsToArguments": {
+        "A": {
+            "field": [
+                "arg"
+            ]
+        },
+        "Int": {},
+        "B": {
+            "field": [
+                "arg"
+            ]
+        },
+        "C": {
+            "field": [
+                "arg"
+            ]
+        },
+        "String": {},
+        "Query": {}
+    }
+}

@@ -21,15 +21,31 @@ def test_v2_0_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -40,11 +56,20 @@ def test_v2_0_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -55,11 +80,22 @@ def test_v2_0_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -70,15 +106,31 @@ def test_v2_1_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -89,11 +141,20 @@ def test_v2_1_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -104,11 +165,22 @@ def test_v2_1_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -119,15 +191,31 @@ def test_v2_2_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -138,11 +226,20 @@ def test_v2_2_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -153,11 +250,22 @@ def test_v2_2_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -168,15 +276,31 @@ def test_v2_3_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -187,11 +311,20 @@ def test_v2_3_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -202,11 +335,22 @@ def test_v2_3_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -217,15 +361,31 @@ def test_v2_4_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -236,11 +396,20 @@ def test_v2_4_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -251,11 +420,22 @@ def test_v2_4_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -266,15 +446,31 @@ def test_v2_5_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -285,11 +481,20 @@ def test_v2_5_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -300,11 +505,22 @@ def test_v2_5_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -315,15 +531,31 @@ def test_v2_6_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -334,11 +566,20 @@ def test_v2_6_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -349,11 +590,22 @@ def test_v2_6_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -364,15 +616,31 @@ def test_v2_7_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -383,11 +651,20 @@ def test_v2_7_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -398,11 +675,22 @@ def test_v2_7_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -413,15 +701,31 @@ def test_v2_8_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -432,11 +736,20 @@ def test_v2_8_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -447,11 +760,22 @@ def test_v2_8_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 
@@ -462,15 +786,31 @@ def test_v2_9_key_invalid_fields_syntax_error() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Product @key(fields: \"featuredItem { id\") {\n  featuredItem: Node!\n  sku: String!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "featuredItem {'
+                    ' id") {\n  featuredItem: Node!\n  sku:'
+                    " String!\n}\n\ninterface Node {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "serviceB",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@external\", \"@requires\"])\n\nextend type Product {\n  sku: String! @external\n  price: Int! @requires(fields: \"sku\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@external", "@requires"])\n\nextend type Product {\n '
+                    " sku: String! @external\n  price: Int! @requires(fields:"
+                    ' "sku")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"featuredItem { id\"): Syntax Error: Expected Name, found <EOF>.",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "featuredItem { id"): Syntax Error: Expected'
+                " Name, found <EOF>."
+            ),
         ],
     )
 
@@ -481,11 +821,20 @@ def test_v2_9_key_invalid_fields_unknown_directive() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype User @key(fields: \"id name @lowercase \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id name @lowercase'
+                    ' ") {\n  id: ID!\n  name: String\n}\n\nextend type Query'
+                    " {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [users] On type \"User\", for @key(fields: \"id name @lowercase \"): Unknown directive \"@lowercase\"",
+            (
+                '[KEY_INVALID_FIELDS] [users] On type "User", for @key(fields:'
+                ' "id name @lowercase "): Unknown directive "@lowercase"'
+            ),
         ],
     )
 
@@ -496,11 +845,22 @@ def test_v2_9_key_invalid_fields_unknown_field() raises:
         [
             sg(
                 "serviceA",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Product @key(fields: \"skucha\") {\n  sku: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Product @key(fields: "skucha") {\n '
+                    " sku: String!\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS] [serviceA] On type \"Product\", for @key(fields: \"skucha\"): Cannot query field \"skucha\" on type \"Product\" (the field should either be added to this subgraph or, if it should not be resolved by this subgraph, you need to add it to this subgraph with @external).",
+            (
+                '[KEY_INVALID_FIELDS] [serviceA] On type "Product", for'
+                ' @key(fields: "skucha"): Cannot query field "skucha" on type'
+                ' "Product" (the field should either be added to this subgraph'
+                " or, if it should not be resolved by this subgraph, you need"
+                " to add it to this subgraph with @external)."
+            ),
         ],
     )
 

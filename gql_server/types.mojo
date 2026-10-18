@@ -18,10 +18,14 @@ Port of Apollo Server 5.5.1 `externalTypes/graphql.ts` (`GraphQLRequest`,
 - The request context has no `logger`, `cache` or `schema`; a plugin
   holds what it needs.
 - A response has one result. Incremental delivery is not ported.
+- The request context has three fields for the inline trace plugin:
+  `will_resolve_field`, `field_timings` and `inline_trace`. Upstream
+  keeps that state in the plugin and in the `willResolveField` hook.
 """
 
 from std.memory import ArcPointer
 
+from gql_execution.execute import FieldTiming
 from gql_execution.value import UNDEFINED, Values
 from gql_json.parser import parse as parse_json
 from gql_json.value import NO_NODE as NO_JSON
@@ -32,6 +36,7 @@ from gql_server.cache_policy import CachePolicy
 from gql_server.error_normalize import FormattedError
 from gql_server.errors import ServerError
 from gql_server.http_types import HTTPGraphQLHead, HTTPGraphQLRequest
+from gql_server.trace_tree_builder import TraceTreeBuilder
 
 
 struct GraphQLRequest(Copyable, Movable):
@@ -165,12 +170,15 @@ struct GraphQLResponse(Copyable, Movable):
 @fieldwise_init
 struct GraphQLRequestMetrics(Copyable, ImplicitlyCopyable, Movable):
     """What the pipeline found out about a request: the persisted query
-    parts of upstream `GraphQLRequestMetrics`."""
+    and trace parts of upstream `GraphQLRequestMetrics`."""
 
     var persisted_query_hit: Bool
     """Whether the query text came from the persisted query cache."""
     var persisted_query_register: Bool
     """Whether the request stores its query in the cache."""
+    var capture_traces: Optional[Bool]
+    """`captureTraces`: whether a plugin traces the request; None until
+    a plugin decides."""
 
 
 struct GraphQLRequestContext(Movable):
@@ -203,6 +211,14 @@ struct GraphQLRequestContext(Movable):
     """The cache policy of the response."""
     var request_is_batched: Bool
     """Whether the request is one of a batch."""
+    var will_resolve_field: Bool
+    """Whether a plugin wants the field timings of execution, as an
+    upstream plugin that returns a `willResolveField` hook."""
+    var field_timings: List[FieldTiming]
+    """The field timings of execution, when `will_resolve_field` is set."""
+    var inline_trace: Optional[TraceTreeBuilder]
+    """The trace of the inline trace plugin, when the request asks for
+    one."""
 
     def __init__(
         out self,
@@ -231,9 +247,12 @@ struct GraphQLRequestContext(Movable):
         self.operation = NO_NODE
         self.operation_name = None
         self.errors = List[ServerError]()
-        self.metrics = GraphQLRequestMetrics(False, False)
+        self.metrics = GraphQLRequestMetrics(False, False, None)
         self.overall_cache_policy = CachePolicy()
         self.request_is_batched = request_is_batched
+        self.will_resolve_field = False
+        self.field_timings = List[FieldTiming]()
+        self.inline_trace = None
 
     def take_response(deinit self) -> GraphQLResponse:
         """End the request and return its response.

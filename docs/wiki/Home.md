@@ -23,6 +23,12 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Validation](Validation): the `gql_validation` package, which checks an executable document against a schema.
 - [Client](Client): the `gql_client` package, which is the normalized cache of a GraphQL client.
 - [Composition](Composition): the `gql_composition` package, which validates Apollo Federation subgraphs.
+- [Router](Router): the `gql_router` package, which ports the Hive Router query planner.
+- [Subgraph](Subgraph): the `gql_subgraph` package, which builds an executable Apollo Federation subgraph.
+- [Server](Server): the `gql_server` package, which is the Apollo Server port and its standalone HTTP server.
+- [Mcp](Mcp): the `gql_mcp` package, which is the Model Context Protocol server of Apollo MCP Server.
+- [Codegen](Codegen): the `gql_codegen` package, which writes Mojo models for operations, as the Apollo Kotlin compiler writes Kotlin.
+- [Compatibility](Compatibility): the result of each check of the Apollo Federation subgraph compatibility suite.
 - [Coverage tool](Coverage-tool): what `make coverage` measures, and how.
 
 ## Explanation
@@ -31,4 +37,4 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 
 ## Packages
 
-Today the project has one package, `gql_language`. The other packages are planned. The [README checklist](https://github.com/SethKitchen/MojoGraphQL#features) shows the status of each feature.
+The [README checklist](https://github.com/SethKitchen/MojoGraphQL#features) shows the status of each package.

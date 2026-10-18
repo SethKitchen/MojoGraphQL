@@ -21,15 +21,29 @@ def test_override_label_guild_v2_0_not_available_raise_na_error() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [foo] Unknown argument \"label\" on directive \"@override\".",
+            (
+                '[INVALID_GRAPHQL] [foo] Unknown argument "label" on directive'
+                ' "@override".'
+            ),
         ],
     )
 
@@ -40,15 +54,29 @@ def test_override_label_guild_v2_1_not_available_raise_na_error() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [foo] Unknown argument \"label\" on directive \"@override\".",
+            (
+                '[INVALID_GRAPHQL] [foo] Unknown argument "label" on directive'
+                ' "@override".'
+            ),
         ],
     )
 
@@ -59,15 +87,29 @@ def test_override_label_guild_v2_2_not_available_raise_na_error() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [foo] Unknown argument \"label\" on directive \"@override\".",
+            (
+                '[INVALID_GRAPHQL] [foo] Unknown argument "label" on directive'
+                ' "@override".'
+            ),
         ],
     )
 
@@ -78,15 +120,29 @@ def test_override_label_guild_v2_3_not_available_raise_na_error() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [foo] Unknown argument \"label\" on directive \"@override\".",
+            (
+                '[INVALID_GRAPHQL] [foo] Unknown argument "label" on directive'
+                ' "@override".'
+            ),
         ],
     )
 
@@ -97,15 +153,29 @@ def test_override_label_guild_v2_4_not_available_raise_na_error() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [foo] Unknown argument \"label\" on directive \"@override\".",
+            (
+                '[INVALID_GRAPHQL] [foo] Unknown argument "label" on directive'
+                ' "@override".'
+            ),
         ],
     )
 
@@ -116,15 +186,29 @@ def test_override_label_guild_v2_5_not_available_raise_na_error() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [foo] Unknown argument \"label\" on directive \"@override\".",
+            (
+                '[INVALID_GRAPHQL] [foo] Unknown argument "label" on directive'
+                ' "@override".'
+            ),
         ],
     )
 
@@ -135,15 +219,29 @@ def test_override_label_guild_v2_6_not_available_raise_na_error() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [foo] Unknown argument \"label\" on directive \"@override\".",
+            (
+                '[INVALID_GRAPHQL] [foo] Unknown argument "label" on directive'
+                ' "@override".'
+            ),
         ],
     )
 
@@ -154,51 +252,95 @@ def test_override_label_guild_v2_7_available_allow_to_use() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\", \"@shareable\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\") @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override", "@shareable"])\n\ntype Query {\n '
+                    ' foo: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    ' ID\n  name: String @override(from: "bar", label:'
+                    ' "public") @shareable\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  bar:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " name: String @shareable\n}"
+                ),
             ),
             sg(
                 "baz",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  name: String @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\", \"@shareable\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\") @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override", "@shareable"])\n\ntype Query {\n '
+                    ' foo: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    ' ID\n  name: String @override(from: "bar", label:'
+                    ' "public") @shareable\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  bar:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " name: String @shareable\n}"
+                ),
             ),
             sg(
                 "baz",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -208,15 +350,34 @@ def test_override_label_guild_v2_7_label_percent_11_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-11)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-11)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-11)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-11)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -227,15 +388,34 @@ def test_override_label_guild_v2_7_label_percent_1_1_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-1.1)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-1.1)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-1.1)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-1.1)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -246,15 +426,34 @@ def test_override_label_guild_v2_7_label_percent_1_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-1)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-1)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-1)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-1)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -265,15 +464,34 @@ def test_override_label_guild_v2_7_label_percent_0_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-0)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-0)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-0)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-0)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -284,15 +502,34 @@ def test_override_label_guild_v2_7_label_percent_0_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(+0)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(+0)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(+0)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(+0)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -303,15 +540,34 @@ def test_override_label_guild_v2_7_label_percent_0_00_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(+0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(+0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(+0.00)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(+0.00)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -322,15 +578,34 @@ def test_override_label_guild_v2_7_label_percent_0_00_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-0.00)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-0.00)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -341,15 +616,34 @@ def test_override_label_guild_v2_7_label_percent_1_123456789_should_fail() raise
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.123456789)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.123456789)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(1.123456789)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(1.123456789)" on field "User.name" on subgraph'
+                ' "foo": labels must start with a letter and after that may'
+                " contain alphanumerics, underscores, minuses, colons, periods,"
+                " or slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -360,15 +654,34 @@ def test_override_label_guild_v2_7_label_percent_101_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(101)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(101)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(101)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(101)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -379,15 +692,33 @@ def test_override_label_guild_v2_7_label_0foo_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"0foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "0foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"0foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "0foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -398,15 +729,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"_foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "_foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"_foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "_foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -417,15 +766,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"-foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "-foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"-foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "-foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -436,15 +803,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_3() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \":foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: ":foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \":foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label ":foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -455,15 +840,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_4() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \".foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: ".foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \".foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label ".foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -474,15 +877,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_5() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"/foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "/foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"/foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "/foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -493,15 +914,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_6() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"!foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "!foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"!foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "!foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -512,15 +951,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_7() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo%\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo%")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo%\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo%"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -531,15 +988,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_8() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo(\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo(")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo(\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo("'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -550,15 +1025,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_9() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo)"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -569,15 +1062,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_10() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo[\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo[")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo[\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo["'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -588,15 +1099,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_11() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo]\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo]")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo]\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo]"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -607,15 +1136,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_12() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo{\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo{")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo{\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo{"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -626,15 +1173,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_13() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo}\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo}")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo}\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo}"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -645,15 +1210,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_14() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo<\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo<")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo<\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo<"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -664,15 +1247,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_15() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo>\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo>")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo>\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo>"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -683,15 +1284,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_16() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo=\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo=")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo=\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo="'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -702,15 +1321,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_17() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo?\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo?")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo?\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo?"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -721,15 +1358,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_18() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo!\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo!")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo!\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo!"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -740,15 +1395,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_19() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo@\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo@")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo@\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo@"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -759,15 +1432,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_20() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo#\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo#")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo#\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo#"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -778,15 +1469,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_21() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo$\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo$")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo$\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo$"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -797,15 +1506,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_22() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo^\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo^")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo^\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo^"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -816,15 +1543,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_23() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo&\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo&")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo&\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo&"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -835,15 +1580,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_24() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo*\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo*")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo*\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo*"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -854,15 +1617,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_25() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo~\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo~")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo~\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo~"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -873,15 +1654,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_26() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo`\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo`")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo`\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo`"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -892,15 +1691,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_27() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo|\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo|")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo|\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo|"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -911,15 +1728,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_28() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo;\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo;")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo;\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo;"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -930,15 +1765,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_29() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo,\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo,")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo,\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo,"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -949,15 +1802,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_30() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo \")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo ")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo \" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo "'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -968,15 +1839,33 @@ def test_override_label_guild_v2_7_label_foo_should_fail_31() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \" foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: " foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \" foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label " foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -987,15 +1876,33 @@ def test_override_label_guild_v2_7_label_0_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \" 0\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: " 0")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \" 0\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label " 0" on'
+                ' field "User.name" on subgraph "foo": labels must start with a'
+                " letter and after that may contain alphanumerics, underscores,"
+                " minuses, colons, periods, or slashes. Alternatively, labels"
+                ' may be of the form "percent(x)" where x is a float between'
+                " 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1006,15 +1913,26 @@ def test_override_label_guild_v2_7_label_percent_0_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1024,15 +1942,26 @@ def test_override_label_guild_v2_7_label_percent_1_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1042,15 +1971,26 @@ def test_override_label_guild_v2_7_label_percent_1_12345678_should_pass() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.12345678)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.12345678)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1060,15 +2000,26 @@ def test_override_label_guild_v2_7_label_percent_100_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(100.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(100.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1078,15 +2029,25 @@ def test_override_label_guild_v2_7_label_foo_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1096,15 +2057,25 @@ def test_override_label_guild_v2_7_label_foo_bar_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo_bar\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo_bar")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1114,15 +2085,25 @@ def test_override_label_guild_v2_7_label_percent1_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent1\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "percent1")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1132,15 +2113,25 @@ def test_override_label_guild_v2_7_label_f0_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f0\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f0")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1150,15 +2141,25 @@ def test_override_label_guild_v2_7_label_f_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f_\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f_")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1168,15 +2169,25 @@ def test_override_label_guild_v2_7_label_f_should_pass_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f-\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f-")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1186,15 +2197,25 @@ def test_override_label_guild_v2_7_label_f_should_pass_3() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f:\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f:")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1204,15 +2225,25 @@ def test_override_label_guild_v2_7_label_f_should_pass_4() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f.\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f.")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1222,15 +2253,25 @@ def test_override_label_guild_v2_7_label_f_should_pass_5() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f/\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f/")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1240,29 +2281,58 @@ def test_override_label_guild_v2_7_should_detect_unsatisfiable_paths() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  user(id: ID!): User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group @override(from: \"b\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID!\n  level: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  user(id: ID!):'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    ' group: Group @override(from: "b")\n}\n\ntype Group'
+                    ' @key(fields: "id") {\n  id: ID!\n  level: Int\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@requires\", \"@external\", \"@override\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group!\n  groupLevel: ID! @requires(fields: \"group { level }\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID\n  level: Int @external\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@requires", "@external", "@override"])\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n  group: Group!\n '
+                    ' groupLevel: ID! @requires(fields: "group { level'
+                    ' }")\n}\n\ntype Group @key(fields: "id") {\n  id: ID\n '
+                    " level: Int @external\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  user(id: ID!): User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group @override(from: \"b\", label: \"public\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID!\n  level: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  user(id: ID!):'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    ' group: Group @override(from: "b", label:'
+                    ' "public")\n}\n\ntype Group @key(fields: "id") {\n  id:'
+                    " ID!\n  level: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@requires\", \"@external\", \"@override\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group!\n  groupLevel: ID! @requires(fields: \"group { level }\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID\n  level: Int @external\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@requires", "@external", "@override"])\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n  group: Group!\n '
+                    ' groupLevel: ID! @requires(fields: "group { level'
+                    ' }")\n}\n\ntype Group @key(fields: "id") {\n  id: ID\n '
+                    " level: Int @external\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1272,51 +2342,95 @@ def test_override_label_guild_v2_8_available_allow_to_use() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\", \"@shareable\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\") @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override", "@shareable"])\n\ntype Query {\n '
+                    ' foo: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    ' ID\n  name: String @override(from: "bar", label:'
+                    ' "public") @shareable\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  bar:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " name: String @shareable\n}"
+                ),
             ),
             sg(
                 "baz",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  name: String @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\", \"@shareable\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\") @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override", "@shareable"])\n\ntype Query {\n '
+                    ' foo: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    ' ID\n  name: String @override(from: "bar", label:'
+                    ' "public") @shareable\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  bar:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " name: String @shareable\n}"
+                ),
             ),
             sg(
                 "baz",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1326,15 +2440,34 @@ def test_override_label_guild_v2_8_label_percent_11_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-11)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-11)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-11)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-11)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1345,15 +2478,34 @@ def test_override_label_guild_v2_8_label_percent_1_1_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-1.1)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-1.1)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-1.1)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-1.1)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1364,15 +2516,34 @@ def test_override_label_guild_v2_8_label_percent_1_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-1)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-1)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-1)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-1)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1383,15 +2554,34 @@ def test_override_label_guild_v2_8_label_percent_0_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-0)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-0)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-0)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-0)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1402,15 +2592,34 @@ def test_override_label_guild_v2_8_label_percent_0_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(+0)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(+0)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(+0)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(+0)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1421,15 +2630,34 @@ def test_override_label_guild_v2_8_label_percent_0_00_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(+0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(+0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(+0.00)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(+0.00)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1440,15 +2668,34 @@ def test_override_label_guild_v2_8_label_percent_0_00_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-0.00)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-0.00)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1459,15 +2706,34 @@ def test_override_label_guild_v2_8_label_percent_1_123456789_should_fail() raise
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.123456789)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.123456789)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(1.123456789)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(1.123456789)" on field "User.name" on subgraph'
+                ' "foo": labels must start with a letter and after that may'
+                " contain alphanumerics, underscores, minuses, colons, periods,"
+                " or slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1478,15 +2744,34 @@ def test_override_label_guild_v2_8_label_percent_101_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(101)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(101)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(101)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(101)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -1497,15 +2782,33 @@ def test_override_label_guild_v2_8_label_0foo_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"0foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "0foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"0foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "0foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1516,15 +2819,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"_foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "_foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"_foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "_foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1535,15 +2856,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"-foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "-foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"-foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "-foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1554,15 +2893,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_3() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \":foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: ":foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \":foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label ":foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1573,15 +2930,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_4() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \".foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: ".foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \".foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label ".foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1592,15 +2967,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_5() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"/foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "/foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"/foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "/foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1611,15 +3004,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_6() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"!foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "!foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"!foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "!foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1630,15 +3041,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_7() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo%\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo%")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo%\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo%"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1649,15 +3078,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_8() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo(\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo(")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo(\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo("'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1668,15 +3115,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_9() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo)"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1687,15 +3152,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_10() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo[\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo[")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo[\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo["'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1706,15 +3189,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_11() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo]\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo]")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo]\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo]"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1725,15 +3226,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_12() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo{\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo{")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo{\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo{"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1744,15 +3263,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_13() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo}\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo}")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo}\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo}"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1763,15 +3300,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_14() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo<\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo<")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo<\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo<"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1782,15 +3337,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_15() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo>\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo>")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo>\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo>"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1801,15 +3374,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_16() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo=\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo=")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo=\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo="'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1820,15 +3411,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_17() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo?\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo?")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo?\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo?"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1839,15 +3448,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_18() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo!\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo!")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo!\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo!"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1858,15 +3485,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_19() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo@\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo@")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo@\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo@"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1877,15 +3522,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_20() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo#\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo#")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo#\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo#"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1896,15 +3559,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_21() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo$\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo$")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo$\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo$"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1915,15 +3596,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_22() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo^\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo^")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo^\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo^"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1934,15 +3633,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_23() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo&\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo&")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo&\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo&"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1953,15 +3670,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_24() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo*\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo*")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo*\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo*"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1972,15 +3707,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_25() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo~\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo~")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo~\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo~"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -1991,15 +3744,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_26() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo`\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo`")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo`\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo`"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2010,15 +3781,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_27() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo|\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo|")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo|\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo|"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2029,15 +3818,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_28() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo;\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo;")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo;\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo;"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2048,15 +3855,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_29() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo,\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo,")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo,\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo,"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2067,15 +3892,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_30() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo \")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo ")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo \" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo "'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2086,15 +3929,33 @@ def test_override_label_guild_v2_8_label_foo_should_fail_31() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \" foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: " foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \" foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label " foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2105,15 +3966,33 @@ def test_override_label_guild_v2_8_label_0_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \" 0\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: " 0")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \" 0\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label " 0" on'
+                ' field "User.name" on subgraph "foo": labels must start with a'
+                " letter and after that may contain alphanumerics, underscores,"
+                " minuses, colons, periods, or slashes. Alternatively, labels"
+                ' may be of the form "percent(x)" where x is a float between'
+                " 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2124,15 +4003,26 @@ def test_override_label_guild_v2_8_label_percent_0_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2142,15 +4032,26 @@ def test_override_label_guild_v2_8_label_percent_1_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2160,15 +4061,26 @@ def test_override_label_guild_v2_8_label_percent_1_12345678_should_pass() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.12345678)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.12345678)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2178,15 +4090,26 @@ def test_override_label_guild_v2_8_label_percent_100_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(100.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(100.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2196,15 +4119,25 @@ def test_override_label_guild_v2_8_label_foo_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2214,15 +4147,25 @@ def test_override_label_guild_v2_8_label_foo_bar_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo_bar\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo_bar")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2232,15 +4175,25 @@ def test_override_label_guild_v2_8_label_percent1_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent1\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "percent1")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2250,15 +4203,25 @@ def test_override_label_guild_v2_8_label_f0_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f0\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f0")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2268,15 +4231,25 @@ def test_override_label_guild_v2_8_label_f_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f_\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f_")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2286,15 +4259,25 @@ def test_override_label_guild_v2_8_label_f_should_pass_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f-\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f-")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2304,15 +4287,25 @@ def test_override_label_guild_v2_8_label_f_should_pass_3() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f:\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f:")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2322,15 +4315,25 @@ def test_override_label_guild_v2_8_label_f_should_pass_4() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f.\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f.")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2340,15 +4343,25 @@ def test_override_label_guild_v2_8_label_f_should_pass_5() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f/\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f/")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2358,29 +4371,58 @@ def test_override_label_guild_v2_8_should_detect_unsatisfiable_paths() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  user(id: ID!): User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group @override(from: \"b\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID!\n  level: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  user(id: ID!):'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    ' group: Group @override(from: "b")\n}\n\ntype Group'
+                    ' @key(fields: "id") {\n  id: ID!\n  level: Int\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@requires\", \"@external\", \"@override\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group!\n  groupLevel: ID! @requires(fields: \"group { level }\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID\n  level: Int @external\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@requires", "@external", "@override"])\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n  group: Group!\n '
+                    ' groupLevel: ID! @requires(fields: "group { level'
+                    ' }")\n}\n\ntype Group @key(fields: "id") {\n  id: ID\n '
+                    " level: Int @external\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  user(id: ID!): User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group @override(from: \"b\", label: \"public\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID!\n  level: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  user(id: ID!):'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    ' group: Group @override(from: "b", label:'
+                    ' "public")\n}\n\ntype Group @key(fields: "id") {\n  id:'
+                    " ID!\n  level: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@requires\", \"@external\", \"@override\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group!\n  groupLevel: ID! @requires(fields: \"group { level }\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID\n  level: Int @external\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@requires", "@external", "@override"])\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n  group: Group!\n '
+                    ' groupLevel: ID! @requires(fields: "group { level'
+                    ' }")\n}\n\ntype Group @key(fields: "id") {\n  id: ID\n '
+                    " level: Int @external\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2390,51 +4432,95 @@ def test_override_label_guild_v2_9_available_allow_to_use() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "public")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\", \"@shareable\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\") @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override", "@shareable"])\n\ntype Query {\n '
+                    ' foo: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    ' ID\n  name: String @override(from: "bar", label:'
+                    ' "public") @shareable\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  bar:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " name: String @shareable\n}"
+                ),
             ),
             sg(
                 "baz",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n  name: String @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\", \"@shareable\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"public\") @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override", "@shareable"])\n\ntype Query {\n '
+                    ' foo: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    ' ID\n  name: String @override(from: "bar", label:'
+                    ' "public") @shareable\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype Query {\n  bar:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " name: String @shareable\n}"
+                ),
             ),
             sg(
                 "baz",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@shareable"])\n\ntype User @key(fields: "id")'
+                    " {\n  id: ID\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -2444,15 +4530,34 @@ def test_override_label_guild_v2_9_label_percent_11_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-11)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-11)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-11)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-11)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2463,15 +4568,34 @@ def test_override_label_guild_v2_9_label_percent_1_1_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-1.1)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-1.1)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-1.1)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-1.1)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2482,15 +4606,34 @@ def test_override_label_guild_v2_9_label_percent_1_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-1)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-1)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-1)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-1)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2501,15 +4644,34 @@ def test_override_label_guild_v2_9_label_percent_0_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-0)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-0)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-0)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-0)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2520,15 +4682,34 @@ def test_override_label_guild_v2_9_label_percent_0_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(+0)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(+0)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(+0)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(+0)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2539,15 +4720,34 @@ def test_override_label_guild_v2_9_label_percent_0_00_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(+0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(+0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(+0.00)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(+0.00)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2558,15 +4758,34 @@ def test_override_label_guild_v2_9_label_percent_0_00_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(-0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(-0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(-0.00)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(-0.00)" on field "User.name" on subgraph "foo":'
+                " labels must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2577,15 +4796,34 @@ def test_override_label_guild_v2_9_label_percent_1_123456789_should_fail() raise
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.123456789)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.123456789)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(1.123456789)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(1.123456789)" on field "User.name" on subgraph'
+                ' "foo": labels must start with a letter and after that may'
+                " contain alphanumerics, underscores, minuses, colons, periods,"
+                " or slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2596,15 +4834,34 @@ def test_override_label_guild_v2_9_label_percent_101_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(101)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(101)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"percent(101)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label"
+                ' "percent(101)" on field "User.name" on subgraph "foo": labels'
+                " must start with a letter and after that may contain"
+                " alphanumerics, underscores, minuses, colons, periods, or"
+                " slashes. Alternatively, labels may be of the form"
+                ' "percent(x)" where x is a float between 0-100 inclusive.'
+            ),
         ],
     )
 
@@ -2615,15 +4872,33 @@ def test_override_label_guild_v2_9_label_0foo_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"0foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "0foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"0foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "0foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2634,15 +4909,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"_foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "_foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"_foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "_foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2653,15 +4946,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"-foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "-foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"-foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "-foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2672,15 +4983,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_3() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \":foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: ":foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \":foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label ":foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2691,15 +5020,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_4() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \".foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: ".foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \".foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label ".foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2710,15 +5057,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_5() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"/foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "/foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"/foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "/foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2729,15 +5094,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_6() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"!foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "!foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"!foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "!foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2748,15 +5131,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_7() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo%\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo%")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo%\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo%"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2767,15 +5168,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_8() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo(\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo(")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo(\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo("'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2786,15 +5205,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_9() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo)\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo)"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2805,15 +5242,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_10() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo[\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo[")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo[\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo["'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2824,15 +5279,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_11() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo]\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo]")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo]\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo]"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2843,15 +5316,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_12() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo{\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo{")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo{\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo{"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2862,15 +5353,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_13() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo}\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo}")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo}\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo}"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2881,15 +5390,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_14() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo<\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo<")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo<\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo<"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2900,15 +5427,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_15() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo>\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo>")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo>\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo>"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2919,15 +5464,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_16() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo=\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo=")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo=\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo="'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2938,15 +5501,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_17() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo?\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo?")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo?\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo?"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2957,15 +5538,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_18() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo!\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo!")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo!\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo!"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2976,15 +5575,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_19() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo@\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo@")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo@\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo@"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -2995,15 +5612,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_20() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo#\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo#")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo#\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo#"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3014,15 +5649,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_21() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo$\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo$")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo$\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo$"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3033,15 +5686,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_22() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo^\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo^")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo^\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo^"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3052,15 +5723,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_23() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo&\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo&")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo&\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo&"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3071,15 +5760,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_24() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo*\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo*")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo*\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo*"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3090,15 +5797,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_25() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo~\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo~")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo~\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo~"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3109,15 +5834,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_26() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo`\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo`")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo`\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo`"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3128,15 +5871,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_27() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo|\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo|")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo|\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo|"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3147,15 +5908,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_28() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo;\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo;")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo;\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo;"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3166,15 +5945,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_29() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo,\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo,")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo,\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo,"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3185,15 +5982,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_30() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo \")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo ")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \"foo \" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label "foo "'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3204,15 +6019,33 @@ def test_override_label_guild_v2_9_label_foo_should_fail_31() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \" foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: " foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \" foo\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label " foo"'
+                ' on field "User.name" on subgraph "foo": labels must start'
+                " with a letter and after that may contain alphanumerics,"
+                " underscores, minuses, colons, periods, or slashes."
+                ' Alternatively, labels may be of the form "percent(x)" where x'
+                " is a float between 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3223,15 +6056,33 @@ def test_override_label_guild_v2_9_label_0_should_fail() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \" 0\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: " 0")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label \" 0\" on field \"User.name\" on subgraph \"foo\": labels must start with a letter and after that may contain alphanumerics, underscores, minuses, colons, periods, or slashes. Alternatively, labels may be of the form \"percent(x)\" where x is a float between 0-100 inclusive.",
+            (
+                '[OVERRIDE_LABEL_INVALID] [foo] Invalid @override label " 0" on'
+                ' field "User.name" on subgraph "foo": labels must start with a'
+                " letter and after that may contain alphanumerics, underscores,"
+                " minuses, colons, periods, or slashes. Alternatively, labels"
+                ' may be of the form "percent(x)" where x is a float between'
+                " 0-100 inclusive."
+            ),
         ],
     )
 
@@ -3242,15 +6093,26 @@ def test_override_label_guild_v2_9_label_percent_0_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(0.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(0.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3260,15 +6122,26 @@ def test_override_label_guild_v2_9_label_percent_1_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3278,15 +6151,26 @@ def test_override_label_guild_v2_9_label_percent_1_12345678_should_pass() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(1.12345678)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(1.12345678)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3296,15 +6180,26 @@ def test_override_label_guild_v2_9_label_percent_100_00_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent(100.00)\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label:'
+                    ' "percent(100.00)")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3314,15 +6209,25 @@ def test_override_label_guild_v2_9_label_foo_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3332,15 +6237,25 @@ def test_override_label_guild_v2_9_label_foo_bar_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"foo_bar\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "foo_bar")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3350,15 +6265,25 @@ def test_override_label_guild_v2_9_label_percent1_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"percent1\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "percent1")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3368,15 +6293,25 @@ def test_override_label_guild_v2_9_label_f0_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f0\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f0")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3386,15 +6321,25 @@ def test_override_label_guild_v2_9_label_f_should_pass() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f_\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f_")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3404,15 +6349,25 @@ def test_override_label_guild_v2_9_label_f_should_pass_2() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f-\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f-")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3422,15 +6377,25 @@ def test_override_label_guild_v2_9_label_f_should_pass_3() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f:\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f:")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3440,15 +6405,25 @@ def test_override_label_guild_v2_9_label_f_should_pass_4() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f.\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f.")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3458,15 +6433,25 @@ def test_override_label_guild_v2_9_label_f_should_pass_5() raises:
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  foo: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String @override(from: \"bar\", label: \"f/\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  foo:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    ' name: String @override(from: "bar", label: "f/")\n}'
+                ),
             ),
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  bar: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  bar: User\n}\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -3476,28 +6461,114 @@ def test_override_label_guild_v2_9_should_detect_unsatisfiable_paths() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  user(id: ID!): User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group @override(from: \"b\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID!\n  level: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  user(id: ID!):'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    ' group: Group @override(from: "b")\n}\n\ntype Group'
+                    ' @key(fields: "id") {\n  id: ID!\n  level: Int\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@requires\", \"@external\", \"@override\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group!\n  groupLevel: ID! @requires(fields: \"group { level }\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID\n  level: Int @external\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@requires", "@external", "@override"])\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n  group: Group!\n '
+                    ' groupLevel: ID! @requires(fields: "group { level'
+                    ' }")\n}\n\ntype Group @key(fields: "id") {\n  id: ID\n '
+                    " level: Int @external\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  user(id: ID!): User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group @override(from: \"b\", label: \"public\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID!\n  level: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  user(id: ID!):'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    ' group: Group @override(from: "b", label:'
+                    ' "public")\n}\n\ntype Group @key(fields: "id") {\n  id:'
+                    " ID!\n  level: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@requires\", \"@external\", \"@override\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  group: Group!\n  groupLevel: ID! @requires(fields: \"group { level }\")\n}\n\ntype Group @key(fields: \"id\") {\n  id: ID\n  level: Int @external\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@requires", "@external", "@override"])\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n  group: Group!\n '
+                    ' groupLevel: ID! @requires(fields: "group { level'
+                    ' }")\n}\n\ntype Group @key(fields: "id") {\n  id: ID\n '
+                    " level: Int @external\n}"
+                ),
+            ),
+        ],
+        [],
+    )
+
+
+comptime _V27 = (
+    "extend schema @link(url:"
+    ' "https://specs.apollo.dev/federation/v2.7", import: ["@key",'
+    ' "@override", "@requires", "@external", "@shareable"])\n\n'
+)
+
+
+def test_label_from_unknown_subgraph() raises:
+    # The source subgraph does not exist, so the rule has nothing to check.
+    check(
+        [
+            sg(
+                "a",
+                String(_V27)
+                + 'type Query {\n  t: T\n}\n\ntype T @key(fields: "id") {\n'
+                + '  id: ID!\n  f: String @override(from: "nope", label:'
+                + ' "percent(50)")\n}',
+            ),
+        ],
+        [],
+    )
+
+
+def test_label_from_subgraph_without_the_field() raises:
+    # Subgraph "b" has the type but not the field.
+    check(
+        [
+            sg(
+                "a",
+                String(_V27)
+                + 'type Query {\n  t: T\n}\n\ntype T @key(fields: "id") {\n'
+                + '  id: ID!\n  f: String @override(from: "b", label:'
+                + ' "percent(50)")\n}',
+            ),
+            sg(
+                "b",
+                String(_V27)
+                + 'type T @key(fields: "id") {\n  id: ID!\n  g: String\n}',
+            ),
+            sg(
+                "c",
+                String(_V27)
+                + 'type T @key(fields: "id") {\n  id: ID!\n'
+                + "  f: String @shareable\n}",
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "T.f" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "a" and "c" and defined as non-shareable in'
+                ' subgraph "a"'
+            ),
         ],
     )
 

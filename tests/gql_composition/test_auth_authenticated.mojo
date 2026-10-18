@@ -21,11 +21,22 @@ def test_authenticated_forbidden_on_interface_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ninterface Node @authenticated {\n  id: ID!\n}\n\ntype User implements Node @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  node(id: ID!): Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ninterface Node'
+                    " @authenticated {\n  id: ID!\n}\n\ntype User implements"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}\n\ntype Query {\n'
+                    "  node(id: ID!): Node\n}"
+                ),
             ),
         ],
         [
-            "[AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE] [a] Invalid use of @authenticated on interface \"Node\": @authenticated cannot be applied on interfaces, interface fields and interface objects",
+            (
+                "[AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE] [a] Invalid use of"
+                ' @authenticated on interface "Node": @authenticated cannot be'
+                " applied on interfaces, interface fields and interface objects"
+            ),
         ],
     )
 
@@ -36,11 +47,22 @@ def test_authenticated_forbidden_on_interface_field() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ninterface Node {\n  id: ID! @authenticated\n}\n\ntype User implements Node @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  node(id: ID!): Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ninterface Node {\n  id:'
+                    " ID! @authenticated\n}\n\ntype User implements Node"
+                    ' @key(fields: "id") {\n  id: ID!\n}\n\ntype Query {\n '
+                    " node(id: ID!): Node\n}"
+                ),
             ),
         ],
         [
-            "[AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE] [a] Invalid use of @authenticated on field \"Node.id\": @authenticated cannot be applied on interfaces, interface fields and interface objects",
+            (
+                "[AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE] [a] Invalid use of"
+                ' @authenticated on field "Node.id": @authenticated cannot be'
+                " applied on interfaces, interface fields and interface objects"
+            ),
         ],
     )
 
@@ -51,15 +73,33 @@ def test_authenticated_forbidden_on_interfaceobject() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\", \"@interfaceObject\"])\n\ntype User @key(fields: \"id\") @interfaceObject @authenticated {\n  id: ID!\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key", "@interfaceObject"])\n\ntype'
+                    ' User @key(fields: "id") @interfaceObject @authenticated'
+                    " {\n  id: ID!\n  name: String!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Authenticated implements User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  User(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ninterface User'
+                    ' @key(fields: "id") {\n  id: ID!\n}\n\ntype Authenticated'
+                    ' implements User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  User(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE] [a] Invalid use of @authenticated on interface object \"User\": @authenticated cannot be applied on interfaces, interface fields and interface objects",
+            (
+                "[AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE] [a] Invalid use of"
+                ' @authenticated on interface object "User": @authenticated'
+                " cannot be applied on interfaces, interface fields and"
+                " interface objects"
+            ),
         ],
     )
 
@@ -70,15 +110,30 @@ def test_authenticated_allowed_on_interfaceobject_field() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype User @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  name: String @authenticated @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key", "@interfaceObject",'
+                    ' "@shareable"])\n\ntype User @key(fields: "id")'
+                    " @interfaceObject {\n  id: ID!\n  name: String"
+                    " @authenticated @shareable\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\", \"@shareable\"])\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Authenticated implements User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Temorary implements User @key(fields: \"id\") {\n  id: ID!\n  name: String @authenticated @shareable\n}\n\ntype Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key", "@shareable"])\n\ninterface'
+                    ' User @key(fields: "id") {\n  id: ID!\n}\n\ntype'
+                    ' Authenticated implements User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Temorary implements User @key(fields:"
+                    ' "id") {\n  id: ID!\n  name: String @authenticated'
+                    " @shareable\n}\n\ntype Query {\n  user(id: ID!): User\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -88,19 +143,37 @@ def test_authenticated_allowed_on_interfaceobject_field_that_belongs_to_interfac
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\", \"@interfaceObject\"])\n\ntype User @key(fields: \"id\") @interfaceObject {\n  id: ID! @authenticated\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key", "@interfaceObject"])\n\ntype'
+                    ' User @key(fields: "id") @interfaceObject {\n  id: ID!'
+                    " @authenticated\n  name: String\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Authenticated implements User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ninterface User'
+                    ' @key(fields: "id") {\n  id: ID!\n}\n\ntype Authenticated'
+                    ' implements User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  user(id: ID!): User\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\", \"@interfaceObject\"])\n\ntype User @key(fields: \"id\") @interfaceObject {\n  id: ID! @authenticated\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key", "@interfaceObject"])\n\ntype'
+                    ' User @key(fields: "id") @interfaceObject {\n  id: ID!'
+                    " @authenticated\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -110,11 +183,20 @@ def test_authenticated_forbidden_on_input_object_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ninput UserInput @authenticated {\n  id: ID!\n}\n\ntype Query {\n  user(input: UserInput): String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ninput UserInput'
+                    " @authenticated {\n  id: ID!\n}\n\ntype Query {\n "
+                    " user(input: UserInput): String\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Directive \"@authenticated\" may not be used on INPUT_OBJECT.",
+            (
+                '[INVALID_GRAPHQL] [a] Directive "@authenticated" may not be'
+                " used on INPUT_OBJECT."
+            ),
         ],
     )
 
@@ -125,11 +207,21 @@ def test_authenticated_forbidden_on_union_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\nunion Result @authenticated = User | Error\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Error {\n  message: String\n}\n\ntype Query {\n  result: Result\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\nunion Result'
+                    " @authenticated = User | Error\n\ntype User @key(fields:"
+                    ' "id") {\n  id: ID!\n}\n\ntype Error {\n  message:'
+                    " String\n}\n\ntype Query {\n  result: Result\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Directive \"@authenticated\" may not be used on UNION.",
+            (
+                '[INVALID_GRAPHQL] [a] Directive "@authenticated" may not be'
+                " used on UNION."
+            ),
         ],
     )
 
@@ -140,11 +232,15 @@ def test_authenticated_allowed_on_scalar() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\"])\n\nscalar JSON @authenticated\n\ntype Query {\n  json: JSON\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated"])\n\nscalar JSON @authenticated\n\ntype'
+                    " Query {\n  json: JSON\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -154,11 +250,15 @@ def test_authenticated_allowed_on_enum() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\"])\n\nenum Role @authenticated {\n  ADMIN\n}\n\ntype Query {\n  role: Role\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated"])\n\nenum Role @authenticated {\n '
+                    " ADMIN\n}\n\ntype Query {\n  role: Role\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -168,11 +268,18 @@ def test_authenticated_passed_from_object_types_implementing_the_interface_to_in
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ninterface Node {\n  id: ID!\n}\n\ntype User implements Node @key(fields: \"id\") @authenticated {\n  id: ID!\n}\n\ntype Post implements Node @key(fields: \"id\") @authenticated {\n  id: ID!\n}\n\ntype Query {\n  node: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ninterface Node {\n  id:'
+                    ' ID!\n}\n\ntype User implements Node @key(fields: "id")'
+                    " @authenticated {\n  id: ID!\n}\n\ntype Post implements"
+                    ' Node @key(fields: "id") @authenticated {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  node: Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -182,11 +289,19 @@ def test_authenticated_passed_from_object_fields_implementing_the_interface_to_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ninterface Node {\n  id: ID!\n  name: String\n}\n\ntype User implements Node @key(fields: \"id\") @authenticated {\n  id: ID!\n  name: String @authenticated\n}\n\ntype Post implements Node @key(fields: \"id\") {\n  id: ID!\n  name: String @authenticated\n}\n\ntype Query {\n  node: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ninterface Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ntype User implements Node"
+                    ' @key(fields: "id") @authenticated {\n  id: ID!\n  name:'
+                    " String @authenticated\n}\n\ntype Post implements Node"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String'
+                    " @authenticated\n}\n\ntype Query {\n  node: Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -196,15 +311,25 @@ def test_authenticated_many_object_type_instances_of_the_same_name_across_subgra
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype User @key(fields: \"id\") @authenticated {\n  id: ID!\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype User @key(fields:'
+                    ' "id") @authenticated {\n  id: ID!\n}\n\ntype Query {\n '
+                    " user: User\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype User @key(fields: \"id\") @authenticated {\n  id: ID!\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype User @key(fields:'
+                    ' "id") @authenticated {\n  id: ID!\n  name: String\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -214,15 +339,27 @@ def test_authenticated_many_object_fields_instances_of_the_same_name_across_subg
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String @authenticated @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key", "@shareable"])\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String'
+                    " @authenticated @shareable\n}\n\ntype Query {\n  user:"
+                    " User\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\", \"@shareable\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String @authenticated @shareable\n  age: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key", "@shareable"])\n\ntype User'
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String'
+                    " @authenticated @shareable\n  age: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -232,15 +369,25 @@ def test_authenticated_deduplicated_and_dropped_redundant_scopes() raises:
         [
             sg(
                 "accounts",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype User @key(fields: \"id\") @authenticated {\n  id: ID!\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype User @key(fields:'
+                    ' "id") @authenticated {\n  id: ID!\n}\n\ntype Query {\n '
+                    " user: User\n}"
+                ),
             ),
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype User @key(fields: \"id\") @authenticated {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype User @key(fields:'
+                    ' "id") @authenticated {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -250,14 +397,82 @@ def test_authenticated_requires_missing_access_to_referenced_interface_field() r
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@external\", \"@requires\"])\n\ntype Query {\n  user: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  comment: Node @external\n  hasComment: Boolean @requires(fields: \"comment { id }\")\n}\n\ninterface Node {\n  id: ID!\n}\n\ntype Comment implements Node @external {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@external", "@requires"])\n\ntype Query {\n '
+                    ' user: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID\n  comment: Node @external\n  hasComment: Boolean"
+                    ' @requires(fields: "comment { id }")\n}\n\ninterface Node'
+                    " {\n  id: ID!\n}\n\ntype Comment implements Node @external"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comment: Node\n}\n\ninterface Node {\n  id: ID!\n}\n\ntype Comment implements Node {\n  id: ID! @authenticated\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype User @key(fields:'
+                    ' "id") {\n  id: ID!\n  comment: Node\n}\n\ninterface Node'
+                    " {\n  id: ID!\n}\n\ntype Comment implements Node {\n  id:"
+                    " ID! @authenticated\n}"
+                ),
             ),
         ],
         [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "User.hasComment" does not specify necessary @authenticated,'
+                " @requiresScopes and/or @policy auth requirements to access"
+                ' the transitive field "Node.id" data from @requires selection'
+                " set."
+            ),
+        ],
+    )
+
+
+def test_authenticated_requires_untyped_inline_fragment() raises:
+    # Upstream `composeServices` throws in its satisfiability rule first
+    # ("Inline fragment without type condition is not supported."), and
+    # `validate_subgraphs` does not run that rule. `AuthOnRequiresRule` reads
+    # an inline fragment without a type condition as the current type, so
+    # the result is that of `comment { id }` above.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@external", "@requires"])\n\ntype Query {\n '
+                    ' user: User\n}\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID\n  comment: Node @external\n  hasComment: Boolean"
+                    ' @requires(fields: "comment { ... { id } }")\n}\n\n'
+                    "interface Node {\n  id: ID!\n}\n\ntype Comment implements"
+                    " Node @external {\n  id: ID!\n}"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype User @key(fields:'
+                    ' "id") {\n  id: ID!\n  comment: Node\n}\n\ninterface Node'
+                    " {\n  id: ID!\n}\n\ntype Comment implements Node {\n  id:"
+                    " ID! @authenticated\n}"
+                ),
+            ),
+        ],
+        [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "User.hasComment" does not specify necessary @authenticated,'
+                " @requiresScopes and/or @policy auth requirements to access"
+                ' the transitive field "Node.id" data from @requires selection'
+                " set."
+            ),
         ],
     )
 
@@ -268,15 +483,32 @@ def test_authenticated_requires_has_access_to_referenced_interface_field() raise
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@external\", \"@requires\", \"@authenticated\"])\n\ntype Query {\n  user: User\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  comment: Node @external\n  hasComment: Boolean @requires(fields: \"comment { id }\") @authenticated\n}\n\ninterface Node {\n  id: ID!\n}\n\ntype Comment implements Node @external {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@external", "@requires",'
+                    ' "@authenticated"])\n\ntype Query {\n  user:'
+                    ' User\n}\n\ntype User @key(fields: "id") {\n  id: ID\n '
+                    " comment: Node @external\n  hasComment: Boolean"
+                    ' @requires(fields: "comment { id }")'
+                    " @authenticated\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}\n\ntype Comment implements Node @external {\n  id:"
+                    " ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  comment: Node\n}\n\ninterface Node {\n  id: ID!\n}\n\ntype Comment implements Node {\n  id: ID! @authenticated\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype User @key(fields:'
+                    ' "id") {\n  id: ID!\n  comment: Node\n}\n\ninterface Node'
+                    " {\n  id: ID!\n}\n\ntype Comment implements Node {\n  id:"
+                    " ID! @authenticated\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -286,14 +518,51 @@ def test_authenticated_requires_missing_access_to_referenced_interface_type() ra
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@external\", \"@requires\"])\n\ntype Query {\n  account: Account\n}\n\ntype Account @key(fields: \"id\") {\n  id: ID\n  details: AccountDetail @external\n  detailsSummary: String @requires(fields: \"details { ... on ScopedAccountDetail { sensitiveLevel } ... on PublicAccountDetail { publicNote } ... on AdminAccountDetail { adminLevel } }\")\n}\n\ninterface AccountDetail {\n  summary: String\n}\n\ntype ScopedAccountDetail implements AccountDetail @external {\n  summary: String\n  sensitiveLevel: Int\n}\n\ntype PublicAccountDetail implements AccountDetail @external {\n  summary: String\n  publicNote: String\n}\n\ntype AdminAccountDetail implements AccountDetail @external {\n  summary: String\n  adminLevel: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@external", "@requires"])\n\ntype Query {\n '
+                    ' account: Account\n}\n\ntype Account @key(fields: "id")'
+                    " {\n  id: ID\n  details: AccountDetail @external\n "
+                    ' detailsSummary: String @requires(fields: "details { ...'
+                    " on ScopedAccountDetail { sensitiveLevel } ... on"
+                    " PublicAccountDetail { publicNote } ... on"
+                    ' AdminAccountDetail { adminLevel } }")\n}\n\ninterface'
+                    " AccountDetail {\n  summary: String\n}\n\ntype"
+                    " ScopedAccountDetail implements AccountDetail @external"
+                    " {\n  summary: String\n  sensitiveLevel: Int\n}\n\ntype"
+                    " PublicAccountDetail implements AccountDetail @external"
+                    " {\n  summary: String\n  publicNote: String\n}\n\ntype"
+                    " AdminAccountDetail implements AccountDetail @external {\n"
+                    "  summary: String\n  adminLevel: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype Account @key(fields: \"id\") {\n  id: ID\n  details: AccountDetail\n}\n\ninterface AccountDetail {\n  summary: String\n}\n\ntype ScopedAccountDetail implements AccountDetail @authenticated {\n  summary: String\n  sensitiveLevel: Int\n}\n\ntype PublicAccountDetail implements AccountDetail {\n  summary: String\n  publicNote: String\n}\n\ntype AdminAccountDetail implements AccountDetail @authenticated {\n  summary: String\n  adminLevel: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype Account @key(fields:'
+                    ' "id") {\n  id: ID\n  details:'
+                    " AccountDetail\n}\n\ninterface AccountDetail {\n  summary:"
+                    " String\n}\n\ntype ScopedAccountDetail implements"
+                    " AccountDetail @authenticated {\n  summary: String\n "
+                    " sensitiveLevel: Int\n}\n\ntype PublicAccountDetail"
+                    " implements AccountDetail {\n  summary: String\n "
+                    " publicNote: String\n}\n\ntype AdminAccountDetail"
+                    " implements AccountDetail @authenticated {\n  summary:"
+                    " String\n  adminLevel: Int\n}"
+                ),
             ),
         ],
         [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "Account.detailsSummary" does not specify necessary'
+                " @authenticated, @requiresScopes and/or @policy auth"
+                ' requirements to access the transitive field "Account.details"'
+                " data from @requires selection set."
+            ),
         ],
     )
 
@@ -304,15 +573,47 @@ def test_authenticated_requires_has_access_to_referenced_interface_type_auth_on_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@external\", \"@requires\", \"@authenticated\"])\n\ntype Query {\n  account: Account\n}\n\ntype Account @key(fields: \"id\") @authenticated {\n  id: ID\n  details: AccountDetail @external\n  detailsSummary: String @requires(fields: \"details { summary ... on ScopedAccountDetail { sensitiveLevel } ... on PublicAccountDetail { publicNote } ... on AdminAccountDetail { adminLevel } }\")\n}\n\ninterface AccountDetail {\n  summary: String\n}\n\ntype ScopedAccountDetail implements AccountDetail @external {\n  summary: String\n  sensitiveLevel: Int\n}\n\ntype PublicAccountDetail implements AccountDetail @external {\n  summary: String\n  publicNote: String\n}\n\ntype AdminAccountDetail implements AccountDetail @external {\n  summary: String\n  adminLevel: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@external", "@requires",'
+                    ' "@authenticated"])\n\ntype Query {\n  account:'
+                    ' Account\n}\n\ntype Account @key(fields: "id")'
+                    " @authenticated {\n  id: ID\n  details: AccountDetail"
+                    " @external\n  detailsSummary: String @requires(fields:"
+                    ' "details { summary ... on ScopedAccountDetail {'
+                    " sensitiveLevel } ... on PublicAccountDetail { publicNote"
+                    " } ... on AdminAccountDetail { adminLevel }"
+                    ' }")\n}\n\ninterface AccountDetail {\n  summary:'
+                    " String\n}\n\ntype ScopedAccountDetail implements"
+                    " AccountDetail @external {\n  summary: String\n "
+                    " sensitiveLevel: Int\n}\n\ntype PublicAccountDetail"
+                    " implements AccountDetail @external {\n  summary: String\n"
+                    "  publicNote: String\n}\n\ntype AdminAccountDetail"
+                    " implements AccountDetail @external {\n  summary: String\n"
+                    "  adminLevel: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype Account @key(fields: \"id\") {\n  id: ID\n  details: AccountDetail @authenticated\n}\n\ninterface AccountDetail {\n  summary: String\n}\n\ntype ScopedAccountDetail implements AccountDetail {\n  summary: String @authenticated\n  sensitiveLevel: Int @authenticated\n}\n\ntype PublicAccountDetail implements AccountDetail {\n  summary: String\n  publicNote: String @authenticated\n}\n\ntype AdminAccountDetail implements AccountDetail {\n  summary: String @authenticated\n  adminLevel: Int @authenticated\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype Account @key(fields:'
+                    ' "id") {\n  id: ID\n  details: AccountDetail'
+                    " @authenticated\n}\n\ninterface AccountDetail {\n "
+                    " summary: String\n}\n\ntype ScopedAccountDetail implements"
+                    " AccountDetail {\n  summary: String @authenticated\n "
+                    " sensitiveLevel: Int @authenticated\n}\n\ntype"
+                    " PublicAccountDetail implements AccountDetail {\n "
+                    " summary: String\n  publicNote: String"
+                    " @authenticated\n}\n\ntype AdminAccountDetail implements"
+                    " AccountDetail {\n  summary: String @authenticated\n "
+                    " adminLevel: Int @authenticated\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -322,14 +623,355 @@ def test_authenticated_requires_has_access_to_referenced_interface_type() raises
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@external\", \"@requires\", \"@authenticated\"])\n\ntype Query {\n  account: Account\n}\n\ntype Account @key(fields: \"id\") {\n  id: ID\n  details: AccountDetail @external\n  detailsSummary: String @requires(fields: \"details { summary ... on ScopedAccountDetail { sensitiveLevel } ... on PublicAccountDetail { publicNote } ... on AdminAccountDetail { adminLevel } }\") @authenticated\n}\n\ninterface AccountDetail {\n  summary: String\n}\n\ntype ScopedAccountDetail implements AccountDetail @external {\n  summary: String\n  sensitiveLevel: Int\n}\n\ntype PublicAccountDetail implements AccountDetail @external {\n  summary: String\n  publicNote: String\n}\n\ntype AdminAccountDetail implements AccountDetail @external {\n  summary: String\n  adminLevel: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@external", "@requires",'
+                    ' "@authenticated"])\n\ntype Query {\n  account:'
+                    ' Account\n}\n\ntype Account @key(fields: "id") {\n  id:'
+                    " ID\n  details: AccountDetail @external\n  detailsSummary:"
+                    ' String @requires(fields: "details { summary ... on'
+                    " ScopedAccountDetail { sensitiveLevel } ... on"
+                    " PublicAccountDetail { publicNote } ... on"
+                    ' AdminAccountDetail { adminLevel } }")'
+                    " @authenticated\n}\n\ninterface AccountDetail {\n "
+                    " summary: String\n}\n\ntype ScopedAccountDetail implements"
+                    " AccountDetail @external {\n  summary: String\n "
+                    " sensitiveLevel: Int\n}\n\ntype PublicAccountDetail"
+                    " implements AccountDetail @external {\n  summary: String\n"
+                    "  publicNote: String\n}\n\ntype AdminAccountDetail"
+                    " implements AccountDetail @external {\n  summary: String\n"
+                    "  adminLevel: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@authenticated\", \"@key\"])\n\ntype Account @key(fields: \"id\") {\n  id: ID\n  details: AccountDetail @authenticated\n}\n\ninterface AccountDetail {\n  summary: String\n}\n\ntype ScopedAccountDetail implements AccountDetail {\n  summary: String @authenticated\n  sensitiveLevel: Int @authenticated\n}\n\ntype PublicAccountDetail implements AccountDetail {\n  summary: String\n  publicNote: String @authenticated\n}\n\ntype AdminAccountDetail implements AccountDetail {\n  summary: String @authenticated\n  adminLevel: Int @authenticated\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@authenticated", "@key"])\n\ntype Account @key(fields:'
+                    ' "id") {\n  id: ID\n  details: AccountDetail'
+                    " @authenticated\n}\n\ninterface AccountDetail {\n "
+                    " summary: String\n}\n\ntype ScopedAccountDetail implements"
+                    " AccountDetail {\n  summary: String @authenticated\n "
+                    " sensitiveLevel: Int @authenticated\n}\n\ntype"
+                    " PublicAccountDetail implements AccountDetail {\n "
+                    " summary: String\n  publicNote: String"
+                    " @authenticated\n}\n\ntype AdminAccountDetail implements"
+                    " AccountDetail {\n  summary: String @authenticated\n "
+                    " adminLevel: Int @authenticated\n}"
+                ),
+            ),
+        ],
+        [],
+    )
+
+
+def test_hive_case_ar1_nested() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { user: User'
+                    ' }\ntype User @key(fields: "id") { id: ID comment: Node'
+                    " @external hasComment: Boolean @requires(fields:"
+                    ' "comment { ... on Comment { id } }") }\ninterface Node {'
+                    " id: ID! }\ntype Comment implements Node @external { id:"
+                    " ID! }"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype User @key(fields:'
+                    ' "id") { id: ID! comment: Node }\ninterface Node { id:'
+                    " ID! }\ntype Comment implements Node { id: ID!"
+                    " @authenticated }"
+                ),
             ),
         ],
         [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "User.hasComment" does not specify necessary'
+                " @authenticated, @requiresScopes and/or @policy auth"
+                " requirements to access the transitive field"
+                ' "Comment.id" data from @requires selection set.'
+            ),
+        ],
+    )
+
+
+def test_hive_case_ar2_context() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { u: User'
+                    ' }\ntype User @key(fields: "id") @context(name:'
+                    ' "userCtx") @authenticated { id: ID! name: String!'
+                    ' child: Child! }\ntype Child @key(fields: "id") { id: ID!'
+                    ' greet(n: String @fromContext(field: "$userCtx { name'
+                    ' }")): String }'
+                ),
+            ),
+        ],
+        [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "Child.greet" does not specify necessary'
+                " @authenticated, @requiresScopes and/or @policy auth"
+                " requirements to access the transitive data in context"
+                " a__userCtx from @fromContext selection set."
+            ),
+        ],
+    )
+
+
+def test_hive_case_ar3_union_typename() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { user: User'
+                    ' }\ntype User @key(fields: "id") { id: ID r: R @external'
+                    ' hasR: Boolean @requires(fields: "r { __typename }")'
+                    " }\nunion R = X | Y\ntype Y @shareable { y: Int }\ntype X"
+                    " @shareable { x: Int }"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype User @key(fields:'
+                    ' "id") { id: ID! r: R }\nunion R = X | Y\ntype Y'
+                    " @shareable { y: Int }\ntype X @shareable @authenticated"
+                    " { x: Int }"
+                ),
+            ),
+        ],
+        [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "User.hasR" does not specify necessary @authenticated,'
+                " @requiresScopes and/or @policy auth requirements to"
+                ' access the transitive type "X" data from @requires'
+                " selection set."
+            ),
+        ],
+    )
+
+
+def test_hive_case_ar4_union_fragment() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { user: User'
+                    ' }\ntype User @key(fields: "id") { id: ID r: R @external'
+                    ' hasR: Boolean @requires(fields: "r { ... on X { x } }")'
+                    " }\nunion R = X | Y\ntype Y @shareable { y: Int }\ntype X"
+                    " @shareable { x: Int }"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype User @key(fields:'
+                    ' "id") { id: ID! r: R }\nunion R = X | Y\ntype Y'
+                    " @shareable { y: Int }\ntype X @shareable @authenticated"
+                    " { x: Int }"
+                ),
+            ),
+        ],
+        [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "User.hasR" does not specify necessary @authenticated,'
+                " @requiresScopes and/or @policy auth requirements to"
+                ' access the transitive type "X" data from @requires'
+                " selection set."
+            ),
+        ],
+    )
+
+
+def test_hive_case_ar4_union_fragment_field() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { user: User'
+                    ' }\ntype User @key(fields: "id") { id: ID r: R @external'
+                    ' hasR: Boolean @requires(fields: "r { ... on X { x } }")'
+                    " }\nunion R = X | Y\ntype Y @shareable { y: Int }\ntype X"
+                    " @shareable { x: Int }"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype User @key(fields:'
+                    ' "id") { id: ID! r: R }\nunion R = X | Y\ntype Y'
+                    " @shareable { y: Int }\ntype X @shareable { x: Int"
+                    " @authenticated }"
+                ),
+            ),
+        ],
+        [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "User.hasR" does not specify necessary @authenticated,'
+                " @requiresScopes and/or @policy auth requirements to"
+                ' access the transitive field "X.x" data from @requires'
+                " selection set."
+            ),
+        ],
+    )
+
+
+def test_hive_case_ar3b_union_typename_ok() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { user: User'
+                    ' }\ntype User @key(fields: "id") { id: ID r: R @external'
+                    ' hasR: Boolean @requires(fields: "__typename r {'
+                    ' __typename ... on X { x } }") }\nunion R = X | Y\ntype Y'
+                    " @shareable { y: Int }\ntype X @shareable { x: Int }"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype User @key(fields:'
+                    ' "id") { id: ID! r: R }\nunion R = X | Y\ntype Y'
+                    " @shareable { y: Int }\ntype X @shareable { x: Int"
+                    " @authenticated }"
+                ),
+            ),
+            sg(
+                "c",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { c: Int }'
+                ),
+            ),
+        ],
+        [],
+    )
+
+
+def test_hive_case_ar3c_union_typename_denied_3() raises:
+    # The expected errors are Hive v0.27.0 `validate` on these subgraphs.
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { user: User'
+                    ' }\ntype User @key(fields: "id") { id: ID r: R @external'
+                    ' hasR: Boolean @requires(fields: "r { __typename }")'
+                    " }\nunion R = X | Y\ntype Y @shareable { y: Int }\ntype X"
+                    " @shareable { x: Int }"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype User @key(fields:'
+                    ' "id") { id: ID! r: R }\nunion R = X | Y\ntype Y'
+                    " @shareable { y: Int }\ntype X @shareable @authenticated"
+                    " { x: Int }"
+                ),
+            ),
+            sg(
+                "c",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key","@external","@requires","@shareable","@provides'
+                    '","@interfaceObject","@composeDirective","@authenticated'
+                    '","@context","@fromContext"])\ntype Query { c: Int }'
+                ),
+            ),
+        ],
+        [
+            (
+                "[MISSING_TRANSITIVE_AUTH_REQUIREMENTS] [a] Field"
+                ' "User.hasR" does not specify necessary @authenticated,'
+                " @requiresScopes and/or @policy auth requirements to"
+                ' access the transitive type "X" data from @requires'
+                " selection set."
+            ),
         ],
     )
 

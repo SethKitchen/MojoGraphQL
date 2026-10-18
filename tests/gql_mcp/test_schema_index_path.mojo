@@ -87,10 +87,14 @@ def test_referencing_type() raises:
     assert_false(
         found == PathSegment(String("Child"), String("other"), _no_args())
     )
-    assert_false(found == PathSegment(String("X"), String("grandchild"), _no_args()))
+    assert_false(
+        found == PathSegment(String("X"), String("grandchild"), _no_args())
+    )
     var args = List[String]()
     args.append("A")
-    assert_false(found == PathSegment(String("Child"), String("grandchild"), args^))
+    assert_false(
+        found == PathSegment(String("Child"), String("grandchild"), args^)
+    )
 
 
 def test_iteration() raises:

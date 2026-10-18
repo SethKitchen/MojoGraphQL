@@ -31,6 +31,8 @@ generates and parses into a second document.
 - An error message has no source excerpt.
 - Only the federation and link specifications can be linked. A `@link` to
   another specification is kept as a directive application.
+- A second `schema` definition is an error, as the graphql-js SDL rule
+  `LoneSchemaDefinition` says. Upstream accepts it.
 """
 
 from gql_language.ast import NO_NODE, Document, Kind, Role

@@ -21,11 +21,21 @@ def test_v2_0_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -36,11 +46,21 @@ def test_v2_1_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -51,11 +71,21 @@ def test_v2_2_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -66,11 +96,21 @@ def test_v2_3_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -81,11 +121,21 @@ def test_v2_4_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -96,11 +146,21 @@ def test_v2_5_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -111,11 +171,21 @@ def test_v2_6_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -126,11 +196,21 @@ def test_v2_7_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -141,11 +221,21 @@ def test_v2_8_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 
@@ -156,11 +246,21 @@ def test_v2_9_invalid_shareable_usage() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\ntype User implements Node {\n  id: ID!\n  name: String\n}\n\ninterface Node {\n  id: ID! @shareable\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\ntype User implements Node {\n  id:'
+                    " ID!\n  name: String\n}\n\ninterface Node {\n  id: ID!"
+                    " @shareable\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on field \"Node.id\": only object type fields can be marked with @shareable",
+            (
+                "[INVALID_SHAREABLE_USAGE] [users] Invalid use of @shareable on"
+                ' field "Node.id": only object type fields can be marked with'
+                " @shareable"
+            ),
         ],
     )
 

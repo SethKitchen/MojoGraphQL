@@ -25,6 +25,11 @@ library module imports a package its package does not list, or a test or a
 benchmark imports a package outside its package's closure. These rules let
 a user build one package with only its closure.
 
+`test_depends` lists the packages that only the tests and the benchmarks
+of a package can also import, with their closures. A library module cannot
+import them. The subgraph compatibility suite of `gql_subgraph` uses it to
+serve a subgraph with `gql_server`.
+
 packages.toml uses a subset of TOML: `[packages.<name>]` tables whose keys
 hold a string or a one-line list of strings.
 """
@@ -53,11 +58,15 @@ struct Graph(Movable):
     """Every package, in file order."""
     var depends: List[List[String]]
     """The dependencies of each package, by index into `names`."""
+    var test_depends: List[List[String]]
+    """The other packages that the tests and the benchmarks of each
+    package can import."""
 
     def __init__(out self):
         """Start with no packages."""
         self.names = List[String]()
         self.depends = List[List[String]]()
+        self.test_depends = List[List[String]]()
 
     def index(self, name: StringSlice) -> Int:
         """Return a package's index, or -1.
@@ -117,6 +126,7 @@ def load(path: String) raises -> Graph:
                 raise Error("packages.toml: " + name + " is listed twice")
             graph.names.append(name)
             graph.depends.append(List[String]())
+            graph.test_depends.append(List[String]())
             current = len(graph.names) - 1
             continue
         var equals = line.find("=")
@@ -125,6 +135,8 @@ def load(path: String) raises -> Graph:
         var key = String(line[byte=0:equals].strip())
         if key == "depends":
             graph.depends[current] = _strings(line[byte = equals + 1 :])
+        elif key == "test_depends":
+            graph.test_depends[current] = _strings(line[byte = equals + 1 :])
     return graph^
 
 
@@ -417,7 +429,15 @@ def check(graph: Graph) raises -> List[String]:
                         + " does not depend on"
                     )
         var wide: List[String] = ["std"]
-        for ref needed in closure(graph, [name]):
+        var roots: List[String] = [name]
+        for ref extra in graph.test_depends[index]:
+            if graph.index(extra) < 0:
+                problems.append(
+                    name + " has an unknown test dependency " + extra
+                )
+            else:
+                roots.append(extra)
+        for ref needed in closure(graph, roots):
             wide.append(needed)
         var programs = tests(name)
         programs.extend(benches(name))

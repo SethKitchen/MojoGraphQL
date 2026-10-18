@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Language
 
-`gql_language` reads, holds and prints GraphQL text. It is a port of graphql-js 16.14.2 `src/language`, and it needs only the Mojo standard library. The visitor is not ported yet.
+`gql_language` reads, holds and prints GraphQL text. It is a port of graphql-js 16.14.2 `src/language`, and it needs only the Mojo standard library. The visitor walks a document without editing it.
 
 | Module | Contents | graphql-js source |
 | --- | --- | --- |

@@ -84,7 +84,8 @@ def _read_arguments(
                 slicing = value
             elif name == "sizedFields":
                 sized = value
-            elif name == "requireOneSlicingArgument":
+            else:
+                # The definition of `@listSize` has no other argument.
                 require_one = value
         argument = context.document.next_sibling(argument)
     if assumed != NO_NODE:
@@ -186,11 +187,7 @@ def enter_list_size(
         kind == Kind.INTERFACE_TYPE_DEFINITION
         or kind == Kind.INTERFACE_TYPE_EXTENSION
     )
-    if not interface and not (
-        kind == Kind.OBJECT_TYPE_DEFINITION
-        or kind == Kind.OBJECT_TYPE_EXTENSION
-    ):
-        return
+    # A field definition is on an object type or on an interface type.
     var at = context.state.owner_field(type_name, field_name, interface)
     context.state.types[at.type].fields[at.field].list_size = ListSize(
         False,
@@ -221,7 +218,11 @@ def _check_sized_fields(
         return False
     var not_lists = List[String]()
     var missing = List[String]()
-    for ref name in sized:
+    # The caller passes at least one name.
+    var index = 0
+    while index < len(sized):
+        ref name = sized[index]
+        index += 1
         var field = context.merged[output].find_field(context.document, name)
         if field == NO_NODE:
             missing.append(name)
@@ -259,7 +260,11 @@ def _check_slicing(
     field."""
     var not_ints = List[String]()
     var missing = List[String]()
-    for ref name in slicing:
+    # The caller passes at least one name.
+    var index = 0
+    while index < len(slicing):
+        ref name = slicing[index]
+        index += 1
         var found = NO_NODE
         var argument = context.document.first_child(field)
         while argument != NO_NODE and found == NO_NODE:

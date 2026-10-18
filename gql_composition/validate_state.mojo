@@ -13,8 +13,12 @@ Port of `validateSubgraphState` of Hive Federation Composition v0.27.0
 or an input field has an output or input type with a `SKIP` result for an
 unknown type, after it already skipped the unknown types; and it checks
 that a type implements an interface only once, which its `Set` of
-interfaces already ensures. Those branches cannot run, and this port does
-not have them. The literal checks of the specified scalars are those of
+interfaces already ensures. Upstream also checks that the root types are
+different and known, but the state names each root type `Query`,
+`Mutation` or `Subscription` and holds it. Upstream checks that a required
+argument of a directive definition is not deprecated, but the state never
+records `@deprecated` on a directive argument. Those branches cannot run,
+and this port does not have them. The literal checks of the specified scalars are those of
 graphql-js 16 `parseLiteral`.
 """
 
@@ -57,13 +61,6 @@ def _is_introspection_type(name: String) -> Bool:
     return False
 
 
-def _and_list(items: List[String]) -> String:
-    """Join two or three operation names, as upstream `andList`."""
-    if len(items) == 2:
-        return items[0] + " and " + items[1]
-    return items[0] + ", " + items[1] + ", and " + items[2]
-
-
 def strip_non_null(type: String) -> String:
     """Drop the trailing `!` of a printed type, as upstream `stripNonNull`.
 
@@ -100,14 +97,14 @@ def _is_list(type: String) -> Bool:
 
 
 def _named(type: String) -> String:
-    """Return the named type of a printed type."""
+    """Return the named type of a printed type. The name is never empty."""
     var bytes = type.as_bytes()
     var start = 0
     var end = len(bytes)
-    while start < end and bytes[start] == UInt8(ord("[")):
+    while bytes[start] == UInt8(ord("[")):
         start += 1
-    while end > start and (
-        bytes[end - 1] == UInt8(ord("]")) or bytes[end - 1] == UInt8(ord("!"))
+    while bytes[end - 1] == UInt8(ord("]")) or bytes[end - 1] == UInt8(
+        ord("!")
     ):
         end -= 1
     return String(type[byte=start:end])
@@ -159,14 +156,11 @@ struct _Validator:
             )
 
     def validate_root_types(mut self, state: SubgraphState):
-        """Check the root types, as upstream `validateRootTypes`."""
-        var names = List[String]()
-        var kinds = List[List[RootKind]]()
+        """Check the root types, as upstream `validateRootTypes`. The state
+        names each root type after its kind and holds it."""
         for kind in state.root_order:
             var name = state.root_names[Int(kind.value)]
             var found = state.find_type(name)
-            if name.byte_length() == 0 or found == -1:
-                continue
             if state.types[found].kind != TypeKind.OBJECT:
                 var operation = _capitalized(kind)
                 if kind == RootKind.QUERY:
@@ -184,28 +178,6 @@ struct _Validator:
                         + name
                         + "."
                     )
-                continue
-            var at = -1
-            for index in range(len(names)):
-                if names[index] == name:
-                    at = index
-            if at == -1:
-                names.append(name)
-                kinds.append([kind])
-            else:
-                kinds[at].append(kind)
-        for index in range(len(names)):
-            if len(kinds[index]) > 1:
-                var operations = List[String]()
-                for kind in kinds[index]:
-                    operations.append(_capitalized(kind))
-                self.report(
-                    'All root types must be different, "'
-                    + names[index]
-                    + '" type is used as '
-                    + _and_list(operations)
-                    + " root types."
-                )
 
     def validate_directives(mut self, state: SubgraphState):
         """Check the directive definitions, as upstream
@@ -231,14 +203,6 @@ struct _Validator:
                         + ":) must be Input Type but got: "
                         + argument.type
                         + "."
-                    )
-                if _is_required(argument) and argument.deprecated:
-                    self.report(
-                        "Required argument @"
-                        + directive.name
-                        + "("
-                        + argument.name
-                        + ":) cannot be deprecated."
                     )
 
     def validate_types(mut self, state: SubgraphState) raises:
@@ -280,11 +244,7 @@ struct _Validator:
         """Check the fields of an object or interface type, as upstream
         `validateFields`."""
         var name = type.name
-        var is_root = False
-        for ref root in state.root_names:
-            if root == name:
-                is_root = True
-        if len(type.fields) == 0 and not is_root:
+        if len(type.fields) == 0 and name not in state.root_names:
             self.report("Type " + name + " must define one or more fields.")
         for ref field in type.fields:
             self.validate_name(field.name)
@@ -602,8 +562,10 @@ def _is_int32(text: StringSlice) -> Bool:
     if len(bytes) - start > 10:
         return False
     var value = 0
-    for index in range(start, len(bytes)):
+    var index = start
+    while index < len(bytes):
         value = value * 10 + Int(bytes[index]) - ord("0")
+        index += 1
     if negative:
         return value <= 2147483648
     return value <= 2147483647

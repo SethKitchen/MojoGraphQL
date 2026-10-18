@@ -481,9 +481,11 @@ struct SpecSchema(Copyable):
         Returns:
             Whether such a directive exists.
         """
-        for ref definition in self.directives:
-            if definition.name == name:
+        var index = 0
+        while index < len(self.directives):
+            if self.directives[index].name == name:
                 return True
+            index += 1
         return False
 
     def has_type(self, name: StringSlice) -> Bool:
@@ -563,10 +565,12 @@ def _print_type(document: Document, node: Int, prefix: String) -> String:
 
 
 def _contains(names: List[String], name: StringSlice) -> Bool:
-    """Return True if a list holds a name."""
-    for ref item in names:
-        if item == name:
+    """Return True if a list holds a name. The list is never empty."""
+    var index = 0
+    while index < len(names):
+        if names[index] == name:
             return True
+        index += 1
     return False
 
 
@@ -606,11 +610,10 @@ def _add_definitions(
                     if document.role(child) == Role.ARGUMENT:
                         var type_node = document.child(child, Role.TYPE)
                         var default = document.child(child, Role.DEFAULT_VALUE)
+                        # Every default value in the federation SDL is a
+                        # Boolean.
                         var boolean_default = -1
-                        if (
-                            default != NO_NODE
-                            and document.kind(default) == Kind.BOOLEAN
-                        ):
+                        if default != NO_NODE:
                             boolean_default = Int(
                                 document.boolean_value(default)
                             )
@@ -730,16 +733,17 @@ def detect_federation_version(
         The version and the imports; `v1.0` without a federation link.
 
     Raises:
-        Error: `Invalid @link directive` for a `@link` without `url`,
-            `Unsupported federation version: <version>`, or the error of
-            `parse_link_import`.
+        Error: `Invalid @link directive` for a `@link` without `url`, or
+            the error of `parse_link_import`.
     """
-    for definition in definitions:
+    var position = 0
+    while position < len(definitions):
+        var definition = definitions[position]
+        position += 1
         var kind = document.kind(definition)
         if kind != Kind.SCHEMA_DEFINITION and kind != Kind.SCHEMA_EXTENSION:
             continue
         var found = False
-        var decided = False
         var federation = FederationSpec(FederationVersion.V1_0, [])
         var directive = document.first_child(definition)
         while directive != NO_NODE:
@@ -763,21 +767,17 @@ def detect_federation_version(
                     var spec = parse_link_url(document.string_value(value))
                     if spec.identity == "https://specs.apollo.dev/federation":
                         found = True
-                        if spec.version:
-                            var index = FederationVersion.from_text(
-                                spec.version.value()
-                            )
-                            if index == -1:
-                                raise Error(
-                                    "Unsupported federation version: "
-                                    + spec.version.value()
-                                )
-                            federation = FederationSpec(
-                                FederationVersion(UInt8(index)), imports^
-                            )
-                            decided = True
+                        # The `@link` rules of `validate` reject a
+                        # federation link without a version, or with an
+                        # unknown version, before this runs.
+                        var index = FederationVersion.from_text(
+                            spec.version.value()
+                        )
+                        federation = FederationSpec(
+                            FederationVersion(UInt8(index)), imports^
+                        )
             directive = document.next_sibling(directive)
-        if decided:
+        if found:
             return federation^
     return FederationSpec(FederationVersion.V1_0, [])
 

@@ -24,7 +24,9 @@ from gql_language.block_string import (
     print_block_string,
     print_string,
 )
+from gql_language.lexer import block_string_value
 from gql_language.printer import print_node
+from gql_language.source import Source
 
 
 def print_value(doc: Document, node: Int) -> String:
@@ -97,7 +99,7 @@ def print_description(
     node: Int,
     indentation: String,
     first_in_block: Bool,
-    escaped: Bool = False,
+    round_trip: Bool = False,
 ) -> String:
     """Print the description of a definition and a line break, as
     graphql-js `printDescription`.
@@ -107,9 +109,11 @@ def print_description(
         node: A definition node.
         indentation: The indentation of the definition.
         first_in_block: Whether the definition is the first in its block.
-        escaped: Print a description that is not printable as a block
-            string as an ordinary string, as graphql-js does; the federation
-            printer always prints a block string.
+        round_trip: Print the value that a block string of the description
+            holds, as `printSubgraphSchema` does: it prints the schema that
+            upstream builds from printed SDL. A description that a block
+            string cannot hold exactly loses its blank first and last lines
+            and its common indent.
 
     Returns:
         The description, or empty when there is none.
@@ -117,11 +121,12 @@ def print_description(
     if not doc.has_description(node):
         return String("")
     var description = doc.description(node)
-    var block: String
-    if not escaped or is_printable_as_block_string(description):
-        block = print_block_string(description)
-    else:
-        block = print_string(description)
+    if round_trip and not is_printable_as_block_string(description):
+        var printed = print_block_string(description)
+        description = block_string_value(
+            Source(printed), 0, printed.byte_length()
+        )
+    var block = print_block_string(description)
     var prefix = indentation
     if indentation != "" and not first_in_block:
         prefix = "\n" + indentation
@@ -166,7 +171,7 @@ def print_directives_inline(doc: Document, node: Int) -> String:
 
 
 def print_args(
-    doc: Document, node: Int, indentation: String, escaped: Bool = False
+    doc: Document, node: Int, indentation: String, round_trip: Bool = False
 ) -> String:
     """Print the arguments of a field or a directive, as graphql-js
     `printArgs`: on one line, or one per line when one has a description.
@@ -175,7 +180,7 @@ def print_args(
         doc: The document.
         node: A `FieldDefinition` or `DirectiveDefinition` node.
         indentation: The indentation of the node.
-        escaped: As `print_description` takes it.
+        round_trip: As `print_description` takes it.
 
     Returns:
         The arguments in parentheses, or empty when there are none.
@@ -200,14 +205,16 @@ def print_args(
     var inner = "  " + indentation
     index = 0
     while index < len(args):
-        out += "\n" + print_description(doc, args[index], inner, index == 0)
+        out += "\n" + print_description(
+            doc, args[index], inner, index == 0, round_trip
+        )
         out += inner + print_input_value(doc, args[index])
         index += 1
     return out + "\n" + indentation + ")"
 
 
 def print_item(
-    doc: Document, node: Int, first: Bool, escaped: Bool = False
+    doc: Document, node: Int, first: Bool, round_trip: Bool = False
 ) -> String:
     """Print a field, an input field or an enum value of a type, with its
     description.
@@ -217,15 +224,15 @@ def print_item(
         node: A `FieldDefinition`, `InputValueDefinition` or
             `EnumValueDefinition` node.
         first: Whether the item is the first of its block.
-        escaped: As `print_description` takes it.
+        round_trip: As `print_description` takes it.
 
     Returns:
         The item, indented by two spaces, with no line break at the end.
     """
-    var out = print_description(doc, node, "  ", first, escaped) + "  "
+    var out = print_description(doc, node, "  ", first, round_trip) + "  "
     var kind = doc.kind(node)
     if kind == Kind.FIELD_DEFINITION:
-        out += String(doc.name(node)) + print_args(doc, node, "  ", escaped)
+        out += String(doc.name(node)) + print_args(doc, node, "  ", round_trip)
         out += ": "
         out += print_node(doc, doc.child(node, Role.TYPE))
         return out + print_directives_inline(doc, node)
@@ -235,21 +242,21 @@ def print_item(
 
 
 def print_directive_definition(
-    doc: Document, node: Int, escaped: Bool = False
+    doc: Document, node: Int, round_trip: Bool = False
 ) -> String:
     """Print a directive definition with its description.
 
     Args:
         doc: The document.
         node: A `DirectiveDefinition` node.
-        escaped: As `print_description` takes it.
+        round_trip: As `print_description` takes it.
 
     Returns:
         The definition, such as `directive @a on FIELD`.
     """
-    var out = print_description(doc, node, "", True, escaped)
+    var out = print_description(doc, node, "", True, round_trip)
     out += "directive @" + String(doc.name(node))
-    out += print_args(doc, node, "", escaped)
+    out += print_args(doc, node, "", round_trip)
     if doc.is_repeatable(node):
         out += " repeatable"
     out += " on "

@@ -29,6 +29,12 @@ Workloads:
 - `mcp/call-operation`: `tools/call` of the operation `Repository01`: the
   server sends the operation to the stub endpoint over HTTP and returns the
   result as structured content.
+- `mcp/call-search`: `tools/call` of `search` with two terms: the schema
+  index of the GitHub schema, and the types that it finds.
+- `mcp/call-introspect`: `tools/call` of `introspect` of `Repository`, a
+  type of more than 100 fields, at depth 1.
+- `mcp/call-validate`: `tools/call` of `validate` of an operation with
+  variables, arguments and nesting.
 
 As a program, it takes the server command:
 
@@ -75,6 +81,23 @@ comptime CALL = (
     '{"owner":"apollographql","name":"apollo-mcp-server"}}}'
 )
 """The tail of the `tools/call` request."""
+comptime SEARCH = (
+    '"method":"tools/call","params":{"name":"search","arguments":'
+    '{"terms":["pull request","review comment"]}}}'
+)
+"""The tail of a `search` call: the schema index of the GitHub schema."""
+comptime INTROSPECT = (
+    '"method":"tools/call","params":{"name":"introspect","arguments":'
+    '{"type_name":"Repository","depth":1}}}'
+)
+"""The tail of an `introspect` call of a large type."""
+comptime VALIDATE = (
+    '"method":"tools/call","params":{"name":"validate","arguments":'
+    '{"operation":"query($owner: String!, $name: String!) { repository(owner:'
+    " $owner, name: $name) { name stargazers { totalCount } issues(first: 10)"
+    ' { nodes { title author { login } } } } }"}}}'
+)
+"""The tail of a `validate` call of a valid operation."""
 comptime WARMUP_NS = 200_000_000
 """The least time of the warm-up."""
 comptime ROUND_NS = 1_000_000_000
@@ -443,8 +466,24 @@ def run_server_workloads(command: String, root: String) raises:
             raise Error("tools/call failed: " + called)
         if getenv("MCP_BENCH_SHOW") != "":
             print("CALL", called)
+        var tails: List[String] = [
+            String(SEARCH),
+            String(INTROSPECT),
+            String(VALIDATE),
+        ]
+        var index = 0
+        while index < len(tails):
+            var answer = session.text(session.request(tails[index]))
+            if not '"isError":false' in answer:
+                raise Error("tools/call failed: " + answer)
+            if getenv("MCP_BENCH_SHOW") != "":
+                print("CALL", answer)
+            index += 1
         measure("mcp/tools-list-200", session, TOOLS_LIST)
         measure("mcp/call-operation", session, CALL)
+        measure("mcp/call-search", session, SEARCH)
+        measure("mcp/call-introspect", session, INTROSPECT)
+        measure("mcp/call-validate", session, VALIDATE)
     except e:
         session.stop()
         _ = stub.stop(1000)

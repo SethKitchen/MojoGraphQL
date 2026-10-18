@@ -251,11 +251,14 @@ def _is_extension(context: SubgraphContext, type: Int) -> Bool:
     ref merged = context.merged[type]
     if merged.kind == Kind.OBJECT_TYPE_EXTENSION:
         return True
-    for directive in merged.directives:
+    # The type has the `@key` that selects the field.
+    var index = 0
+    while index < len(merged.directives):
         if context.is_available_directive(
-            "extends", context.document.name(directive)
+            "extends", context.document.name(merged.directives[index])
         ):
             return True
+        index += 1
     return False
 
 
@@ -378,8 +381,11 @@ def enter_key(mut context: SubgraphContext, node: Int) raises:
         index = context.state.object_type(name)
     ref type = context.state.types[index]
     type.keys.append(Key(normalized, _resolvable(context.document, node)))
-    for ref field in handler.used.items:
-        type.fields_used_as_keys.add(field)
+    # A valid key selects at least one field of its type.
+    var position = 0
+    while position < len(handler.used.items):
+        type.fields_used_as_keys.add(handler.used.items[position])
+        position += 1
 
 
 def _check_implementations(
@@ -394,7 +400,11 @@ def _check_implementations(
     if not context.version.above(100):
         return
     var missing = List[String]()
-    for ref merged in context.merged:
+    # The interface itself is one of the merged types.
+    var position = 0
+    while position < len(context.merged):
+        ref merged = context.merged[position]
+        position += 1
         if not merged.is_object() or not merged.implements(
             context.document, name
         ):
@@ -539,8 +549,13 @@ def enter_provides(mut context: SubgraphContext, node: Int) raises:
         var union = context.union_type(output)
         if union != -1:
             var members = context.union_members[union].items.copy()
-            for member in members:
-                _provides_on(context, node, context.merged_type(member))
+            # A union has at least one member.
+            var position = 0
+            while position < len(members):
+                _provides_on(
+                    context, node, context.merged_type(members[position])
+                )
+                position += 1
             return
     _provides_on(context, node, target)
 
@@ -670,11 +685,8 @@ def enter_requires(mut context: SubgraphContext, node: Int) raises:
             prefix + error.message, ErrorCode.REQUIRES_INVALID_FIELDS
         )
         return
-    if (
-        kind != Kind.OBJECT_TYPE_DEFINITION
-        and kind != Kind.OBJECT_TYPE_EXTENSION
-    ):
-        return
+    # A field definition is in an object type or in an interface type, and
+    # the interface case returned above.
     var handler = _FieldSetHandler(_REQUIRES, prefix, "", "")
     visit_fields(
         context,

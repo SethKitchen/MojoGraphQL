@@ -9,7 +9,8 @@
 
 Upstream tests the versions 2.0 to 2.3. This suite also tests 2.4 to 2.14
 in the same way; their expected SDL comes from `@apollo/subgraph` 2.14.4
-itself, run in Node.js with the same SDL.
+itself, run in Node.js with the same SDL. `v2.15` adds no definitions, so
+its SDL is the `v2.14` SDL with the version in the link.
 """
 
 from std.testing import TestSuite, assert_equal
@@ -18,8 +19,7 @@ from _helpers import assert_service_sdl, subgraph
 
 def _check_version(version: String, expected: String) raises:
     var schema = subgraph(
-        "extend schema\n  @link(url:"
-        ' "https://specs.apollo.dev/federation/v'
+        'extend schema\n  @link(url: "https://specs.apollo.dev/federation/v'
         + version
         + '", import: ["@key"])\n\ntype Query {\n  x: Int\n}'
     )
@@ -27,7 +27,9 @@ def _check_version(version: String, expected: String) raises:
 
 
 def test_expands_federation_2_0_correctly() raises:
-    _check_version("2.0", '''schema
+    _check_version(
+        "2.0",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -81,11 +83,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_1_correctly() raises:
-    _check_version("2.1", '''schema
+    _check_version(
+        "2.1",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -141,11 +146,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_2_correctly() raises:
-    _check_version("2.2", '''schema
+    _check_version(
+        "2.2",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -201,11 +209,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_3_correctly() raises:
-    _check_version("2.3", '''schema
+    _check_version(
+        "2.3",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -263,11 +274,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_4_correctly() raises:
-    _check_version("2.4", '''schema
+    _check_version(
+        "2.4",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -325,11 +339,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_5_correctly() raises:
-    _check_version("2.5", '''schema
+    _check_version(
+        "2.5",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -393,11 +410,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_6_correctly() raises:
-    _check_version("2.6", '''schema
+    _check_version(
+        "2.6",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -465,11 +485,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_7_correctly() raises:
-    _check_version("2.7", '''schema
+    _check_version(
+        "2.7",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -537,11 +560,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_8_correctly() raises:
-    _check_version("2.8", '''schema
+    _check_version(
+        "2.8",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -615,11 +641,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_9_correctly() raises:
-    _check_version("2.9", '''schema
+    _check_version(
+        "2.9",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -697,11 +726,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_10_correctly() raises:
-    _check_version("2.10", '''schema
+    _check_version(
+        "2.10",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -779,11 +811,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_11_correctly() raises:
-    _check_version("2.11", '''schema
+    _check_version(
+        "2.11",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -861,11 +896,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_12_correctly() raises:
-    _check_version("2.12", '''schema
+    _check_version(
+        "2.12",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -945,11 +983,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_13_correctly() raises:
-    _check_version("2.13", '''schema
+    _check_version(
+        "2.13",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -1029,11 +1070,14 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
 
 
 def test_expands_federation_2_14_correctly() raises:
-    _check_version("2.14", '''schema
+    _check_version(
+        "2.14",
+        '''schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
 {
   query: Query
@@ -1113,7 +1157,28 @@ scalar _Any
 
 type _Service {
   sdl: String
-}''')
+}''',
+    )
+
+
+def test_federation_2_15_uses_the_2_14_definitions() raises:
+    var older = subgraph(
+        "extend schema\n  @link(url:"
+        ' "https://specs.apollo.dev/federation/v2.14", import: ["@key"])\n\n'
+        "type Query {\n  x: Int\n}"
+    )
+    var newer = subgraph(
+        "extend schema\n  @link(url:"
+        ' "https://specs.apollo.dev/federation/v2.15", import: ["@key"])\n\n'
+        "type Query {\n  x: Int\n}"
+    )
+    assert_service_sdl(
+        newer,
+        older.sdl.replace(
+            "https://specs.apollo.dev/federation/v2.14",
+            "https://specs.apollo.dev/federation/v2.15",
+        ),
+    )
 
 
 def main() raises:

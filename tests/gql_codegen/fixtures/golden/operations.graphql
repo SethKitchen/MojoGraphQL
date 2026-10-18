@@ -1,0 +1,51 @@
+query Hero($episode: Episode, $withFriends: Boolean! = true, $skipName: Boolean = false) {
+  hero(episode: $episode) {
+    name @skip(if: $skipName)
+    id
+    friends @include(if: $withFriends) {
+      name
+    }
+    ... on Droid {
+      primaryFunction
+    }
+    ... on Human {
+      height(unit: FOOT)
+      birthDate
+    }
+    ...CharacterAppearances
+  }
+}
+
+fragment CharacterAppearances on Character {
+  appearsIn
+}
+
+query Search($text: String!, $verbose: Boolean! = false) {
+  search(text: $text) {
+    ... on Human {
+      name
+      mass @include(if: $verbose)
+    }
+    ... on Droid {
+      name
+    }
+  }
+  matrix
+}
+
+mutation CreateReview($episode: Episode, $review: ReviewInput!) {
+  createReview(episode: $episode, review: $review) {
+    stars
+    commentary
+    from
+  }
+}
+
+query Deferred {
+  hero {
+    id
+    ... on Droid @defer(label: "droid") {
+      primaryFunction
+    }
+  }
+}

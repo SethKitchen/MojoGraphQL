@@ -103,3 +103,13 @@ If you change one of them, run `make bench` again, because the old results are t
 
 - It is the `data` of the query `{ items { id title price inStock tags author { id name } stats { views likes } } }`: 1000 `Item` objects with an `id`, each with an `Author` entity (50 different ids) and an embedded `Stats` object.
 - Every object has a `__typename`, as a query that `transformDocument` changed gives it.
+
+## The MojoGraphQL subgraph file
+
+`subgraph-catalog.graphql` is a MojoGraphQL file under the license of this repository. The `gql_subgraph` benchmarks and the `@apollo/subgraph` baseline in `bench/baselines/js-subgraph/` read it.
+
+- It is a federation 2.3 subgraph of a product catalog: 24 types, 6 entities, descriptions, default values, a union, an interface, enums, a custom scalar, input objects and a mutation root.
+- It uses `@key`, `@shareable`, `@external`, `@requires`, `@provides`, `@tag`, `@inaccessible` and `@override`.
+- `buildSubgraphSchema` of `@apollo/subgraph` 2.14.4 accepts it, with all its federation checks.
+
+If you change it, check that `@apollo/subgraph` still accepts it. Then run `make bench` again, because the old results are then not comparable.

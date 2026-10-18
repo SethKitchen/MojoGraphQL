@@ -21,15 +21,24 @@ def test_v2_0_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -39,11 +48,15 @@ def test_v2_0_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -53,15 +66,24 @@ def test_v2_0_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -71,15 +93,23 @@ def test_v2_0_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -89,15 +119,24 @@ def test_v2_0_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -107,15 +146,24 @@ def test_v2_0_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -125,15 +173,24 @@ def test_v2_0_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -143,15 +200,24 @@ def test_v2_1_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -161,11 +227,15 @@ def test_v2_1_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -175,15 +245,24 @@ def test_v2_1_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -193,15 +272,23 @@ def test_v2_1_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -211,15 +298,24 @@ def test_v2_1_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -229,15 +325,24 @@ def test_v2_1_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -247,15 +352,24 @@ def test_v2_1_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -265,15 +379,28 @@ def test_v2_1_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -283,15 +410,28 @@ def test_v2_1_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -301,15 +441,24 @@ def test_v2_2_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -319,11 +468,15 @@ def test_v2_2_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -333,15 +486,24 @@ def test_v2_2_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -351,15 +513,23 @@ def test_v2_2_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -369,15 +539,24 @@ def test_v2_2_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -387,15 +566,24 @@ def test_v2_2_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -405,15 +593,24 @@ def test_v2_2_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -423,15 +620,28 @@ def test_v2_2_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -441,15 +651,28 @@ def test_v2_2_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -459,15 +682,24 @@ def test_v2_3_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -477,11 +709,15 @@ def test_v2_3_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -491,15 +727,24 @@ def test_v2_3_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -509,15 +754,23 @@ def test_v2_3_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -527,15 +780,24 @@ def test_v2_3_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -545,15 +807,24 @@ def test_v2_3_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -563,15 +834,24 @@ def test_v2_3_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -581,15 +861,28 @@ def test_v2_3_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -599,15 +892,28 @@ def test_v2_3_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -617,15 +923,24 @@ def test_v2_4_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -635,11 +950,15 @@ def test_v2_4_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -649,15 +968,24 @@ def test_v2_4_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -667,15 +995,23 @@ def test_v2_4_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -685,15 +1021,24 @@ def test_v2_4_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -703,15 +1048,24 @@ def test_v2_4_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -721,15 +1075,24 @@ def test_v2_4_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -739,15 +1102,28 @@ def test_v2_4_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -757,15 +1133,28 @@ def test_v2_4_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -775,15 +1164,24 @@ def test_v2_5_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -793,11 +1191,15 @@ def test_v2_5_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -807,15 +1209,24 @@ def test_v2_5_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -825,15 +1236,23 @@ def test_v2_5_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -843,15 +1262,24 @@ def test_v2_5_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -861,15 +1289,24 @@ def test_v2_5_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -879,15 +1316,24 @@ def test_v2_5_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -897,15 +1343,28 @@ def test_v2_5_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -915,15 +1374,28 @@ def test_v2_5_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -933,15 +1405,24 @@ def test_v2_6_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -951,11 +1432,15 @@ def test_v2_6_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -965,15 +1450,24 @@ def test_v2_6_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -983,15 +1477,23 @@ def test_v2_6_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1001,15 +1503,24 @@ def test_v2_6_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1019,15 +1530,24 @@ def test_v2_6_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1037,15 +1557,24 @@ def test_v2_6_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1055,15 +1584,28 @@ def test_v2_6_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1073,15 +1615,28 @@ def test_v2_6_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1091,15 +1646,24 @@ def test_v2_7_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1109,11 +1673,15 @@ def test_v2_7_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1123,15 +1691,24 @@ def test_v2_7_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1141,15 +1718,23 @@ def test_v2_7_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1159,15 +1744,24 @@ def test_v2_7_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1177,15 +1771,24 @@ def test_v2_7_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1195,15 +1798,24 @@ def test_v2_7_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1213,15 +1825,28 @@ def test_v2_7_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1231,15 +1856,28 @@ def test_v2_7_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1249,15 +1887,24 @@ def test_v2_8_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1267,11 +1914,15 @@ def test_v2_8_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1281,15 +1932,24 @@ def test_v2_8_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1299,15 +1959,23 @@ def test_v2_8_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1317,15 +1985,24 @@ def test_v2_8_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1335,15 +2012,24 @@ def test_v2_8_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1353,15 +2039,24 @@ def test_v2_8_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1371,15 +2066,28 @@ def test_v2_8_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1389,15 +2097,28 @@ def test_v2_8_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1407,15 +2128,24 @@ def test_v2_9_suffix_identical_foo_vs_foo_names_with_a_number() raises:
         [
             sg(
                 "Foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype User @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  user: User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  user: User\n}"
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Member @key(fields: \"name\") {\n  name: String\n}\n\ntype Query {\n  member: Member\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Member @key(fields: "name") {\n  name:'
+                    " String\n}\n\ntype Query {\n  member: Member\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1425,11 +2155,15 @@ def test_v2_9_executable_directive_definition_is_retained_in_supergraph() raises
         [
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1439,15 +2173,24 @@ def test_v2_9_executable_directive_definition_is_retained_if_defined_identical_i
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1457,15 +2200,23 @@ def test_v2_9_executable_directive_definition_is_omitted_if_only_defined_within_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Int\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1475,15 +2226,24 @@ def test_v2_9_executable_directive_only_contains_locations_shared_between_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1493,15 +2253,24 @@ def test_v2_9_executable_directive_is_removed_if_no_locations_are_shared_between
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD\n\ntype Query'
+                    " {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on'
+                    " FRAGMENT_SPREAD\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1511,15 +2280,24 @@ def test_v2_9_executable_directive_is_only_included_with_executable_definition_l
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1529,15 +2307,28 @@ def test_v2_9_executable_directive_that_is_also_a_compose_directive_is_included_
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1547,15 +2338,28 @@ def test_v2_9_executable_directive_that_is_also_a_compose_directive_and_used_wit
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  a: Int @a\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://a.dev/a/v1.0\", import: [\"@a\"]) @composeDirective(name: \"@a\")\n\ndirective @a(n: Int) on FIELD | FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url: "https://a.dev/a/v1.0",'
+                    ' import: ["@a"]) @composeDirective(name:'
+                    ' "@a")\n\ndirective @a(n: Int) on FIELD |'
+                    " FIELD_DEFINITION\n\ntype Query {\n  b: Int @a\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

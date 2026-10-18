@@ -10,6 +10,9 @@
 #
 # `upstream` names the MIT sources each package ports, at the pinned
 # version. THIRD-PARTY-NOTICES.md holds their license texts.
+#
+# `test_depends` lists the packages that only the tests and the benchmarks
+# of a package can also import. A library module cannot import them.
 
 [packages.gql_language]
 summary = "Source, lexer, parser, AST, printer and visitor"
@@ -49,7 +52,7 @@ upstream = ["Apollo Client 4.3.3 (ae0dfce) src/cache/inmemory: inMemoryCache.ts,
 [packages.gql_composition]
 summary = "Apollo Federation composition: validation of subgraphs"
 depends = ["gql_language"]
-upstream = ["Hive Federation Composition v0.27.0 6272ad8 (MIT)"]
+upstream = ["Hive Federation Composition v0.27.0 6272ad8 (MIT); federation v2.10 to v2.15 checks from the public Apollo GraphOS page Federation versions"]
 
 [packages.gql_mcp]
 summary = "Model Context Protocol server: GraphQL operations as tools, introspect, search, execute and validate"
@@ -59,9 +62,21 @@ upstream = ["Apollo MCP Server 2.0.0 (04e4e6e) crates/apollo-mcp-server/src: ope
 [packages.gql_subgraph]
 summary = "Apollo Federation subgraphs: buildSubgraphSchema, printSubgraphSchema and entity resolution"
 depends = ["gql_language", "gql_schema", "gql_execution", "gql_json"]
+test_depends = ["gql_server"]
 upstream = ["@apollo/subgraph 2.14.4 (b95c124) subgraph-js/src: buildSubgraphSchema.ts, printSubgraphSchema.ts, types.ts, schema-helper/buildSchemaFromSDL.ts (MIT); the Apollo Federation subgraph specification and federation/v2.x specifications; Hive Federation Composition v0.27.0 (MIT) as the reference for the federation-internals behavior"]
+
+[packages.gql_router]
+summary = "Hive Router: the query planner, operation cache, authorization and null bubbling"
+depends = ["gql_language", "gql_json"]
+upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, executor/headers/request.rs, executor/headers/response.rs, pipeline/authorization, executor/operation_filter.rs, executor/execution/error_masking.rs, executor/execution/operation_name.rs, executor/execution/rewrites.rs, executor/response/merge.rs, executor/response/graphql_error.rs, executor/response/storage.rs, executor/response/subgraph_response.rs, and executor/execution/plan.rs (`select_fetch_variables`, `condition_node_by_variables`, `execute_plan_node`, `prepare_batch_fetch_job_state`), executor/utils/traverse.rs, `partition_batch_errors_by_alias`, `collect_batched_entities_by_alias`, and `merge_batch_alias_entities`; query_planner/consumer_schema, tests/generated.rs and apollo-router-workspace are excluded"]
 
 [packages.gql_server]
 summary = "GraphQL server: the Apollo Server request pipeline, HTTP handling and a standalone server"
 depends = ["gql_language", "gql_json", "gql_schema", "gql_validation", "gql_execution", "gql_http"]
-upstream = ["Apollo Server 5.5.1 (0c22029) packages/server/src: ApolloServer.ts, requestPipeline.ts, runHttpQuery.ts, httpBatching.ts, preventCsrf.ts, errorNormalize.ts, internalErrorClasses.ts, errors/index.ts, cachePolicy.ts, utils/HeaderMap.ts, validationRules/NoIntrospection.ts, the header part of plugin/cacheControl, plugin/disableSuggestions, standalone/index.ts (MIT); negotiator 1.1.0, content-type 2.1.0, whatwg-mimetype 4.0.0, cors 2.8.6, body-parser 2.3.0, finalhandler 2.1.1 and @apollo/utils.keyvaluecache 4.0.0, as Apollo Server uses them (MIT)"]
+upstream = ["Apollo Server 5.5.1 (0c22029) packages/server/src: ApolloServer.ts, requestPipeline.ts, runHttpQuery.ts, httpBatching.ts, preventCsrf.ts, errorNormalize.ts, internalErrorClasses.ts, errors/index.ts, cachePolicy.ts, utils/HeaderMap.ts, validationRules/NoIntrospection.ts, the header part of plugin/cacheControl, plugin/disableSuggestions, plugin/inlineTrace, plugin/traceTreeBuilder.ts, plugin/schemaIsSubgraph.ts, the inline trace part of plugin/disabled, standalone/index.ts, and the Trace message of packages/usage-reporting-protobuf/src/reports.proto (MIT); negotiator 1.1.0, content-type 2.1.0, whatwg-mimetype 4.0.0, cors 2.8.6, body-parser 2.3.0, finalhandler 2.1.1 and @apollo/utils.keyvaluecache 4.0.0, as Apollo Server uses them (MIT)"]
+
+[packages.gql_codegen]
+summary = "Code generation: Mojo models, documents and operation ids for GraphQL operations"
+depends = ["gql_language", "gql_schema", "gql_validation", "gql_json"]
+upstream = ["Apollo Kotlin afe947c (5.2.1-SNAPSHOT; the benchmark runs the published 5.2.0) libraries/apollo-compiler: ApolloCompiler.kt, Options.kt, Strings.kt, UsedCoordinates.kt, ir/IrOperationsBuilder.kt, ir/OperationBasedModelGroupBuilder.kt, ir/BooleanExpression.kt, ir/usedFragments.kt, internal/ApolloExecutableDocumentTransform.kt, internal/Inflector.kt, internal/checkCapitalizedFields.kt, internal/checkApolloInlineFragmentsHaveTypeCondition.kt, internal/DefaultApolloCompilerRegistry.kt (sha256); libraries/apollo-ast: SDLWriter.kt, gql.kt (writeInternal), gqlstrings.kt, QueryDocumentMinifier.kt, Schema.kt (type relations), Issue.kt (MIT)"]
+

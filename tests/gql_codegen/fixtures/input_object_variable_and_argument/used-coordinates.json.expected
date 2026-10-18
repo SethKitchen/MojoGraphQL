@@ -1,0 +1,21 @@
+{
+    "typeToFieldsToArguments": {
+        "Human": {
+            "height": [
+                "unit"
+            ]
+        },
+        "Query": {
+            "heroWithReview": [
+                "episode",
+                "review",
+                "listOfInts"
+            ]
+        },
+        "String": {},
+        "Float": {},
+        "Episode": {},
+        "Int": {},
+        "Character": {}
+    }
+}

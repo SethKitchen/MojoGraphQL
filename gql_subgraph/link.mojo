@@ -13,8 +13,15 @@ reference. `@apollo/subgraph` 2.14.4 does this in
 `@apollo/federation-internals`, which is Elastic licensed and is not read;
 the error messages are those it gives, observed as a black box.
 
-**Differences from upstream.** The link specification itself cannot be
-renamed with `as` or imported from: its directive is always `@link`.
+**Differences from upstream.**
+
+- The link specification itself cannot be renamed with `as`: its
+  directive is always `@link`. Its `import` argument is ignored. Upstream
+  reports each element of it as unknown.
+- A `url` or an `as` that is not a string is ignored. Upstream fails with
+  a JavaScript `TypeError` (`url.startsWith is not a function`).
+- An `import` that is not a list is ignored. Upstream reads a string as a
+  list of its characters, and reports each one as an unknown element.
 """
 
 from gql_language.ast import NO_NODE, Document, Kind, Role
@@ -25,6 +32,7 @@ from gql_subgraph.spec import (
     LINK_URL,
     TYPE_COUNT,
     FederationVersion,
+    check_federation_url,
     directive_index,
     directive_name,
     has_directive,
@@ -102,33 +110,90 @@ def string_argument(doc: Document, directive: Int, name: StringSlice) -> String:
     return doc.string_value(value)
 
 
-def _object_string(doc: Document, object: Int, key: StringSlice) -> String:
-    """Return the string of a field of an object value, or empty."""
+def _import_object(mut info: LinkInfo, doc: Document, object: Int):
+    """Apply an element `{ name: "@key", as: "@k" }` of the `import`
+    argument, or add the error of its first bad field."""
+    var name = String("")
+    var alias = String("")
+    var has_name = False
     var field = doc.first_child(object)
     while field != NO_NODE:
+        var key = String(doc.name(field))
         var value = doc.child(field, Role.VALUE)
-        if doc.name(field) == key and doc.kind(value) == Kind.STRING:
-            return doc.string_value(value)
+        if key != "name" and key != "as":
+            info.errors.append(
+                'Unknown field "'
+                + key
+                + '" for sub-value '
+                + print_value(doc, object)
+                + " of @link(import:) argument."
+            )
+            return
+        if doc.kind(value) != Kind.STRING:
+            info.errors.append(
+                'Invalid value for the "'
+                + key
+                + '" field for sub-value '
+                + print_value(doc, object)
+                + " of @link(import:) argument: must be a string."
+            )
+            return
+        if key == "name":
+            name = doc.string_value(value)
+            has_name = True
+        else:
+            alias = doc.string_value(value)
         field = doc.next_sibling(field)
-    return String("")
+    if not has_name:
+        info.errors.append(
+            "Invalid sub-value "
+            + print_value(doc, object)
+            + ' for @link(import:) argument: missing mandatory "name" field.'
+        )
+        return
+    _import(info, name, alias^)
 
 
 def _import(mut info: LinkInfo, name: String, var alias: String):
     """Apply one element of the `import` argument of the federation link."""
     if alias == "":
         alias = name
-    if name.startswith("@"):
+    var directive = name.startswith("@")
+    # A directive imports as a directive, and a type as a type.
+    var valid = directive == alias.startswith("@")
+    if not valid and directive:
+        info.errors.append(
+            'Invalid @link import renaming: directive "'
+            + name
+            + "\" imported name should start with a '@' character, but got \""
+            + alias
+            + '".'
+        )
+    elif not valid:
+        info.errors.append(
+            'Invalid @link import renaming: type "'
+            + name
+            + "\" imported name should not start with a '@' character, but"
+            ' got "'
+            + alias
+            + '" (or, if @'
+            + name
+            + " is a directive, then it should be referred to with a '@')."
+        )
+    var known: Bool
+    if directive:
         var index = directive_index(name[byte=1:])
-        if index >= 0 and has_directive(info.version, index):
+        known = index >= 0 and has_directive(info.version, index)
+        if known and valid:
             info.names[index] = String(alias.removeprefix("@"))
             info.renamed[index] = alias != name
-            return
     else:
         var index = type_index(name)
-        if index >= 0 and has_type(info.version, index):
+        known = index >= 0 and has_type(info.version, index)
+        if known and valid:
             info.type_refs[index] = alias
-            return
-    info.errors.append('Cannot import unknown element "' + name + '".')
+    if not known:
+        info.errors.append('Cannot import unknown element "' + name + '".')
 
 
 def read_links(doc: Document, schema_nodes: List[Int]) raises -> LinkInfo:
@@ -155,8 +220,19 @@ def read_links(doc: Document, schema_nodes: List[Int]) raises -> LinkInfo:
             if String(doc.name(directive)) != "link":
                 pass
             elif url == LINK_URL:
+                if info.links_link_spec:
+                    info.errors.append(
+                        "Invalid duplicate application of @core/@link"
+                    )
                 info.links_link_spec = True
-            elif url.startswith(FEDERATION_URL) and federation == NO_NODE:
+            elif url.startswith(FEDERATION_URL):
+                check_federation_url(url)
+                if federation != NO_NODE:
+                    raise Error(
+                        'Cannot link feature "https://specs.apollo.dev/'
+                        'federation" since it has already been linked in the'
+                        " schema."
+                    )
                 federation = directive
                 info.version = parse_federation_url(url)
             directive = doc.next_with_role(directive)
@@ -189,11 +265,7 @@ def read_links(doc: Document, schema_nodes: List[Int]) raises -> LinkInfo:
         if doc.kind(item) == Kind.STRING:
             _import(info, doc.string_value(item), String(""))
         elif doc.kind(item) == Kind.OBJECT:
-            _import(
-                info,
-                _object_string(doc, item, "name"),
-                _object_string(doc, item, "as"),
-            )
+            _import_object(info, doc, item)
         else:
             info.errors.append(
                 "Invalid sub-value "

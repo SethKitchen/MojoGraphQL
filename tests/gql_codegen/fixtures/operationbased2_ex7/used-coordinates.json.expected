@@ -1,0 +1,8 @@
+{
+    "typeToFieldsToArguments": {
+        "Animal": {},
+        "Int": {},
+        "String": {},
+        "Query": {}
+    }
+}

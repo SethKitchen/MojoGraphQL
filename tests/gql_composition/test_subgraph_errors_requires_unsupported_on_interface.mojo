@@ -21,12 +21,28 @@ def test_v2_0_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on interface \"User\": @key is not yet supported on interfaces",
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on"
+                ' interface "User": @key is not yet supported on interfaces'
+            ),
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -37,12 +53,28 @@ def test_v2_1_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on interface \"User\": @key is not yet supported on interfaces",
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on"
+                ' interface "User": @key is not yet supported on interfaces'
+            ),
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -53,12 +85,28 @@ def test_v2_2_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on interface \"User\": @key is not yet supported on interfaces",
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on"
+                ' interface "User": @key is not yet supported on interfaces'
+            ),
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -69,11 +117,24 @@ def test_v2_3_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -84,11 +145,24 @@ def test_v2_4_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -99,11 +173,24 @@ def test_v2_5_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -114,11 +201,24 @@ def test_v2_6_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -129,11 +229,24 @@ def test_v2_7_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -144,11 +257,24 @@ def test_v2_8_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 
@@ -159,11 +285,24 @@ def test_v2_9_requires_unsupported_on_interface() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@requires\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String @requires(fields: \"name\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@requires"])\n\ntype Query {\n  users:'
+                    " [User]\n}\n\ntype RegisteredUser implements User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    ' email: String\n}\n\ninterface User @key(fields: "id") {\n'
+                    "  id: ID!\n  name: String!\n  email: String"
+                    ' @requires(fields: "name")\n}'
+                ),
             ),
         ],
         [
-            "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @requires on field \"User.email\" of parent type \"User\": @requires is not yet supported within interfaces",
+            (
+                "[REQUIRES_UNSUPPORTED_ON_INTERFACE] [users] Cannot use"
+                ' @requires on field "User.email" of parent type "User":'
+                " @requires is not yet supported within interfaces"
+            ),
         ],
     )
 

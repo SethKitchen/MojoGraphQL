@@ -102,7 +102,7 @@ def _value_kind_text(document: Document, value: Int) -> String:
 
 def _directive_location(document: Document, path: List[Int]) -> String:
     """Return the location of a directive from the node that holds it, as
-    upstream `getDirectiveLocationForASTPath`; empty when there is none."""
+    upstream `getDirectiveLocationForASTPath`."""
     var applied = path[len(path) - 1]
     var kind = document.kind(applied)
     if kind == Kind.SCHEMA_DEFINITION or kind == Kind.SCHEMA_EXTENSION:
@@ -157,9 +157,9 @@ def _executable_location(document: Document, applied: Int) -> String:
         return String("INLINE_FRAGMENT")
     if kind == Kind.FRAGMENT_DEFINITION:
         return String("FRAGMENT_DEFINITION")
-    if kind == Kind.VARIABLE_DEFINITION:
-        return String("VARIABLE_DEFINITION")
-    return String("")
+    # The parser puts a directive only on the kinds above and on a variable
+    # definition.
+    return String("VARIABLE_DEFINITION")
 
 
 comptime _SPECIFIED_DIRECTIVES: Array[StaticString, 5] = [
@@ -512,10 +512,7 @@ struct GraphQLRules(Movable):
             self._report('Unknown directive "@' + name + '".')
             return
         var location = _directive_location(document, path)
-        if (
-            location.byte_length() > 0
-            and ("|" + location + "|") not in locations.value()
-        ):
+        if ("|" + location + "|") not in locations.value():
             self._report(
                 'Directive "@' + name + '" may not be used on ' + location + "."
             )

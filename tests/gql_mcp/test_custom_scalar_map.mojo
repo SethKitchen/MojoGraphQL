@@ -12,6 +12,8 @@ has the `gql_json` message, so those tests check the prefix.
 
 from gql_json.value import NO_NODE
 from gql_mcp.custom_scalar_map import CustomScalarMap
+from std.os import getenv
+from std.pathlib import Path
 from std.testing import TestSuite, assert_equal, assert_true
 
 
@@ -101,7 +103,10 @@ def test_meta_schema_checks() raises:
 
 
 def test_load() raises:
-    var map = CustomScalarMap.load("tests/gql_mcp/fixtures/custom_scalars.json")
+    # The file goes in the private temporary directory of the suite.
+    var path = getenv("TMPDIR", "/tmp") + "/custom_scalars.json"
+    Path(path).write_text('{"Date": {"type": "string"}}')
+    var map = CustomScalarMap.load(path)
     assert_equal(map.tree.to_string(map.get("Date")), '{"type":"string"}')
     assert_true(error_of("{}") == "no error")
 

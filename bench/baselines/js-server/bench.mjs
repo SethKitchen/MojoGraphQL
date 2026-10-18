@@ -5,11 +5,13 @@
 
 // The Apollo Server 5.5.1 baseline of the gql_server benchmarks.
 //
-// `node bench.mjs` times `server/execute-operation-small` and
-// `server/apq-hit` with the method of bench/baselines/js/bench.mjs: warm
-// up, then rounds of at least ROUND_NS each, and report the fastest round.
-// Each operation is one awaited `server.executeOperation`, which is what
-// the Mojo workload times.
+// `node bench.mjs` times `server/execute-operation-small`,
+// `server/apq-hit` and `server/execute-ftv1` with the method of
+// bench/baselines/js/bench.mjs: warm up, then rounds of at least ROUND_NS
+// each, and report the fastest round. Each operation is one awaited
+// `server.executeOperation`, which is what the Mojo workload times.
+// `server/execute-ftv1` sends the `apollo-federation-include-trace: ftv1`
+// header to a server with `ApolloServerPluginInlineTrace()`.
 //
 // `node bench.mjs server` serves `server/http-post-small` with
 // `startStandaloneServer` on a free loopback port. It prints `PORT <n>` and
@@ -18,13 +20,15 @@
 // Both use `nodeEnv: 'production'`, the setting for a deployed server.
 
 import { createHash } from 'node:crypto';
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer, HeaderMap } from '@apollo/server';
+import { ApolloServerPluginInlineTrace } from '@apollo/server/plugin/inlineTrace';
 import { startStandaloneServer } from '@apollo/server/standalone';
 
 const ROUND_NS = 1_000_000_000n;
 const ROUNDS = 5;
 const WARMUP_NS = 200_000_000n;
 const QUERY = '{ hello }';
+const BOOKS_QUERY = '{ books { title author } }';
 
 function makeServer() {
   return new ApolloServer({
@@ -85,6 +89,38 @@ async function operations() {
     return response.body.singleResult.data.hello.length;
   });
   await server.stop();
+
+  const traced = new ApolloServer({
+    typeDefs:
+      'type Query { books: [Book] } type Book { title: String author: String }',
+    resolvers: {
+      Query: {
+        books: () => {
+          const out = [];
+          for (let i = 0; i < 10; i++) out.push({ title: 'Title', author: 'Author' });
+          return out;
+        },
+      },
+    },
+    nodeEnv: 'production',
+    plugins: [ApolloServerPluginInlineTrace()],
+  });
+  await traced.start();
+  const http = {
+    method: 'POST',
+    headers: new HeaderMap([['apollo-federation-include-trace', 'ftv1']]),
+    search: '',
+    body: {},
+  };
+  const traceCheck = await traced.executeOperation({ query: BOOKS_QUERY, http });
+  if (typeof traceCheck.body.singleResult.extensions?.ftv1 !== 'string') {
+    throw new Error('no ftv1');
+  }
+  await measure('server/execute-ftv1', async () => {
+    const response = await traced.executeOperation({ query: BOOKS_QUERY, http });
+    return response.body.singleResult.extensions.ftv1.length;
+  });
+  await traced.stop();
   if (sink === 0) throw new Error('nothing ran');
 }
 

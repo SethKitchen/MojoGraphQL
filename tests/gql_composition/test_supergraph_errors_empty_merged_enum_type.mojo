@@ -7,8 +7,8 @@
 
 Each test is one upstream test, for the Guild implementation. Each check is
 the input of one `composeServices` call in it.
-The expected errors are those of the subgraph phase of upstream
-`validate` in Node.js on the same subgraphs, printed by graphql-js.
+The expected errors are Hive `EMPTY_MERGED_ENUM_TYPE` from
+`composeServices` on the same subgraphs.
 """
 
 from _harness import check, sg
@@ -21,14 +21,32 @@ def test_v2_0_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -39,14 +57,32 @@ def test_v2_1_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -57,14 +93,32 @@ def test_v2_2_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -75,14 +129,32 @@ def test_v2_3_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -93,14 +165,32 @@ def test_v2_4_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -111,14 +201,32 @@ def test_v2_5_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -129,14 +237,32 @@ def test_v2_6_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -147,14 +273,32 @@ def test_v2_7_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -165,14 +309,32 @@ def test_v2_8_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 
@@ -183,14 +345,32 @@ def test_v2_9_empty_merged_enum_type() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  ADMIN\n  UNREGULAR\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\ntype User @shareable {\n  name: String!\n}\n\nenum UserType {\n  REGULAR\n  ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType): [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\ntype User @shareable {\n  name:'
+                    " String!\n}\n\nenum UserType {\n  REGULAR\n "
+                    " ANONYMOUS\n}\n\ntype Query {\n  users(type: UserType):"
+                    " [User]\n}"
+                ),
             ),
         ],
         [
+            (
+                "[EMPTY_MERGED_ENUM_TYPE] None of the values of enum type"
+                ' "UserType" are defined consistently in all the subgraphs'
+                " defining that type. As only values common to all subgraphs"
+                " are merged, this would result in an empty type."
+            ),
         ],
     )
 

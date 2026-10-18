@@ -15,7 +15,9 @@ from gql_composition.version import (
     VERSION_COUNT,
     VERSION_NAMES,
     FederationVersion,
+    satisfies_version_range,
 )
+from gql_composition.compose import compose_subgraphs
 from _harness import check, errors_of, sg
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
@@ -44,6 +46,108 @@ def test_version_table() raises:
     assert_true(FederationVersion(10).below(210))
     assert_equal(FederationVersion.V1_0.number(), 100)
     assert_equal(String(FederationVersion.V2_12), "v2.12")
+    assert_true(satisfies_version_range("v2.10", ">= v2.9"))
+    assert_false(satisfies_version_range("v2.9", ">= v2.10"))
+    assert_true(satisfies_version_range("v2.3", "> v1.0"))
+    assert_false(satisfies_version_range("v1.0", "> v1.0"))
+    assert_true(satisfies_version_range("v2.0", "< v2.3"))
+    assert_false(satisfies_version_range("v2.3", "< v2.3"))
+    assert_true(satisfies_version_range("v2.8", ">= v2.8"))
+    assert_false(satisfies_version_range("v2.3", "nope"))
+    assert_false(satisfies_version_range("v2.3", " v2.3"))
+    assert_false(satisfies_version_range("v9.9", ">= v2.3"))
+    assert_false(satisfies_version_range("v2.3", ">= v9.9"))
+
+
+def test_cache_tag_is_printed_on_the_supergraph() raises:
+    var result = compose_subgraphs(
+        [
+            sg(
+                "a",
+                _link("v2.12", '"@cacheTag"')
+                + 'type Query @cacheTag(format: "q") {\n'
+                + '  a: String @cacheTag(format: "a")\n'
+                + "}\n",
+            )
+        ]
+    )
+    assert_equal(len(result.errors), 0)
+    assert_true(
+        result.supergraph_sdl.find(
+            "directive @cacheTag(format: String!) repeatable on"
+            " FIELD_DEFINITION | OBJECT"
+        )
+        >= 0
+    )
+    assert_true(result.supergraph_sdl.find('@cacheTag(format: "q")') >= 0)
+    assert_true(result.supergraph_sdl.find('@cacheTag(format: "a")') >= 0)
+    assert_true(result.public_sdl.find("cacheTag") < 0)
+
+
+def test_cache_tags_from_two_subgraphs_are_combined() raises:
+    var link = _link("v2.12", '"@cacheTag", "@shareable"')
+    var result = compose_subgraphs(
+        [
+            sg(
+                "a",
+                link
+                + 'type Query @cacheTag(format: "q") {\n'
+                + '  a: String @shareable @cacheTag(format: "a")\n'
+                + "}\n",
+            ),
+            sg(
+                "b",
+                link
+                + 'type Query @cacheTag(format: "r") {\n'
+                + '  a: String @shareable @cacheTag(format: "a")'
+                + ' @cacheTag(format: "b")\n'
+                + "}\n",
+            ),
+        ]
+    )
+    assert_equal(len(result.errors), 0)
+    assert_true(
+        result.supergraph_sdl.find(
+            '@cacheTag(format: "q") @cacheTag(format: "r")'
+        )
+        >= 0
+    )
+    assert_true(
+        result.supergraph_sdl.find(
+            '@cacheTag(format: "a") @cacheTag(format: "b")'
+        )
+        >= 0
+    )
+    assert_true(
+        result.supergraph_sdl.find(
+            '@cacheTag(format: "a") @cacheTag(format: "a")'
+        )
+        < 0
+    )
+
+
+def test_a_renamed_cache_tag_keeps_its_local_name() raises:
+    var result = compose_subgraphs(
+        [
+            sg(
+                "a",
+                "extend schema @link(url:"
+                ' "https://specs.apollo.dev/federation/v2.12", import:'
+                ' [{name: "@cacheTag", as: "@ctag"}])\n'
+                + 'type Query { a: String @ctag(format: "a") }\n',
+            )
+        ]
+    )
+    assert_equal(len(result.errors), 0)
+    assert_true(
+        result.supergraph_sdl.find(
+            "directive @ctag(format: String!) repeatable on"
+            " FIELD_DEFINITION | OBJECT"
+        )
+        >= 0
+    )
+    assert_true(result.supergraph_sdl.find('@ctag(format: "a")') >= 0)
+    assert_true(result.supergraph_sdl.find("cacheTag") < 0)
 
 
 def test_every_version_links() raises:

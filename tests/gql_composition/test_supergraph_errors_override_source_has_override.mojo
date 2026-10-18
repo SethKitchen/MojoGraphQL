@@ -7,8 +7,9 @@
 
 Each test is one upstream test, for the Guild implementation. Each check is
 the input of one `composeServices` call in it.
-The expected errors are those of the subgraph phase of upstream
-`validate` in Node.js on the same subgraphs, printed by graphql-js.
+The expected errors are Hive `OVERRIDE_SOURCE_HAS_OVERRIDE` from
+`composeServices` on the same subgraphs. A chain that names a missing
+subgraph expects an empty list.
 """
 
 from _harness import check, sg
@@ -21,37 +22,87 @@ def test_v2_0_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -61,37 +112,87 @@ def test_v2_1_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -101,37 +202,87 @@ def test_v2_2_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -141,37 +292,87 @@ def test_v2_3_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -181,37 +382,87 @@ def test_v2_4_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -221,37 +472,87 @@ def test_v2_5_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -261,37 +562,87 @@ def test_v2_6_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -301,37 +652,87 @@ def test_v2_7_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -341,37 +742,87 @@ def test_v2_8_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -381,37 +832,117 @@ def test_v2_9_override_source_has_override() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int! @override(from: "payments")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  payments: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  payments:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
             sg(
                 "invoices",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  invoices: [Bill]\n}\n\ntype Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  invoices:'
+                    ' [Bill]\n}\n\ntype Bill @key(fields: "id") {\n  id: ID!\n '
+                    ' amount: Int @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "billing" is also marked with directive @override in subgraph'
+                ' "payments". Only one @override directive is allowed per'
+                " field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "invoices" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
+            (
+                '[OVERRIDE_SOURCE_HAS_OVERRIDE] Field "Bill.amount" on subgraph'
+                ' "payments" is also marked with directive @override in'
+                ' subgraph "billing". Only one @override directive is allowed'
+                " per field."
+            ),
         ],
     )
     check(
         [
             sg(
                 "bar",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "foo",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\", \"@override\"])\n\ntype Query {\n  user: String @shareable @override(from: \"mono\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable", "@override"])\n\ntype Query {\n  user:'
+                    ' String @shareable @override(from: "mono")\n}'
+                ),
             ),
             sg(
                 "main",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\ntype Query {\n  user: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  user: String'
+                    " @shareable\n}"
+                ),
             ),
         ],
+        [],
+    )
+
+
+def test_override_chain_without_a_cycle() raises:
+    # "a" overrides from "b", "b" from "c", and "c" has no @override.
+    var head = String(
+        "extend schema @link(url:"
+        ' "https://specs.apollo.dev/federation/v2.7", import: ["@key",'
+        ' "@override"])\n\n'
+    )
+    check(
         [
+            sg(
+                "a",
+                head
+                + 'type Query {\n  t: T\n}\n\ntype T @key(fields: "id") {\n'
+                + '  id: ID!\n  f: String @override(from: "b")\n}',
+            ),
+            sg(
+                "b",
+                head
+                + 'type T @key(fields: "id") {\n  id: ID!\n'
+                + '  f: String @override(from: "c")\n}',
+            ),
+            sg(
+                "c",
+                head + 'type T @key(fields: "id") {\n  id: ID!\n  f: String\n}',
+            ),
         ],
+        [],
     )
 
 

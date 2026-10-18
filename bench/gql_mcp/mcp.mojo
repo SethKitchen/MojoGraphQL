@@ -11,7 +11,8 @@
 The program builds `_server.mojo`, the gql_mcp server with the
 configuration of `bench/baselines/rust-mcp/config.yaml`, into
 `.cache/bin/mcp_server`. Then it runs the workloads of `_driver.mojo`
-against that server: `mcp/tools-list-200` and `mcp/call-operation`. The
+against that server: `mcp/tools-list-200`, `mcp/call-operation`,
+`mcp/call-search`, `mcp/call-introspect` and `mcp/call-validate`. The
 baseline in `bench/baselines/rust-mcp` runs Apollo MCP Server under the
 same driver, so that only the server differs.
 """

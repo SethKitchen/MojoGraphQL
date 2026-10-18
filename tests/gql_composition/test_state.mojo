@@ -54,7 +54,11 @@ def test_merge_scope_policies() raises:
     _check(_groups("x,y|z"), _groups("y|z,w|q"), "[[q,z] [w,z] [x,y] [y,z]]")
     _check(_groups("a|a,b"), _groups("a"), "[[a]]")
     _check(_groups("c,d|b"), _groups("a|b,c"), "[[a,b] [b,c] [a,c,d]]")
-    _check(_groups("read:a,write:b"), _groups("read:a|admin"), "[[read:a,write:b]]")
+    _check(_groups("a|b"), _groups("a|b"), "[[a] [b]]")
+    _check(_groups("b,a"), _groups("c|a,b"), "[[a,b]]")
+    _check(
+        _groups("read:a,write:b"), _groups("read:a|admin"), "[[read:a,write:b]]"
+    )
 
 
 def test_kind_texts() raises:

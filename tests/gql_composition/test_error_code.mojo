@@ -17,9 +17,13 @@ def test_codes() raises:
     assert_equal(ErrorCode.NONE.text(), "")
     assert_equal(String(ErrorCode.INVALID_GRAPHQL), "INVALID_GRAPHQL")
     assert_equal(String(ErrorCode.EXTERNAL_UNUSED), "EXTERNAL_UNUSED")
-    assert_true(ErrorCode(54).is_valid())
-    assert_false(ErrorCode(55).is_valid())
-    assert_equal(ErrorCode(55).text(), "<invalid>")
+    assert_true(ErrorCode(82).is_valid())
+    assert_equal(
+        String(ErrorCode.SATISFIABILITY_ERROR),
+        "SATISFIABILITY_ERROR",
+    )
+    assert_false(ErrorCode(83).is_valid())
+    assert_equal(ErrorCode(83).text(), "<invalid>")
 
 
 def test_extensions() raises:

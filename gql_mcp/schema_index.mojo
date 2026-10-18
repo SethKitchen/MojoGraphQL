@@ -76,7 +76,10 @@ def format_f32(value: Float32) -> String:
     var size = text.byte_length()
     if size > -power:
         return (
-            sign + text[byte = : size + power] + "." + text[byte = size + power :]
+            sign
+            + text[byte = : size + power]
+            + "."
+            + text[byte = size + power :]
         )
     return sign + "0." + "0" * (-power - size) + text
 
@@ -357,9 +360,7 @@ def document_order(schema: Schema) -> List[Int]:
         if not type.is_builtin:
             var at = type.definition
             var start = schema.documents[Int(at.document)].start(Int(at.node))
-            keys.append(
-                (((Int(at.document) << 32) | start) << 20) | index
-            )
+            keys.append((((Int(at.document) << 32) | start) << 20) | index)
         index += 1
     sort(keys)
     var out = List[Int]()
@@ -455,7 +456,9 @@ def traverse(schema: Schema, root_types: RootTypes) -> List[TraversedType]:
                         stack.append(
                             TraversedType(
                                 object,
-                                item.path.add_child(None, List[String](), name^),
+                                item.path.add_child(
+                                    None, List[String](), name^
+                                ),
                             )
                         )
                     i += 1
@@ -621,8 +624,7 @@ def _member_descriptions(schema: Schema, type: Int) -> String:
 
 
 struct SchemaIndex(Movable):
-    """A search index of the types of a schema, as upstream `SchemaIndex`.
-    """
+    """A search index of the types of a schema, as upstream `SchemaIndex`."""
 
     var names: List[String]
     """The type name of each document."""
@@ -683,12 +685,15 @@ struct SchemaIndex(Movable):
             ref named = schema.types[types[d]]
             self.texts[0].add(d, expand_identifiers(named.name))
             self.texts[1].add(
-                d, expand_identifiers(schema.description_text(named.description))
+                d,
+                expand_identifiers(schema.description_text(named.description)),
             )
             self.texts[1].add(
                 d, expand_identifiers(_member_descriptions(schema, types[d]))
             )
-            self.texts[2].add(d, expand_identifiers(_fields_text(schema, types[d])))
+            self.texts[2].add(
+                d, expand_identifiers(_fields_text(schema, types[d]))
+            )
             d += 1
 
     def _scorers(self, terms: List[String]) -> List[_TermScorer]:

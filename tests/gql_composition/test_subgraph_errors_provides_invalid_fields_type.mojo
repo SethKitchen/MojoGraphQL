@@ -21,11 +21,22 @@ def test_v2_0_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -36,11 +47,22 @@ def test_v2_1_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -51,11 +73,22 @@ def test_v2_2_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -66,11 +99,22 @@ def test_v2_3_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -81,11 +125,22 @@ def test_v2_4_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -96,11 +151,22 @@ def test_v2_5_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -111,11 +177,22 @@ def test_v2_6_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -126,11 +203,22 @@ def test_v2_7_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -141,11 +229,22 @@ def test_v2_8_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -156,11 +255,22 @@ def test_v2_9_provides_invalid_fields_type_boolean() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides(fields: true)\n}"
+                ),
             ),
         ],
         [
-            "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field \"Invoice.payment\", for @provides(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[PROVIDES_INVALID_FIELDS_TYPE] [billing] On field"
+                ' "Invoice.payment", for @provides(fields: true): Invalid value'
+                ' for argument "fields": must be a string.'
+            ),
         ],
     )
 

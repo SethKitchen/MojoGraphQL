@@ -80,8 +80,10 @@ def test_marks_a_type_with_multiple_key_fields_as_an_entity() raises:
     )
     assert_equal(
         type_sdl(schema, "Product"),
-        "type Product {\n  upc: String!\n  sku: String!\n  name: String\n"
-        "  price: Int\n}",
+        (
+            "type Product {\n  upc: String!\n  sku: String!\n  name: String\n"
+            "  price: Int\n}"
+        ),
     )
     assert_equal(type_sdl(schema, "_Entity"), "union _Entity = Product")
 
@@ -185,8 +187,10 @@ def test_adds_entities_to_a_query_root_with_the_default_name() raises:
     )
     assert_equal(
         type_sdl(schema, "Query"),
-        "type Query {\n  rootField: String\n  _entities(representations:"
-        " [_Any!]!): [_Entity]!\n  _service: _Service!\n}",
+        (
+            "type Query {\n  rootField: String\n  _entities(representations:"
+            " [_Any!]!): [_Entity]!\n  _service: _Service!\n}"
+        ),
     )
 
 
@@ -197,8 +201,11 @@ def test_adds_entities_to_a_query_root_with_another_name() raises:
     )
     assert_equal(
         type_sdl(schema, "QueryRoot"),
-        "type QueryRoot {\n  rootField: String\n  _entities(representations:"
-        " [_Any!]!): [_Entity]!\n  _service: _Service!\n}",
+        (
+            "type QueryRoot {\n  rootField: String\n "
+            " _entities(representations: [_Any!]!): [_Entity]!\n  _service:"
+            " _Service!\n}"
+        ),
     )
 
 
@@ -438,10 +445,12 @@ def test_fails_on_bad_linking() raises:
 type Query { t: T }
 type T @key(fields: "id") { id: ID! }"""
         ),
-        "The schema is not a valid GraphQL schema.. Caused by:\nUnknown"
-        ' directive "@key". If you meant the "@key" federation directive, you'
-        ' should use "@primaryKey" as it is imported under that name in the'
-        " @link to the federation specification of this schema.",
+        (
+            "The schema is not a valid GraphQL schema.. Caused by:\nUnknown"
+            ' directive "@key". If you meant the "@key" federation directive,'
+            ' you should use "@primaryKey" as it is imported under that name in'
+            " the @link to the federation specification of this schema."
+        ),
     )
 
 
@@ -530,22 +539,40 @@ def test_legacy_single_module_without_resolvers() raises:
 
 
 def test_defines_the_resolve_type_resolver_on_the_entity_union() raises:
-    var schema = build_subgraph_schema(
-        _legacy_documents(), SubgraphResolvers()
-    )
+    var schema = build_subgraph_schema(_legacy_documents(), SubgraphResolvers())
     ref resolvers = schema.resolvers.resolvers
     assert_equal(resolvers.type_names[len(resolvers.type_names) - 1], "_Entity")
 
 
 def test_legacy_simple_array_of_documents() raises:
-    var schema = build_subgraph_schema(
-        _legacy_documents(), SubgraphResolvers()
-    )
+    var schema = build_subgraph_schema(_legacy_documents(), SubgraphResolvers())
     assert_equal(
         type_sdl(schema, "Product"),
         "type Product {\n  upc: String!\n  name: String\n  price: Int\n}",
     )
     assert_equal(type_sdl(schema, "_Entity"), "union _Entity = Product")
+
+
+def test_legacy_empty_array_of_documents() raises:
+    # The SDL of `buildSubgraphSchema({ typeDefs: [], resolvers: {} })` in
+    # @apollo/subgraph 2.14.4.
+    var schema = build_subgraph_schema(List[Document](), SubgraphResolvers())
+    assert_service_sdl(
+        schema,
+        (
+            "directive @key(fields: _FieldSet!, resolvable: Boolean = true)"
+            " repeatable on OBJECT | INTERFACE\n\ndirective @requires(fields:"
+            " _FieldSet!) on FIELD_DEFINITION\n\ndirective @provides(fields:"
+            " _FieldSet!) on FIELD_DEFINITION\n\ndirective @external(reason:"
+            " String) on OBJECT | FIELD_DEFINITION\n\ndirective @tag(name:"
+            " String!) repeatable on FIELD_DEFINITION | OBJECT | INTERFACE |"
+            " UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE |"
+            " INPUT_OBJECT | INPUT_FIELD_DEFINITION\n\ndirective @extends on"
+            " OBJECT | INTERFACE\n\nscalar _FieldSet\n\nscalar _Any\n\ntype"
+            " _Service {\n  sdl: String\n}\n\ntype Query {\n  _service:"
+            " _Service!\n}"
+        ),
+    )
 
 
 def main() raises:

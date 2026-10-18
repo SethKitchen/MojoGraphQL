@@ -1,0 +1,8 @@
+OtherValidationIssue (2:24)
+No value passed for required inputField `stars`
+------------
+OtherValidationIssue (2:24)
+No value passed for required inputField `listOfStringNonOptional`
+------------
+OtherValidationIssue (4:12)
+Variable `red` of type `String!` used in position expecting type `Int!`

@@ -107,7 +107,9 @@ def _parse(text: Span[UInt8, _], comma: Bool, start: Int) -> _Parsed:
                 break
             if code == 61:
                 var key = lower_ascii(
-                    _text(text, key_start, _trailing_ows(text, key_start, index))
+                    _text(
+                        text, key_start, _trailing_ows(text, key_start, index)
+                    )
                 )
                 index = _skip_ows(text, index + 1)
                 if index < size and text[index] == 34:
@@ -393,7 +395,9 @@ def _is_token(text: Span[UInt8, _]) -> Bool:
     while index < len(text):
         var b = text[index]
         var alnum = (
-            (b >= 48 and b <= 57) or (b >= 65 and b <= 90) or (b >= 97 and b <= 122)
+            (b >= 48 and b <= 57)
+            or (b >= 65 and b <= 90)
+            or (b >= 97 and b <= 122)
         )
         if not alnum:
             var symbols = StaticString("!#$%&'*+-.^_`|~").as_bytes()
@@ -434,14 +438,18 @@ def mime_essence(text: StringSlice) -> Optional[String]:
     while semicolon < end and bytes[semicolon] != 59:
         semicolon += 1
     var subtype_end = semicolon
-    while subtype_end > slash + 1 and _is_http_whitespace(bytes[subtype_end - 1]):
+    while subtype_end > slash + 1 and _is_http_whitespace(
+        bytes[subtype_end - 1]
+    ):
         subtype_end -= 1
     if not _is_token(bytes[slash + 1 : subtype_end]):
         return None
     return lower_ascii(_text(bytes, start, subtype_end))
 
 
-def media_type_parameter(text: StringSlice, name: StringSlice) -> Optional[String]:
+def media_type_parameter(
+    text: StringSlice, name: StringSlice
+) -> Optional[String]:
     """Return a parameter of a media type, as `content-type` 2.1.0 `parse`
     reads it.
 

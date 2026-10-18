@@ -21,11 +21,19 @@ def test_v2_0_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -36,11 +44,19 @@ def test_v2_1_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -51,11 +67,19 @@ def test_v2_2_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -66,11 +90,19 @@ def test_v2_3_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -81,11 +113,19 @@ def test_v2_4_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -96,11 +136,19 @@ def test_v2_5_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -111,11 +159,19 @@ def test_v2_6_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -126,11 +182,19 @@ def test_v2_7_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -141,11 +205,19 @@ def test_v2_8_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 
@@ -156,11 +228,19 @@ def test_v2_9_invalid_subgraph_name() raises:
         [
             sg(
                 "_",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph: this name is reserved",
+            (
+                "[INVALID_SUBGRAPH_NAME] [_] Invalid name _ for a subgraph:"
+                " this name is reserved"
+            ),
         ],
     )
 

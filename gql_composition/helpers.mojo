@@ -374,14 +374,6 @@ def _spec_field_set_types(v2: Bool) -> List[String]:
     return [String("_FieldSet!"), String("FieldSet!"), String("String")]
 
 
-def _holds(items: List[String], item: String) -> Bool:
-    """Return True if a list holds a string."""
-    for ref existing in items:
-        if existing == item:
-            return True
-    return False
-
-
 def validate_directive_against_original(
     mut context: SubgraphContext, definition: Int, spec_name: String
 ) raises:
@@ -400,18 +392,14 @@ def validate_directive_against_original(
     """
     ref document = context.document
     var provided_name = String(document.name(definition))
-    if not context.is_available_directive(spec_name, provided_name):
-        return
     var v2 = context.version.at_least(200)
-    var original = -1
-    for index in range(len(context.known.directives)):
-        if context.is_available_directive(
-            spec_name, context.known.directives[index].name
-        ):
-            original = index
-            break
-    if original == -1:
-        raise Error("Federation directive @" + spec_name + " not found")
+    # The caller passes only the federation directives that the subgraph
+    # can use, so one of the known directives is `spec_name`.
+    var original = 0
+    while not context.is_available_directive(
+        spec_name, context.known.directives[original].name
+    ):
+        original += 1
     var prefix = 'Invalid definition for directive "@' + spec_name + '": '
     var messages = List[String]()
     var arguments = context.known.directives[original].arguments.copy()
@@ -437,13 +425,15 @@ def validate_directive_against_original(
         if (
             argument.type != provided_type
             and provided_type != "String!"
-            and _holds(_spec_field_set_types(v2), argument.type)
+            and argument.type in _spec_field_set_types(v2)
         ):
             var allowed = _field_set_types(v2)
-            var accepted = _holds(allowed, provided_type)
-            for ref item in allowed:
-                if "[" + item + "]!" == provided_type:
+            var accepted = provided_type in allowed
+            var index = 0
+            while index < len(allowed):
+                if "[" + allowed[index] + "]!" == provided_type:
                     accepted = True
+                index += 1
             if not accepted:
                 messages.append(
                     prefix
@@ -455,7 +445,8 @@ def validate_directive_against_original(
                     + provided_type
                     + '"'
                 )
-        if argument.type == "Boolean" and argument.boolean_default != -1:
+        # Each known boolean argument has a default value.
+        if argument.type == "Boolean":
             var provided_value = -1
             var default = document.child(provided, Role.DEFAULT_VALUE)
             if default != NO_NODE:
@@ -463,11 +454,11 @@ def validate_directive_against_original(
                     raise Error("Expected a Boolean")
                 provided_value = Int(document.boolean_value(default))
             if provided_value != argument.boolean_default:
+                # Each known boolean default is `true`, so a provided
+                # default that differs is `false`.
                 var shown = String("null")
                 if provided_value != -1:
-                    shown = String("true") if provided_value == 1 else String(
-                        "false"
-                    )
+                    shown = String("false")
                 messages.append(
                     prefix
                     + 'argument "'
@@ -483,7 +474,7 @@ def validate_directive_against_original(
     while location != NO_NODE:
         if document.role(location) == Role.LOCATION:
             var text = String(document.text(location))
-            if _holds(expected, text):
+            if text in expected:
                 overlap = True
             found.append(text^)
         location = document.next_sibling(location)
@@ -500,8 +491,10 @@ def validate_directive_against_original(
     if len(messages) == 0:
         context.replacements.add(provided_name)
         return
-    for ref message in messages:
-        context.report(message, ErrorCode.DIRECTIVE_DEFINITION_INVALID)
+    var index = 0
+    while index < len(messages):
+        context.report(messages[index], ErrorCode.DIRECTIVE_DEFINITION_INVALID)
+        index += 1
 
 
 def argument_value(

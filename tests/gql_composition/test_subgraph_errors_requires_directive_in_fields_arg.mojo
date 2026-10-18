@@ -21,11 +21,26 @@ def test_v2_0_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown element \"@composeDirective\".",
+            (
+                "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown"
+                ' element "@composeDirective".'
+            ),
         ],
     )
 
@@ -36,12 +51,35 @@ def test_v2_1_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -52,12 +90,35 @@ def test_v2_2_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -68,12 +129,35 @@ def test_v2_3_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -84,12 +168,35 @@ def test_v2_4_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -100,12 +207,35 @@ def test_v2_5_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -116,12 +246,35 @@ def test_v2_6_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -132,12 +285,35 @@ def test_v2_7_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -148,12 +324,35 @@ def test_v2_8_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 
@@ -164,12 +363,35 @@ def test_v2_9_requires_directive_in_fields_arg() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@composeDirective\", \"@requires\"]) @link(url: \"https://myspecs.dev/testkit/v1.0\", import: [\"@lowercase\"]) @composeDirective(name: \"@lowercase\")\n\ndirective @lowercase on FIELD_DEFINITION\n\ntype User @key(fields: \"id name\") {\n  id: ID!\n  name: String\n  profile: Profile @requires(fields: \"name @lowercase\")\n}\n\ntype Profile {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@composeDirective", "@requires"]) @link(url:'
+                    ' "https://myspecs.dev/testkit/v1.0", import:'
+                    ' ["@lowercase"]) @composeDirective(name:'
+                    ' "@lowercase")\n\ndirective @lowercase on'
+                    ' FIELD_DEFINITION\n\ntype User @key(fields: "id name") {\n'
+                    "  id: ID!\n  name: String\n  profile: Profile"
+                    ' @requires(fields: "name @lowercase")\n}\n\ntype Profile'
+                    " {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): cannot have directive applications in the @requires(fields:) argument but found @lowercase.",
-            "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field \"User.profile\", for @requires(fields: \"name @lowercase\"): field \"User.name\" should not be part of a @requires since it is already provided by this subgraph (it is not marked @external)",
+            (
+                "[REQUIRES_DIRECTIVE_IN_FIELDS_ARG] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                " cannot have directive applications in the @requires(fields:)"
+                " argument but found @lowercase."
+            ),
+            (
+                "[REQUIRES_FIELDS_MISSING_EXTERNAL] [users] On field"
+                ' "User.profile", for @requires(fields: "name @lowercase"):'
+                ' field "User.name" should not be part of a @requires since it'
+                " is already provided by this subgraph (it is not marked"
+                " @external)"
+            ),
         ],
     )
 

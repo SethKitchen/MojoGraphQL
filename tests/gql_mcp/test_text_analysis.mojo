@@ -106,9 +106,10 @@ def test_analyze() raises:
         "[hello][world][s][café][run]",
     )
     assert_equal(_joined(analyze("über_Größe")), "[über][größe]")
-    assert_equal(_joined(analyze("ΑΣ1 ΣΑ ΑΣ ΑΣΑ Σ aΣ ΣΣ 1Σ")), (
-        "[ας1][σα][ας][ασα][σ][aς][σς][1σ]"
-    ))
+    assert_equal(
+        _joined(analyze("ΑΣ1 ΣΑ ΑΣ ΑΣΑ Σ aΣ ΣΣ 1Σ")),
+        "[ας1][σα][ας][ασα][σ][aς][σς][1σ]",
+    )
     assert_equal(_joined(analyze("")), "")
     assert_equal(_joined(analyze("  --  ")), "")
 

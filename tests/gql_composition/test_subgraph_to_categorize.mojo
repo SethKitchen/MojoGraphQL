@@ -21,11 +21,24 @@ def test_v2_0_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown element \"@composeDirective\".",
+            (
+                "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown"
+                ' element "@composeDirective".'
+            ),
         ],
     )
 
@@ -36,11 +49,20 @@ def test_v2_1_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -50,11 +72,20 @@ def test_v2_2_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -64,11 +95,20 @@ def test_v2_3_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -78,11 +118,20 @@ def test_v2_4_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -92,11 +141,20 @@ def test_v2_5_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -106,11 +164,20 @@ def test_v2_6_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -120,11 +187,20 @@ def test_v2_7_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -134,11 +210,20 @@ def test_v2_8_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -148,11 +233,20 @@ def test_v2_9_valid_composed_directive_gets_an_empty_object_instead_of_name() ra
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: {})\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: {})\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

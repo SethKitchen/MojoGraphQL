@@ -103,6 +103,7 @@ A type resolver returns the name of the object type as a string value. A resolve
 | `resolvers` | `resolve`, `resolveType`, `isTypeOf`, `fieldResolver`, `typeResolver` | No resolvers |
 | `max_coercion_errors` | `options.maxCoercionErrors` | 50 |
 | `assume_valid_schema` | A schema built with `assumeValid` | False |
+| `field_timing` | The Apollo Server `willResolveField` hook | False |
 
 The arena stays in `args.values` after execution. A resolver can change values there, as a mutation resolver changes its data.
 
@@ -142,6 +143,7 @@ These things differ from graphql-js `buildClientSchema`:
 - graphql-js `CollectedErrors` drops an error under a response path that is already `null`. Only a promise that settles late can cause that, so this port has no such step.
 - An error of execution has no source excerpt, so `String(error)` gives only the message. The JSON of a response has no excerpt in graphql-js either.
 - A default value that is not valid for its type gives a field error when execution uses it. graphql-js `buildSchema` coerces each default value when it builds the schema, and it can raise there.
+- `field_timing` is an addition for the inline trace plugin of `gql_server`. When it is set, execution records a `FieldTiming` for each resolved field in `ExecutionResult.field_timings`. A timing has the path, the field name, the type, the parent type and the times of the resolver. The fields are those that Apollo Server wraps: the fields of the object types whose names do not start with `__`. Meta fields and introspection fields have no timing. When `field_timing` is False, execution does not record anything.
 
 ## Tests
 

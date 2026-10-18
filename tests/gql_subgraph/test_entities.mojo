@@ -15,7 +15,7 @@ writes the value of a `__resolveType` that is not a string with Node.js
 (`{ id: "1" }`).
 """
 
-from std.testing import TestSuite, assert_equal
+from std.testing import TestSuite, assert_equal, assert_true
 from _helpers import run, sdl_document
 from gql_execution.execute import ExecutionArgs, ResolveInfo, execute
 from gql_execution.value import Values
@@ -27,7 +27,9 @@ from gql_subgraph.build_subgraph_schema import (
 )
 
 
-def _build(sdl: String, var resolvers: SubgraphResolvers) raises -> SubgraphSchema:
+def _build(
+    sdl: String, var resolvers: SubgraphResolvers
+) raises -> SubgraphSchema:
     var modules = List[SchemaModule]()
     modules.append(SchemaModule(sdl_document(sdl), resolvers^))
     return build_subgraph_schema(modules^)
@@ -60,20 +62,29 @@ def test_executes_resolve_reference_for_a_type_if_found() raises:
     resolvers.resolve_reference("Product", _product_reference)
     resolvers.resolve_reference("User", _user_reference)
     var schema = _build(
-        'type Product @key(fields: "upc") { upc: Int name: String } type User'
-        ' @key(fields: "id") { firstName: String }',
+        (
+            'type Product @key(fields: "upc") { upc: Int name: String } type'
+            ' User @key(fields: "id") { firstName: String }'
+        ),
         resolvers^,
     )
     assert_equal(
         run(
             schema,
-            "query GetEntities($representations: [_Any!]!) {"
-            " _entities(representations: $representations) { ... on Product {"
-            " name } ... on User { firstName } } }",
-            '{"representations": [{"__typename": "Product", "upc": 1},'
-            ' {"__typename": "User", "id": 1}]}',
+            (
+                "query GetEntities($representations: [_Any!]!) {"
+                " _entities(representations: $representations) { ... on Product"
+                " { name } ... on User { firstName } } }"
+            ),
+            (
+                '{"representations": [{"__typename": "Product", "upc": 1},'
+                ' {"__typename": "User", "id": 1}]}'
+            ),
         ),
-        '{"data":{"_entities":[{"name":"Apollo Gateway"},{"firstName":"James"}]}}',
+        (
+            '{"data":{"_entities":[{"name":"Apollo'
+            ' Gateway"},{"firstName":"James"}]}}'
+        ),
     )
 
 
@@ -85,11 +96,15 @@ def test_executes_resolve_reference_with_default_representation_values() raises:
     assert_equal(
         run(
             schema,
-            "query GetEntities($representations: [_Any!]!) {"
-            " _entities(representations: $representations) { ... on Product {"
-            " upc name } } }",
-            '{"representations": [{"__typename": "Product", "upc": 1, "name":'
-            ' "Apollo Gateway"}]}',
+            (
+                "query GetEntities($representations: [_Any!]!) {"
+                " _entities(representations: $representations) { ... on Product"
+                " { upc name } } }"
+            ),
+            (
+                '{"representations": [{"__typename": "Product", "upc": 1,'
+                ' "name": "Apollo Gateway"}]}'
+            ),
         ),
         '{"data":{"_entities":[{"upc":1,"name":"Apollo Gateway"}]}}',
     )
@@ -130,8 +145,11 @@ type Book implements Product @key(fields: "id") {
     assert_equal(
         run(
             schema,
-            "query ($representations: [_Any!]!) { _entities(representations:"
-            " $representations) { ... on Product { name } } }",
+            (
+                "query ($representations: [_Any!]!) {"
+                " _entities(representations: $representations) { ... on Product"
+                " { name } } }"
+            ),
             '{"representations": [{"__typename": "Product", "id": 1}]}',
         ),
         '{"data":{"_entities":[{"name":"My book"}]}}',
@@ -182,9 +200,11 @@ type ProductB implements Product @key(fields: "key") {
     assert_equal(
         run(
             schema,
-            'query Product { _entities(representations: [{ __typename:'
-            ' "Product", key: "unknown" }]) { __typename ... on Product { type'
-            " key } } }",
+            (
+                "query Product { _entities(representations: [{ __typename:"
+                ' "Product", key: "unknown" }]) { __typename ... on Product {'
+                " type key } } }"
+            ),
         ),
         '{"data":{"_entities":[null]}}',
     )
@@ -204,7 +224,9 @@ comptime ENTITY_QUERY = (
 )
 
 
-def _entities(var resolvers: SubgraphResolvers, representations: String) raises -> String:
+def _entities(
+    var resolvers: SubgraphResolvers, representations: String
+) raises -> String:
     var schema = _build(ENTITY_SDL, resolvers^)
     return run(schema, ENTITY_QUERY, '{"r": ' + representations + "}")
 
@@ -237,8 +259,12 @@ def _no_type(name: String) -> String:
 
 def test_a_typename_that_names_no_object_or_interface_type() raises:
     var none = SubgraphResolvers()
-    assert_equal(_entities(none.copy(), '[{"__typename": "Nope"}]'), _no_type("Nope"))
-    assert_equal(_entities(none.copy(), '[{"__typename": "String"}]'), _no_type("String"))
+    assert_equal(
+        _entities(none.copy(), '[{"__typename": "Nope"}]'), _no_type("Nope")
+    )
+    assert_equal(
+        _entities(none.copy(), '[{"__typename": "String"}]'), _no_type("String")
+    )
     assert_equal(_entities(none.copy(), '[{"id": 1}]'), _no_type("undefined"))
     assert_equal(_entities(none.copy(), '[{"__typename": 1}]'), _no_type("1"))
     assert_equal(
@@ -384,8 +410,10 @@ def test_an_interface_entity_uses_the_reference_resolver_of_its_type() raises:
     resolvers.resolve_reference("Book", _book_from_reference)
     assert_equal(
         _entities(resolvers^, PRODUCT),
-        '{"data":{"_entities":[{"__typename":"Book","id":"12","name":"from'
-        ' book"}]}}',
+        (
+            '{"data":{"_entities":[{"__typename":"Book","id":"12","name":"from'
+            ' book"}]}}'
+        ),
     )
 
 
@@ -448,12 +476,16 @@ def test_an_object_entity_that_fails() raises:
     assert_equal(
         _entities(
             resolvers^,
-            '[{"__typename": "Book", "id": "1"}, {"__typename": "Book", "id":'
-            ' "2"}]',
+            (
+                '[{"__typename": "Book", "id": "1"}, {"__typename": "Book",'
+                ' "id": "2"}]'
+            ),
         ),
-        '{"errors":[{"message":"bad","locations":[{"line":1,"column":23}],'
-        '"path":["_entities",0]},{"message":"bad","locations":[{"line":1,'
-        '"column":23}],"path":["_entities",1]}],"data":{"_entities":[null,null]}}',
+        (
+            '{"errors":[{"message":"bad","locations":[{"line":1,"column":23}],'
+            '"path":["_entities",0]},{"message":"bad","locations":[{"line":1,'
+            '"column":23}],"path":["_entities",1]}],"data":{"_entities":[null,null]}}'
+        ),
     )
     resolvers = SubgraphResolvers()
     resolvers.resolve_reference("Book", _boom)
@@ -483,6 +515,45 @@ def test_an_object_entity_gets_the_typename_of_its_type() raises:
     )
 
 
+def _type_null(
+    mut values: Values, value: Int, info: ResolveInfo, abstract_type: Int
+) raises -> Int:
+    return values.add_null()
+
+
+def test_an_interface_entity_whose_type_resolver_gives_null() raises:
+    var resolvers = SubgraphResolvers()
+    resolvers.resolve_type("Product", _type_null)
+    assert_equal(_entities(resolvers^, PRODUCT), _item_error(MUST_RESOLVE))
+
+
+def test_an_interface_entity_of_a_type_without_a_reference_resolver() raises:
+    var resolvers = SubgraphResolvers()
+    resolvers.resolve_type("Product", _type_book)
+    assert_equal(
+        _entities(resolvers^, PRODUCT),
+        '{"data":{"_entities":[{"__typename":"Book","id":"1","name":null}]}}',
+    )
+
+
+def _tagged(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    _ = values.add_handle(7, 0)
+    return values.add_number(1)
+
+
+def test_federation_fields_find_the_subgraph_past_other_handles() raises:
+    var resolvers = SubgraphResolvers()
+    resolvers.field("Query", "x", _tagged)
+    var schema = _build(ENTITY_SDL, resolvers^)
+    assert_true(
+        run(schema, "{ x _service { sdl } }").startswith(
+            '{"data":{"x":1,"_service":{"sdl":"schema\\n'
+        )
+    )
+
+
 def test_federation_fields_need_subgraph_execute() raises:
     var schema = _build(ENTITY_SDL, SubgraphResolvers())
     var args = ExecutionArgs()
@@ -492,9 +563,11 @@ def test_federation_fields_need_subgraph_execute() raises:
     )
     assert_equal(
         result.to_json(),
-        '{"errors":[{"message":"A subgraph field must execute with'
-        ' SubgraphSchema.execute","locations":[{"line":1,"column":3}],'
-        '"path":["_service"]}],"data":null}',
+        (
+            '{"errors":[{"message":"A subgraph field must execute with'
+            ' SubgraphSchema.execute","locations":[{"line":1,"column":3}],'
+            '"path":["_service"]}],"data":null}'
+        ),
     )
 
 

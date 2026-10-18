@@ -27,8 +27,8 @@ type Product @key(fields: "upc") @key(fields: "sku") @tag(name: "public") {
   name: String!
   description: String
   price: Money!
-  weight: Float @shareable
-  dimensions: Dimensions
+  weight: Float @external
+  dimensions: Dimensions @external
   category: Category
   variants: [Variant!]!
   reviews(first: Int = 10): [Review!]!

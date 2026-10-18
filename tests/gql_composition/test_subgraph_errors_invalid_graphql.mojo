@@ -21,12 +21,28 @@ def test_v2_0_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -37,11 +53,22 @@ def test_v2_0_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -52,7 +79,13 @@ def test_v2_0_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -67,16 +100,47 @@ def test_v2_0_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -87,11 +151,23 @@ def test_v2_0_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown element \"@composeDirective\".",
+            (
+                "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown"
+                ' element "@composeDirective".'
+            ),
         ],
     )
 
@@ -102,11 +178,24 @@ def test_v2_0_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown element \"@composeDirective\".",
+            (
+                "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown"
+                ' element "@composeDirective".'
+            ),
         ],
     )
 
@@ -117,11 +206,24 @@ def test_v2_0_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown element \"@composeDirective\".",
+            (
+                "[INVALID_LINK_DIRECTIVE_USAGE] [users] Cannot import unknown"
+                ' element "@composeDirective".'
+            ),
         ],
     )
 
@@ -132,11 +234,16 @@ def test_v2_0_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -146,11 +253,24 @@ def test_v2_0_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.0",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -161,11 +281,20 @@ def test_v2_0_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -176,12 +305,28 @@ def test_v2_1_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -192,11 +337,22 @@ def test_v2_1_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -207,7 +363,13 @@ def test_v2_1_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -222,16 +384,47 @@ def test_v2_1_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -242,12 +435,28 @@ def test_v2_1_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -258,11 +467,24 @@ def test_v2_1_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -273,11 +495,24 @@ def test_v2_1_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -288,11 +523,16 @@ def test_v2_1_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -302,11 +542,24 @@ def test_v2_1_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.1",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -317,11 +570,20 @@ def test_v2_1_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -332,12 +594,28 @@ def test_v2_2_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -348,11 +626,22 @@ def test_v2_2_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -363,7 +652,13 @@ def test_v2_2_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -378,16 +673,47 @@ def test_v2_2_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -398,12 +724,28 @@ def test_v2_2_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -414,11 +756,24 @@ def test_v2_2_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -429,11 +784,24 @@ def test_v2_2_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -444,11 +812,16 @@ def test_v2_2_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -458,11 +831,24 @@ def test_v2_2_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.2",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -473,11 +859,20 @@ def test_v2_2_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -488,12 +883,28 @@ def test_v2_3_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -504,11 +915,22 @@ def test_v2_3_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -519,7 +941,13 @@ def test_v2_3_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -534,16 +962,47 @@ def test_v2_3_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -554,12 +1013,28 @@ def test_v2_3_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -570,11 +1045,24 @@ def test_v2_3_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -585,11 +1073,24 @@ def test_v2_3_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -600,11 +1101,16 @@ def test_v2_3_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -614,11 +1120,24 @@ def test_v2_3_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.3",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -629,11 +1148,20 @@ def test_v2_3_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -644,12 +1172,28 @@ def test_v2_4_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -660,11 +1204,22 @@ def test_v2_4_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -675,7 +1230,13 @@ def test_v2_4_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -690,16 +1251,47 @@ def test_v2_4_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -710,12 +1302,28 @@ def test_v2_4_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -726,11 +1334,24 @@ def test_v2_4_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -741,11 +1362,24 @@ def test_v2_4_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -756,11 +1390,16 @@ def test_v2_4_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -770,11 +1409,24 @@ def test_v2_4_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.4",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -785,11 +1437,20 @@ def test_v2_4_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -800,12 +1461,28 @@ def test_v2_5_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -816,11 +1493,22 @@ def test_v2_5_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -831,7 +1519,13 @@ def test_v2_5_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -846,16 +1540,47 @@ def test_v2_5_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -866,12 +1591,28 @@ def test_v2_5_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -882,11 +1623,24 @@ def test_v2_5_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -897,11 +1651,24 @@ def test_v2_5_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -912,11 +1679,16 @@ def test_v2_5_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -926,11 +1698,24 @@ def test_v2_5_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.5",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -941,11 +1726,20 @@ def test_v2_5_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -956,12 +1750,28 @@ def test_v2_6_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -972,11 +1782,22 @@ def test_v2_6_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -987,7 +1808,13 @@ def test_v2_6_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -1002,16 +1829,47 @@ def test_v2_6_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -1022,12 +1880,28 @@ def test_v2_6_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1038,11 +1912,24 @@ def test_v2_6_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1053,11 +1940,24 @@ def test_v2_6_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1068,11 +1968,16 @@ def test_v2_6_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1082,11 +1987,24 @@ def test_v2_6_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.6",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -1097,11 +2015,20 @@ def test_v2_6_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -1112,12 +2039,28 @@ def test_v2_7_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -1128,11 +2071,22 @@ def test_v2_7_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -1143,7 +2097,13 @@ def test_v2_7_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -1158,16 +2118,47 @@ def test_v2_7_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -1178,12 +2169,28 @@ def test_v2_7_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1194,11 +2201,24 @@ def test_v2_7_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1209,11 +2229,24 @@ def test_v2_7_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1224,11 +2257,16 @@ def test_v2_7_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1238,11 +2276,24 @@ def test_v2_7_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.7",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -1253,11 +2304,20 @@ def test_v2_7_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -1268,12 +2328,28 @@ def test_v2_8_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -1284,11 +2360,22 @@ def test_v2_8_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -1299,7 +2386,13 @@ def test_v2_8_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -1314,16 +2407,47 @@ def test_v2_8_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -1334,12 +2458,28 @@ def test_v2_8_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1350,11 +2490,24 @@ def test_v2_8_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1365,11 +2518,24 @@ def test_v2_8_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1380,11 +2546,16 @@ def test_v2_8_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1394,11 +2565,24 @@ def test_v2_8_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.8",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -1409,11 +2593,20 @@ def test_v2_8_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 
@@ -1424,12 +2617,28 @@ def test_v2_9_invalid_graphql_invalid_value_for_fields_input_object() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ndirective @key(fields: FieldSet!,'
+                    " resolvable: Boolean = true) repeatable on OBJECT |"
+                    " INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -1440,11 +2649,22 @@ def test_v2_9_invalid_graphql_provides_without_fields() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@provides\"])\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@provides"])\n\ntype Payment @key(fields: "id")'
+                    " {\n  id: ID!\n  amount: Int!\n}\n\ntype Invoice"
+                    ' @key(fields: "id") {\n  id: ID!\n  amount: Int!\n '
+                    " payment: Payment @provides\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [billing] Directive \"@provides\" argument \"fields\" of type \"FieldSet!\" is required, but it was not provided.",
+            (
+                '[INVALID_GRAPHQL] [billing] Directive "@provides" argument'
+                ' "fields" of type "FieldSet!" is required, but it was not'
+                " provided."
+            ),
         ],
     )
 
@@ -1455,7 +2675,13 @@ def test_v2_9_invalid_graphql_unknown_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  profile: Profile\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  profile:'
+                    " Profile\n}"
+                ),
             ),
         ],
         [
@@ -1470,16 +2696,47 @@ def test_v2_9_invalid_graphql_default_value() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users(role: Role = \"Oopsie\"): [User]\n  allUsers(role: Role = OOPSIE): [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n  usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! = null): [User]\n  filterUsers(filter: Filter = {role: \"Oopsie\"}): [User]\n}\n\ninput Filter {\n  role: Role = OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  name: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users(role: Role ='
+                    ' "Oopsie"): [User]\n  allUsers(role: Role = OOPSIE):'
+                    " [User]\n  usersByIDs(ids: [ID!]! = []): [User]\n "
+                    " usersByID(id: ID! = NULL): [User]\n  usersByID2(id: ID! ="
+                    " null): [User]\n  filterUsers(filter: Filter = {role:"
+                    ' "Oopsie"}): [User]\n}\n\ninput Filter {\n  role: Role ='
+                    " OOPSIE\n}\n\nenum Role {\n  ADMIN\n  USER\n}\n\ntype User"
+                    ' @key(fields: "id") {\n  id: ID\n  name: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: \"Oopsie\") provided for argument Query.users(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for argument Query.allUsers(role:) of type Role.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL) provided for argument Query.usersByID(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: null) provided for argument Query.usersByID2(id:) of type ID!.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: {role: \"Oopsie\"}) provided for argument Query.filterUsers(filter:) of type Filter.",
-            "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE) provided for input field Filter.role of type Role.",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got:"
+                ' "Oopsie") provided for argument Query.users(role:) of type'
+                " Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for argument Query.allUsers(role:) of type Role."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: NULL)"
+                " provided for argument Query.usersByID(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: null)"
+                " provided for argument Query.usersByID2(id:) of type ID!."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: {role:"
+                ' "Oopsie"}) provided for argument Query.filterUsers(filter:)'
+                " of type Filter."
+            ),
+            (
+                "[INVALID_GRAPHQL] [users] Invalid default value (got: OOPSIE)"
+                " provided for input field Filter.role of type Role."
+            ),
         ],
     )
 
@@ -1490,12 +2747,28 @@ def test_v2_9_invalid_graphql_composedirective_gets_a_boolean_instead_of_string(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\"]) @composeDirective(name: true)\n\ndirective @hello(name: String) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @hello(name: true)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello"])'
+                    " @composeDirective(name: true)\n\ndirective @hello(name:"
+                    " String) on FIELD_DEFINITION\n\ntype Query {\n  words:"
+                    " [String!]! @hello(name: true)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@composeDirective(name:)\" of type \"String!\" in application of \"@composeDirective\" to \"schema\".",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(name:)\" of type \"String\" in application of \"@hello\" to \"Query.words\".",
+            (
+                "[INVALID_GRAPHQL] [users] Invalid value for"
+                ' "@composeDirective(name:)" of type "String!" in application'
+                ' of "@composeDirective" to "schema".'
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(name:)" of'
+                ' type "String" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1506,11 +2779,24 @@ def test_v2_9_invalid_graphql_composed_directive_gets_an_int_instead_of_input_ty
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1521,11 +2807,24 @@ def test_v2_9_invalid_graphql_composed_directive_gets_a_float_instead_of_input_t
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@composeDirective\"]) @link(url: \"https://myspecs.dev/hello/v1.0\", import: [\"@hello\", \"Person\"]) @composeDirective(name: \"@hello\")\n\ndirective @hello(person: Person) on FIELD_DEFINITION\n\ninput Person {\n  name: String!\n}\n\ntype Query {\n  words: [String!]! @hello(person: 123.4)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/link/v1.0") @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@composeDirective"]) @link(url:'
+                    ' "https://myspecs.dev/hello/v1.0", import: ["@hello",'
+                    ' "Person"]) @composeDirective(name: "@hello")\n\ndirective'
+                    " @hello(person: Person) on FIELD_DEFINITION\n\ninput"
+                    " Person {\n  name: String!\n}\n\ntype Query {\n  words:"
+                    " [String!]! @hello(person: 123.4)\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@hello(person:)\" of type \"Person\" in application of \"@hello\" to \"Query.words\".",
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@hello(person:)"'
+                ' of type "Person" in application of "@hello" to "Query.words".'
+            ),
         ],
     )
 
@@ -1536,11 +2835,16 @@ def test_v2_9_no_invalid_graphql_when_directive_gets_instead_of_string() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"])\n\ndirective @hello(names: [String]) on FIELD_DEFINITION\n\ntype Query {\n  words: [String!]! @shareable @hello(names: [])\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@shareable"])\n\ndirective @hello(names: [String]) on'
+                    " FIELD_DEFINITION\n\ntype Query {\n  words: [String!]!"
+                    " @shareable @hello(names: [])\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -1550,11 +2854,24 @@ def test_v2_9_directive_overwritten_specified_directive_like_deprecated_on_wrong
         [
             sg(
                 "mono",
-                "schema @link(url: \"https://specs.apollo.dev/link/v1.0\") @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@shareable\"]) {\n  query: Query\n}\n\ndirective @deprecated(reason: String = \"No longer supported\") on FIELD_DEFINITION\n\ndirective @shareable repeatable on OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n  view(input: Input): View!\n}\n\ntype View @shareable {\n  user: String\n  post: String!\n}\n\ninput Input {\n  input: String @deprecated(reason: \"impossibru\")\n}",
+                (
+                    'schema @link(url: "https://specs.apollo.dev/link/v1.0")'
+                    ' @link(url: "https://specs.apollo.dev/federation/v2.9",'
+                    ' import: ["@shareable"]) {\n  query: Query\n}\n\ndirective'
+                    ' @deprecated(reason: String = "No longer supported") on'
+                    " FIELD_DEFINITION\n\ndirective @shareable repeatable on"
+                    " OBJECT | FIELD_DEFINITION\n\ntype Query @shareable {\n "
+                    " view(input: Input): View!\n}\n\ntype View @shareable {\n "
+                    " user: String\n  post: String!\n}\n\ninput Input {\n "
+                    ' input: String @deprecated(reason: "impossibru")\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [mono] Directive \"@deprecated\" may not be used on INPUT_FIELD_DEFINITION.",
+            (
+                '[INVALID_GRAPHQL] [mono] Directive "@deprecated" may not be'
+                " used on INPUT_FIELD_DEFINITION."
+            ),
         ],
     )
 
@@ -1565,11 +2882,20 @@ def test_v2_9_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin'
+                    " implements Node {\n  id: ID\n}\n\ninterface Node {\n  id:"
+                    " ID!\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID! but Admin.id of type ID is not a proper subtype.",
+            (
+                "[INVALID_GRAPHQL] [a] Interface field Node.id expects type ID!"
+                " but Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
 

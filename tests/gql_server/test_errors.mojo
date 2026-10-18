@@ -56,12 +56,16 @@ def test_exposes_a_stacktrace_in_debug_mode() raises:
     assert_equal(formatted.message, "message")
     assert_equal(formatted.extension("key").value(), '"value"')
     assert_equal(formatted.extension("code").value(), '"CODE"')
-    assert_equal(formatted.extension("stacktrace").value(), '["GraphQLError: message"]')
+    assert_equal(
+        formatted.extension("stacktrace").value(), '["GraphQLError: message"]'
+    )
     assert_false(Bool(formatted.extension("exception")))
 
 
 def test_hides_stacktrace_by_default() raises:
-    var result = normalize_and_format_errors(_one(ensure_graphql_error(Error("message"))))
+    var result = normalize_and_format_errors(
+        _one(ensure_graphql_error(Error("message")))
+    )
     ref formatted = result.formatted_errors[0]
     assert_equal(formatted.extension("code").value(), '"INTERNAL_SERVER_ERROR"')
     assert_false(Bool(formatted.extension("stacktrace")))
@@ -81,7 +85,9 @@ def test_exposes_extensions_and_code() raises:
     )
 
 
-def keep_format(formatted: FormattedError, error: ServerError) raises -> FormattedError:
+def keep_format(
+    formatted: FormattedError, error: ServerError
+) raises -> FormattedError:
     if formatted.extension("code").value() != '"CODE"':
         raise Error("formatError did not see the code")
     if not formatted.extension("stacktrace"):
@@ -93,13 +99,17 @@ def keep_format(formatted: FormattedError, error: ServerError) raises -> Formatt
 
 def test_calls_format_error_after_code_and_stacktrace() raises:
     var result = normalize_and_format_errors(
-        _one(_with_extensions('{"code":"CODE","key":"value"}')), keep_format, True
+        _one(_with_extensions('{"code":"CODE","key":"value"}')),
+        keep_format,
+        True,
     )
     assert_equal(result.formatted_errors[0].message, "message")
 
 
 def test_formats_native_errors() raises:
-    var result = normalize_and_format_errors(_one(ensure_graphql_error(Error("Hello"))))
+    var result = normalize_and_format_errors(
+        _one(ensure_graphql_error(Error("Hello")))
+    )
     assert_equal(result.formatted_errors[0].message, "Hello")
 
 
@@ -122,8 +132,12 @@ def test_http_extensions_are_collected() raises:
     errors.append(other^)
     var result = normalize_and_format_errors(errors)
     assert_equal(result.http_from_errors.status, 402)
-    assert_equal(result.http_from_errors.headers.get("erroneous").value(), "indeed")
-    assert_equal(result.http_from_errors.headers.get("felonious").value(), "nah")
+    assert_equal(
+        result.http_from_errors.headers.get("erroneous").value(), "indeed"
+    )
+    assert_equal(
+        result.http_from_errors.headers.get("felonious").value(), "nah"
+    )
     assert_false(Bool(result.formatted_errors[0].extension("http")))
 
 
@@ -135,12 +149,21 @@ def test_error_classes() raises:
     assert_false(has_code(bad, ApolloServerErrorCode.BAD_USER_INPUT))
     assert_false(has_code(ServerError("y"), ApolloServerErrorCode.BAD_REQUEST))
     var parse_error = syntax_error(ServerError("s", "GraphQLError"))
-    assert_true(has_code(parse_error, ApolloServerErrorCode.GRAPHQL_PARSE_FAILED))
+    assert_true(
+        has_code(parse_error, ApolloServerErrorCode.GRAPHQL_PARSE_FAILED)
+    )
     assert_equal(parse_error.http.status, 400)
-    var invalid = validation_error(_with_extensions('{"validationErrorCode":"X"}'))
+    var invalid = validation_error(
+        _with_extensions('{"validationErrorCode":"X"}')
+    )
     assert_equal(invalid.extensions[0].key, "validationErrorCode")
     assert_equal(invalid.extensions[1].key, "code")
-    assert_true(has_code(user_input_error(ServerError("u")), ApolloServerErrorCode.BAD_USER_INPUT))
+    assert_true(
+        has_code(
+            user_input_error(ServerError("u")),
+            ApolloServerErrorCode.BAD_USER_INPUT,
+        )
+    )
     var resolution = operation_resolution_error(ServerError("o"))
     assert_equal(resolution.http.status, 400)
     var not_found = persisted_query_not_found_error()
@@ -149,10 +172,14 @@ def test_error_classes() raises:
         not_found.http.headers.get("cache-control").value(),
         "private, no-cache, must-revalidate",
     )
-    assert_equal(not_found.stack, "PersistedQueryNotFoundError: PersistedQueryNotFound")
+    assert_equal(
+        not_found.stack, "PersistedQueryNotFoundError: PersistedQueryNotFound"
+    )
     var not_supported = persisted_query_not_supported_error()
     assert_equal(not_supported.message, "PersistedQueryNotSupported")
-    var wrapped = ensure_graphql_error(Error("boom"), "Context creation failed: ")
+    var wrapped = ensure_graphql_error(
+        Error("boom"), "Context creation failed: "
+    )
     assert_equal(wrapped.message, "Context creation failed: boom")
     assert_equal(wrapped.stack, "Error: boom")
     assert_equal(String(wrapped), "Context creation failed: boom")
@@ -164,7 +191,9 @@ def test_from_graphql_error_keeps_locations_and_path() raises:
     error.locations.append(SourceLocation(3, 4))
     error.path.append(PathSegment.of_key("a"))
     error.path.append(PathSegment.of_index(0))
-    var result = normalize_and_format_errors(_one(ServerError.from_graphql_error(error)))
+    var result = normalize_and_format_errors(
+        _one(ServerError.from_graphql_error(error))
+    )
     assert_equal(
         result.formatted_errors[0].to_json(),
         '{"message":"m","locations":[{"line":1,"column":2},{"line":3,'
@@ -179,13 +208,31 @@ def test_from_graphql_error_keeps_locations_and_path() raises:
 
 
 def test_codes() raises:
-    assert_equal(String(ApolloServerErrorCode.INTERNAL_SERVER_ERROR), "INTERNAL_SERVER_ERROR")
-    assert_equal(ApolloServerErrorCode.GRAPHQL_PARSE_FAILED.text(), "GRAPHQL_PARSE_FAILED")
-    assert_equal(ApolloServerErrorCode.GRAPHQL_VALIDATION_FAILED.text(), "GRAPHQL_VALIDATION_FAILED")
-    assert_equal(ApolloServerErrorCode.PERSISTED_QUERY_NOT_FOUND.text(), "PERSISTED_QUERY_NOT_FOUND")
-    assert_equal(ApolloServerErrorCode.PERSISTED_QUERY_NOT_SUPPORTED.text(), "PERSISTED_QUERY_NOT_SUPPORTED")
+    assert_equal(
+        String(ApolloServerErrorCode.INTERNAL_SERVER_ERROR),
+        "INTERNAL_SERVER_ERROR",
+    )
+    assert_equal(
+        ApolloServerErrorCode.GRAPHQL_PARSE_FAILED.text(),
+        "GRAPHQL_PARSE_FAILED",
+    )
+    assert_equal(
+        ApolloServerErrorCode.GRAPHQL_VALIDATION_FAILED.text(),
+        "GRAPHQL_VALIDATION_FAILED",
+    )
+    assert_equal(
+        ApolloServerErrorCode.PERSISTED_QUERY_NOT_FOUND.text(),
+        "PERSISTED_QUERY_NOT_FOUND",
+    )
+    assert_equal(
+        ApolloServerErrorCode.PERSISTED_QUERY_NOT_SUPPORTED.text(),
+        "PERSISTED_QUERY_NOT_SUPPORTED",
+    )
     assert_equal(ApolloServerErrorCode.BAD_USER_INPUT.text(), "BAD_USER_INPUT")
-    assert_equal(ApolloServerErrorCode.OPERATION_RESOLUTION_FAILURE.text(), "OPERATION_RESOLUTION_FAILURE")
+    assert_equal(
+        ApolloServerErrorCode.OPERATION_RESOLUTION_FAILURE.text(),
+        "OPERATION_RESOLUTION_FAILURE",
+    )
     assert_equal(ApolloServerErrorCode.BAD_REQUEST.text(), "BAD_REQUEST")
     assert_true(ApolloServerErrorCode.BAD_REQUEST.is_valid())
     assert_false(ApolloServerErrorCode(8).is_valid())

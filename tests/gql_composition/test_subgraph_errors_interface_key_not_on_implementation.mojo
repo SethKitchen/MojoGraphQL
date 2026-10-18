@@ -21,11 +21,22 @@ def test_v2_0_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on interface \"User\": @key is not yet supported on interfaces",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on"
+                ' interface "User": @key is not yet supported on interfaces'
+            ),
         ],
     )
 
@@ -36,11 +47,22 @@ def test_v2_1_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on interface \"User\": @key is not yet supported on interfaces",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on"
+                ' interface "User": @key is not yet supported on interfaces'
+            ),
         ],
     )
 
@@ -51,11 +73,22 @@ def test_v2_2_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on interface \"User\": @key is not yet supported on interfaces",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [users] Cannot use @key on"
+                ' interface "User": @key is not yet supported on interfaces'
+            ),
         ],
     )
 
@@ -66,11 +99,23 @@ def test_v2_3_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields: \"id\") on interface type \"User\" is missing on implementation type \"RegisteredUser\".",
+            (
+                "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields:"
+                ' "id") on interface type "User" is missing on implementation'
+                ' type "RegisteredUser".'
+            ),
         ],
     )
 
@@ -81,11 +126,19 @@ def test_v2_3_no_interface_key_not_on_implementation_on_interfaces() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User & Node @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User implements Node {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface Node @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' RegisteredUser implements User & Node @key(fields: "id")'
+                    " {\n  id: ID!\n  name: String!\n  email:"
+                    " String\n}\n\ninterface User implements Node {\n  id:"
+                    " ID!\n  name: String!\n  email: String\n}\n\ninterface"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -95,11 +148,23 @@ def test_v2_4_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields: \"id\") on interface type \"User\" is missing on implementation type \"RegisteredUser\".",
+            (
+                "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields:"
+                ' "id") on interface type "User" is missing on implementation'
+                ' type "RegisteredUser".'
+            ),
         ],
     )
 
@@ -110,11 +175,19 @@ def test_v2_4_no_interface_key_not_on_implementation_on_interfaces() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User & Node @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User implements Node {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface Node @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' RegisteredUser implements User & Node @key(fields: "id")'
+                    " {\n  id: ID!\n  name: String!\n  email:"
+                    " String\n}\n\ninterface User implements Node {\n  id:"
+                    " ID!\n  name: String!\n  email: String\n}\n\ninterface"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -124,11 +197,23 @@ def test_v2_5_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields: \"id\") on interface type \"User\" is missing on implementation type \"RegisteredUser\".",
+            (
+                "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields:"
+                ' "id") on interface type "User" is missing on implementation'
+                ' type "RegisteredUser".'
+            ),
         ],
     )
 
@@ -139,11 +224,19 @@ def test_v2_5_no_interface_key_not_on_implementation_on_interfaces() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User & Node @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User implements Node {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface Node @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' RegisteredUser implements User & Node @key(fields: "id")'
+                    " {\n  id: ID!\n  name: String!\n  email:"
+                    " String\n}\n\ninterface User implements Node {\n  id:"
+                    " ID!\n  name: String!\n  email: String\n}\n\ninterface"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -153,11 +246,23 @@ def test_v2_6_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields: \"id\") on interface type \"User\" is missing on implementation type \"RegisteredUser\".",
+            (
+                "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields:"
+                ' "id") on interface type "User" is missing on implementation'
+                ' type "RegisteredUser".'
+            ),
         ],
     )
 
@@ -168,11 +273,19 @@ def test_v2_6_no_interface_key_not_on_implementation_on_interfaces() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User & Node @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User implements Node {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface Node @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' RegisteredUser implements User & Node @key(fields: "id")'
+                    " {\n  id: ID!\n  name: String!\n  email:"
+                    " String\n}\n\ninterface User implements Node {\n  id:"
+                    " ID!\n  name: String!\n  email: String\n}\n\ninterface"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -182,11 +295,23 @@ def test_v2_7_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields: \"id\") on interface type \"User\" is missing on implementation type \"RegisteredUser\".",
+            (
+                "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields:"
+                ' "id") on interface type "User" is missing on implementation'
+                ' type "RegisteredUser".'
+            ),
         ],
     )
 
@@ -197,11 +322,19 @@ def test_v2_7_no_interface_key_not_on_implementation_on_interfaces() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User & Node @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User implements Node {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface Node @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' RegisteredUser implements User & Node @key(fields: "id")'
+                    " {\n  id: ID!\n  name: String!\n  email:"
+                    " String\n}\n\ninterface User implements Node {\n  id:"
+                    " ID!\n  name: String!\n  email: String\n}\n\ninterface"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -211,11 +344,23 @@ def test_v2_8_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields: \"id\") on interface type \"User\" is missing on implementation type \"RegisteredUser\".",
+            (
+                "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields:"
+                ' "id") on interface type "User" is missing on implementation'
+                ' type "RegisteredUser".'
+            ),
         ],
     )
 
@@ -226,11 +371,19 @@ def test_v2_8_no_interface_key_not_on_implementation_on_interfaces() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User & Node @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User implements Node {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface Node @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' RegisteredUser implements User & Node @key(fields: "id")'
+                    " {\n  id: ID!\n  name: String!\n  email:"
+                    " String\n}\n\ninterface User implements Node {\n  id:"
+                    " ID!\n  name: String!\n  email: String\n}\n\ninterface"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -240,11 +393,23 @@ def test_v2_9_interface_key_not_on_implementation() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    " RegisteredUser implements User {\n  id: ID!\n  name:"
+                    " String!\n  email: String\n}\n\ninterface User"
+                    ' @key(fields: "id") {\n  id: ID!\n  name: String!\n '
+                    " email: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields: \"id\") on interface type \"User\" is missing on implementation type \"RegisteredUser\".",
+            (
+                "[INTERFACE_KEY_NOT_ON_IMPLEMENTATION] [users] Key @key(fields:"
+                ' "id") on interface type "User" is missing on implementation'
+                ' type "RegisteredUser".'
+            ),
         ],
     )
 
@@ -255,11 +420,19 @@ def test_v2_9_no_interface_key_not_on_implementation_on_interfaces() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User]\n}\n\ntype RegisteredUser implements User & Node @key(fields: \"id\") {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface User implements Node {\n  id: ID!\n  name: String!\n  email: String\n}\n\ninterface Node @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User]\n}\n\ntype'
+                    ' RegisteredUser implements User & Node @key(fields: "id")'
+                    " {\n  id: ID!\n  name: String!\n  email:"
+                    " String\n}\n\ninterface User implements Node {\n  id:"
+                    " ID!\n  name: String!\n  email: String\n}\n\ninterface"
+                    ' Node @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

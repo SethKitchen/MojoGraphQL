@@ -21,15 +21,35 @@ def test_v2_0_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -40,15 +60,35 @@ def test_v2_1_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -59,15 +99,35 @@ def test_v2_2_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -78,15 +138,35 @@ def test_v2_3_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -97,15 +177,35 @@ def test_v2_4_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -116,15 +216,35 @@ def test_v2_5_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -135,15 +255,35 @@ def test_v2_6_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -154,15 +294,35 @@ def test_v2_7_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -173,15 +333,35 @@ def test_v2_8_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 
@@ -192,15 +372,35 @@ def test_v2_9_override_collision_with_another_directive() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\", \"@external\", \"@provides\"])\n\nextend type Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"payments\") @external\n}\n\ntype Invoice @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n  payment: Payment @provides(fields: \"amount\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override", "@external",'
+                    ' "@provides"])\n\nextend type Payment @key(fields: "id")'
+                    ' {\n  id: ID!\n  amount: Int! @override(from: "payments")'
+                    ' @external\n}\n\ntype Invoice @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n  payment: Payment @provides(fields:"
+                    ' "amount")\n}'
+                ),
             ),
             sg(
                 "payments",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  payments: [Payment]\n}\n\ntype Payment @key(fields: \"id\") {\n  id: ID!\n  amount: Int!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  payments:'
+                    ' [Payment]\n}\n\ntype Payment @key(fields: "id") {\n  id:'
+                    " ID!\n  amount: Int!\n}"
+                ),
             ),
         ],
         [
-            "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing] @override cannot be used on field \"Payment.amount\" on subgraph \"billing\" since \"Payment.amount\" on \"billing\" is marked with directive \"@external\"",
+            (
+                "[OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE] [billing]"
+                ' @override cannot be used on field "Payment.amount" on'
+                ' subgraph "billing" since "Payment.amount" on "billing" is'
+                ' marked with directive "@external"'
+            ),
         ],
     )
 

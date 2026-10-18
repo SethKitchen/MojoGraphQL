@@ -21,110 +21,200 @@ def test_join_spec_version_guild_federation_s_join_s() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0,v0.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0,v0.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.0,v0.3 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.0,v0.3 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1,v0.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1,v0.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.1,v0.3 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.1,v0.3 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2,v0.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2,v0.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.2,v0.3 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.2,v0.3 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3,v0.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3,v0.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.3,v0.3 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.3,v0.3 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4,v0.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4,v0.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.4,v0.3 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.4,v0.3 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5,v0.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5,v0.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.5,v0.3 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.5,v0.3 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6,v0.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6,v0.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.6,v0.3 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.6,v0.3 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7,v0.4\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7,v0.4", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.7,v0.4 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.7,v0.4 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8,v0.5\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8,v0.5", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.8,v0.5 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.8,v0.5 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9,v0.5\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9,v0.5", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n '
+                    " name: String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
         [
-            "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version v2.9,v0.5 for the federation feature in @link directive on schema",
+            (
+                "[UNKNOWN_FEDERATION_LINK_VERSION] [a] Invalid version"
+                " v2.9,v0.5 for the federation feature in @link directive on"
+                " schema"
+            ),
         ],
     )
 
@@ -135,11 +225,13 @@ def test_join_spec_version_guild_federation_v1_0_join_v0_3() raises:
         [
             sg(
                 "a",
-                "type User @key(fields: \"id\") {\n  id: ID!\n  name: String!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    'type User @key(fields: "id") {\n  id: ID!\n  name:'
+                    " String!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

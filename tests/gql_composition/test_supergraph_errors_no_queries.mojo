@@ -21,31 +21,48 @@ def test_v2_0_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -55,31 +72,48 @@ def test_v2_1_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -89,31 +123,48 @@ def test_v2_2_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -123,31 +174,48 @@ def test_v2_3_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -157,31 +225,48 @@ def test_v2_4_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -191,31 +276,48 @@ def test_v2_5_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -225,31 +327,48 @@ def test_v2_6_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -259,31 +378,48 @@ def test_v2_7_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -293,31 +429,48 @@ def test_v2_8_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -327,31 +480,48 @@ def test_v2_9_no_queries() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id: ID!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
     check(
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype User @key(fields: \"id\") {\n  id: ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype RootQuery {\n  users: [User]\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype User @key(fields: "id") {\n  id:'
+                    " ID!\n}\n\nschema {\n  query: RootQuery\n}\n\ntype"
+                    " RootQuery {\n  users: [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

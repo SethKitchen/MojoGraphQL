@@ -25,8 +25,10 @@ defaults, `start`, `stop`, `executeOperation`,
   thrown `GraphQLError` as it is.
 - There is no default landing page: upstream serves Apollo Sandbox, a
   web application. `landing_page_html` gives the page to serve.
-- There is no logger, no usage reporting, no schema reporting, no inline
-  traces and no Apollo configuration (`apollo`, `APOLLO_KEY`).
+- There is no logger, no usage reporting, no schema reporting and no
+  Apollo configuration (`apollo`, `APOLLO_KEY`).
+- The inline trace plugin is the `inline_trace` option, not a plugin of
+  `P`: see `gql_server.inline_trace`.
 - `stringifyResult`, custom caches and custom document stores are not
   options. The cache and the document store are in-memory LRU caches, as
   the upstream defaults.
@@ -56,6 +58,7 @@ from gql_server.http_types import (
     HTTPGraphQLRequest,
     HTTPGraphQLResponse,
 )
+from gql_server.inline_trace import InlineTraceOptions, InlineTracePlugin
 from gql_server.lru import DEFAULT_MAX_SIZE, InMemoryLRUCache
 from gql_server.plugin import NoPlugin, ServerPlugin
 from gql_server.request_pipeline import (
@@ -70,7 +73,11 @@ from gql_server.run_http_query import (
     prevent_csrf,
     run_potentially_batched_http_query,
 )
-from gql_server.types import GraphQLRequest, GraphQLResponse, pretty_json_stringify
+from gql_server.types import (
+    GraphQLRequest,
+    GraphQLResponse,
+    pretty_json_stringify,
+)
 from gql_validation.validate import ValidationOptions
 
 comptime ContextFunction = def(
@@ -184,6 +191,11 @@ struct ApolloServerOptions(Copyable, Movable):
     """`calculateHttpHeaders` of the cache control plugin."""
     var landing_page_html: Optional[String]
     """The HTML to answer a `GET` that prefers HTML with; None for none."""
+    var inline_trace: Optional[InlineTraceOptions]
+    """The inline trace plugin. The default traces only a subgraph, as
+    the plugin that upstream installs; set `InlineTraceOptions()` to trace
+    every schema, as `ApolloServerPluginInlineTrace()`; None turns it off,
+    as `ApolloServerPluginInlineTraceDisabled()`."""
 
     def __init__(out self):
         """Make the upstream defaults."""
@@ -208,6 +220,7 @@ struct ApolloServerOptions(Copyable, Movable):
         self.status400_for_variable_coercion_errors = True
         self.calculate_http_headers = CalculateHttpHeaders.ON
         self.landing_page_html = None
+        self.inline_trace = InlineTraceOptions.only_if_subgraph()
 
 
 struct ExecuteOperationOptions(Movable):
@@ -227,7 +240,11 @@ struct ExecuteOperationOptions(Movable):
 
 
 struct ApolloServer[P: ServerPlugin = NoPlugin](Movable):
-    """A GraphQL server: upstream `ApolloServer`."""
+    """A GraphQL server: upstream `ApolloServer`.
+
+    Parameters:
+        P: The type of the plugins.
+    """
 
     var internals: ServerInternals
     """The configuration, the schema, the resolvers and the caches."""
@@ -264,8 +281,10 @@ struct ApolloServer[P: ServerPlugin = NoPlugin](Movable):
         ref internals = self.internals
         internals.format_error = options.format_error
         internals.root_value = options.root_value
-        internals.include_stacktrace = options.include_stacktrace_in_error_responses.or_else(
-            is_dev and node_env != "test"
+        internals.include_stacktrace = (
+            options.include_stacktrace_in_error_responses.or_else(
+                is_dev and node_env != "test"
+            )
         )
         internals.persisted_queries = options.persisted_queries
         internals.persisted_query_ttl = options.persisted_queries_ttl
@@ -296,6 +315,12 @@ struct ApolloServer[P: ServerPlugin = NoPlugin](Movable):
             options.status400_for_variable_coercion_errors
         )
         internals.calculate_http_headers = options.calculate_http_headers
+        if options.inline_trace:
+            internals.inline_trace = InlineTracePlugin(
+                options.inline_trace.value().copy()
+            )
+        else:
+            internals.inline_trace = InlineTracePlugin.disabled()
         self.plugin = plugin^
         self.phase = ServerPhase.INITIALIZED
         self.landing_page_html = options.landing_page_html.copy()
@@ -340,6 +365,7 @@ struct ApolloServer[P: ServerPlugin = NoPlugin](Movable):
             )
         try:
             self.plugin.server_will_start()
+            self.internals.inline_trace.server_will_start(self.internals.schema)
         except e:
             self.phase = ServerPhase.FAILED_TO_START
             raise e^
@@ -376,7 +402,9 @@ struct ApolloServer[P: ServerPlugin = NoPlugin](Movable):
             )
 
     def execute_operation(
-        mut self, var request: GraphQLRequest, mut options: ExecuteOperationOptions
+        mut self,
+        var request: GraphQLRequest,
+        mut options: ExecuteOperationOptions,
     ) raises -> GraphQLResponse:
         """Run an operation in process, without HTTP: upstream
         `executeOperation`. A new server starts first.

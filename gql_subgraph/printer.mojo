@@ -166,7 +166,7 @@ def _block(
     directives: List[String],
     items: List[Ref],
     kind: Kind,
-    escaped: Bool,
+    round_trip: Bool,
 ) -> String:
     """Print a type definition or extension from its pieces."""
     var index = 0
@@ -196,19 +196,21 @@ def _block(
         ref at = items[index]
         if index > 0:
             header += "\n"
-        header += print_item(model.docs[at.doc], at.node, index == 0, escaped)
+        header += print_item(
+            model.docs[at.doc], at.node, index == 0, round_trip
+        )
         index += 1
     return header + "\n}"
 
 
 def _header(
-    model: SubgraphModel, part: Part, kind: Kind, name: String, escaped: Bool
+    model: SubgraphModel, part: Part, kind: Kind, name: String, round_trip: Bool
 ) -> String:
     """Print the description, `extend`, the keyword and the name."""
     var out = String("")
     if part.node != NO_NODE:
         out = print_description(
-            model.docs[part.doc], part.node, "", True, escaped
+            model.docs[part.doc], part.node, "", True, round_trip
         )
     if part.is_extension:
         out += "extend "
@@ -230,7 +232,9 @@ def _print_type(
         while index < len(entry.parts):
             ref part = entry.parts[index]
             if not part.is_extension:
-                description = _header(model, part, entry.kind, entry.name, True)
+                description = _header(
+                    model, part, entry.kind, entry.name, False
+                )
             _part_interfaces(model, part, interfaces)
             _part_directives(model, part, mode, directives)
             _part_items(model, part, role, mode, items)
@@ -245,10 +249,11 @@ def _print_type(
                 directives,
                 items,
                 entry.kind,
-                True,
+                False,
             )
         )
         return
+    var round_trip = mode == PrintMode.SUBGRAPH
     var extended = entry.has_definition() and len(entry.parts) > 1
     var index = 0
     while index < len(entry.parts):
@@ -276,12 +281,12 @@ def _print_type(
             blocks.append(
                 _block(
                     model,
-                    _header(model, part, entry.kind, entry.name, False),
+                    _header(model, part, entry.kind, entry.name, round_trip),
                     interfaces,
                     directives,
                     items,
                     entry.kind,
-                    False,
+                    round_trip,
                 )
             )
         index += 1
@@ -356,7 +361,13 @@ def _print_schema(
         var operations = _schema_operations(model, part)
         var out = String("")
         if part.node != NO_NODE:
-            out = print_description(model.docs[part.doc], part.node, "", True)
+            out = print_description(
+                model.docs[part.doc],
+                part.node,
+                "",
+                True,
+                mode == PrintMode.SUBGRAPH,
+            )
         var printed = len(directives) > 0 or out != ""
         if part.is_extension:
             out += "extend "
@@ -430,7 +441,7 @@ def print_model(
                 print_directive_definition(
                     model.docs[entry.at.doc],
                     entry.at.node,
-                    mode == PrintMode.MERGED,
+                    mode == PrintMode.SUBGRAPH,
                 )
             )
         index += 1

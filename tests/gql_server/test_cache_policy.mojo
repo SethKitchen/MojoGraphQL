@@ -27,7 +27,9 @@ from gql_server.server import ApolloServer
 from gql_server.types import GraphQLRequestContext
 
 
-def _hint(max_age: Optional[Int], scope: Optional[CacheScope] = None) -> CacheHint:
+def _hint(
+    max_age: Optional[Int], scope: Optional[CacheScope] = None
+) -> CacheHint:
     return CacheHint(max_age, scope)
 
 
@@ -81,7 +83,9 @@ def test_policy_if_cacheable() raises:
     assert_false(Bool(policy.policy_if_cacheable()))
     policy = CachePolicy()
     policy.restrict(_hint(5))
-    assert_true(policy.policy_if_cacheable().value().scope.value() == CacheScope.PUBLIC)
+    assert_true(
+        policy.policy_if_cacheable().value().scope.value() == CacheScope.PUBLIC
+    )
 
 
 def test_replace() raises:
@@ -116,7 +120,9 @@ def _header(
 ) -> String:
     var policy = CachePolicy()
     policy.restrict(_hint(max_age))
-    return cache_control_header(existing, policy, single_without_errors, mode).or_else("<none>")
+    return cache_control_header(
+        existing, policy, single_without_errors, mode
+    ).or_else("<none>")
 
 
 def test_cache_control_header() raises:
@@ -124,14 +130,26 @@ def test_cache_control_header() raises:
     assert_equal(_header(String(""), None), "no-store")
     assert_equal(_header(None, 10), "max-age=10, public")
     assert_equal(_header(None, 10, False), "no-store")
-    assert_equal(_header(None, None, True, CalculateHttpHeaders.IF_CACHEABLE), "<none>")
-    assert_equal(_header(None, 10, True, CalculateHttpHeaders.IF_CACHEABLE), "max-age=10, public")
+    assert_equal(
+        _header(None, None, True, CalculateHttpHeaders.IF_CACHEABLE), "<none>"
+    )
+    assert_equal(
+        _header(None, 10, True, CalculateHttpHeaders.IF_CACHEABLE),
+        "max-age=10, public",
+    )
     assert_equal(_header(None, 10, True, CalculateHttpHeaders.OFF), "<none>")
     assert_equal(_header(String("no-store"), 10), "no-store")
-    assert_equal(_header(String("max-age=5, private"), 10), "max-age=5, private")
-    assert_equal(_header(String("max-age=50, public"), 10), "max-age=10, public")
-    assert_equal(_header(String("private, no-cache, must-revalidate"), 10), "<none>")
+    assert_equal(
+        _header(String("max-age=5, private"), 10), "max-age=5, private"
+    )
+    assert_equal(
+        _header(String("max-age=50, public"), 10), "max-age=10, public"
+    )
+    assert_equal(
+        _header(String("private, no-cache, must-revalidate"), 10), "<none>"
+    )
     assert_equal(_header(String("max-age=x"), 10), "<none>")
+    assert_equal(_header(String("max-age=60"), 10), "<none>")
     assert_equal(_header(String("max-age=5, shared"), 10), "<none>")
 
 
@@ -148,11 +166,15 @@ struct Hinter(ServerPlugin):
 
 
 def _served(
-    hint: CacheHint, mode: CalculateHttpHeaders, body: String = '{"query":"{ testString }"}'
+    hint: CacheHint,
+    mode: CalculateHttpHeaders,
+    body: String = '{"query":"{ testString }"}',
 ) raises -> String:
     var opts = options()
     opts.calculate_http_headers = mode
-    var server = ApolloServer[Hinter].from_type_defs(SDL, resolvers(), opts^, Hinter(hint))
+    var server = ApolloServer[Hinter].from_type_defs(
+        SDL, resolvers(), opts^, Hinter(hint)
+    )
     server.start()
     var response = server.execute_http_graphql_request(json_post(body), context)
     return response.headers.get("cache-control").or_else("<none>")
@@ -160,15 +182,21 @@ def _served(
 
 def test_cache_control_over_http() raises:
     assert_equal(_served(_hint(None), CalculateHttpHeaders.ON), "no-store")
-    assert_equal(_served(_hint(None), CalculateHttpHeaders.IF_CACHEABLE), "<none>")
-    assert_equal(_served(_hint(11), CalculateHttpHeaders.ON), "max-age=11, public")
+    assert_equal(
+        _served(_hint(None), CalculateHttpHeaders.IF_CACHEABLE), "<none>"
+    )
+    assert_equal(
+        _served(_hint(11), CalculateHttpHeaders.ON), "max-age=11, public"
+    )
     assert_equal(
         _served(_hint(11, CacheScope.PRIVATE), CalculateHttpHeaders.ON),
         "max-age=11, private",
     )
     assert_equal(_served(_hint(11), CalculateHttpHeaders.OFF), "<none>")
     assert_equal(
-        _served(_hint(11), CalculateHttpHeaders.ON, '{"query":"{ testError }"}'),
+        _served(
+            _hint(11), CalculateHttpHeaders.ON, '{"query":"{ testError }"}'
+        ),
         "no-store",
     )
 

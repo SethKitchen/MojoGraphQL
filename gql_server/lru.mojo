@@ -32,6 +32,9 @@ struct InMemoryLRUCache[V: Copyable & Deinitable](Movable, Sized):
 
     The entries are in a ring by use. Link 0 is the ring's anchor, and the
     entry in slot `s` is link `s + 1`.
+
+    Parameters:
+        V: The type of the values.
     """
 
     var max_size: Int
@@ -153,7 +156,9 @@ struct InMemoryLRUCache[V: Copyable & Deinitable](Movable, Sized):
             now_ns: The time now.
             ttl_seconds: The seconds the entry lives; 0 for no limit.
         """
-        var expires = now_ns + ttl_seconds * 1_000_000_000 if ttl_seconds > 0 else 0
+        var expires = (
+            now_ns + ttl_seconds * 1_000_000_000 if ttl_seconds > 0 else 0
+        )
         var found = self._index.get(key)
         if size > self.max_size:
             if found:

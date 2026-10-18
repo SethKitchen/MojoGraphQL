@@ -16,16 +16,19 @@ from std.testing import TestSuite
 
 
 def test_() raises:
-    # 
+    #
     check(
         [
             sg(
                 "a",
-                "type User @key(fields: [\"id\", \"uuid\"]) {\n  id: ID!\n  uuid: ID!\n  name: String\n}\n\ntype Query {\n  users: [User]\n}",
+                (
+                    'type User @key(fields: ["id", "uuid"]) {\n  id: ID!\n '
+                    " uuid: ID!\n  name: String\n}\n\ntype Query {\n  users:"
+                    " [User]\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -35,11 +38,20 @@ def test_v2_0_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -50,11 +62,20 @@ def test_v2_1_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -65,11 +86,20 @@ def test_v2_2_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -80,11 +110,20 @@ def test_v2_3_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -95,11 +134,20 @@ def test_v2_4_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -110,11 +158,20 @@ def test_v2_5_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -125,11 +182,20 @@ def test_v2_6_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -140,11 +206,20 @@ def test_v2_7_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -155,11 +230,20 @@ def test_v2_8_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 
@@ -170,11 +254,20 @@ def test_v2_9_key_invalid_fields_type() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: true) {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    " User @key(fields: true) {\n  id: ID\n}"
+                ),
             ),
         ],
         [
-            "[KEY_INVALID_FIELDS_TYPE] [users] On type \"User\", for @key(fields: true): Invalid value for argument \"fields\": must be a string.",
+            (
+                '[KEY_INVALID_FIELDS_TYPE] [users] On type "User", for'
+                ' @key(fields: true): Invalid value for argument "fields": must'
+                " be a string."
+            ),
         ],
     )
 

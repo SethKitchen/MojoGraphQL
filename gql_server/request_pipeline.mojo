@@ -16,7 +16,11 @@ codes and the HTTP status.
 
 **Differences from upstream.**
 - Execution is `gql_execution.execute`, which is synchronous. Incremental
-  delivery, the gateway executor and `willResolveField` are not ported.
+  delivery and the gateway executor are not ported.
+- `willResolveField` is `GraphQLRequestContext.will_resolve_field`: when
+  a plugin sets it, execution records the `FieldTiming` of each field in
+  `GraphQLRequestContext.field_timings`. Only the inline trace plugin
+  reads them; a `ServerPlugin` has no `willResolveField` hook.
 - `NoIntrospection` runs after the specified rules. Its errors come after
   their errors; upstream runs all rules in one walk, so its errors can be
   among theirs.
@@ -66,10 +70,15 @@ from gql_server.errors import (
     validation_error,
 )
 from gql_server.http_types import HTTPGraphQLHead, merge_http_graphql_head
+from gql_server.inline_trace import InlineTraceOptions, InlineTracePlugin
 from gql_server.lru import InMemoryLRUCache
 from gql_server.plugin import ServerPlugin
 from gql_server.sha256 import sha256_hex
-from gql_server.types import GraphQLRequest, GraphQLRequestContext, GraphQLResponse
+from gql_server.types import (
+    GraphQLRequest,
+    GraphQLRequestContext,
+    GraphQLResponse,
+)
 from gql_validation.rules import ValidationRule, specified_rules
 from gql_validation.validate import ValidationOptions, validate
 
@@ -140,6 +149,9 @@ struct ServerInternals(Movable):
     """The last `accept` field that content negotiation read."""
     var accept_memo_result: Optional[String]
     """The content type that it chose for that field."""
+    var inline_trace: InlineTracePlugin
+    """The inline trace plugin, which upstream installs after the other
+    plugins."""
 
     def __init__(out self, var schema: Schema, var resolvers: Resolvers):
         """Make the internals of a server with the upstream defaults of
@@ -175,6 +187,9 @@ struct ServerInternals(Movable):
         self.calculate_http_headers = CalculateHttpHeaders.ON
         self.accept_memo = None
         self.accept_memo_result = None
+        self.inline_trace = InlineTracePlugin(
+            InlineTraceOptions.only_if_subgraph()
+        )
 
 
 def js_truthy(json: JsonDocument, node: Int) -> Bool:
@@ -222,7 +237,9 @@ def js_string(json: JsonDocument, node: Int) -> String:
         return String("[object Object]")
     if kind == JsonKind.ARRAY:
         return _js_array_string(json, node)
-    return String(json.text(node))
+    if kind == JsonKind.BOOLEAN:
+        return String("true") if json.bool_value(node) else String("false")
+    return String("null")
 
 
 def _js_array_string(json: JsonDocument, node: Int) -> String:
@@ -282,11 +299,7 @@ def remove_suggestions(message: String) -> String:
         `Did you mean` question.
     """
     var at = message.find("Did you mean")
-    if (
-        at < 0
-        or not message.endswith("?")
-        or message.byte_length() < at + 14
-    ):
+    if at < 0 or not message.endswith("?") or message.byte_length() < at + 14:
         return message
     if at > 0 and message.as_bytes()[at - 1] == 32:
         at -= 1
@@ -337,9 +350,13 @@ def _format_errors(
 
 def _will_send_response[
     P: ServerPlugin
-](mut internals: ServerInternals, mut plugin: P, mut ctx: GraphQLRequestContext) raises:
-    """Run `willSendResponse`: the plugins, then the cache control plugin,
-    which upstream installs after them."""
+](
+    mut internals: ServerInternals,
+    mut plugin: P,
+    mut ctx: GraphQLRequestContext,
+) raises:
+    """Run `willSendResponse`: the plugins, then the cache control plugin
+    and the inline trace plugin, which upstream installs after them."""
     plugin.will_send_response(ctx)
     var header = cache_control_header(
         ctx.response.http.headers.get("cache-control"),
@@ -349,6 +366,7 @@ def _will_send_response[
     )
     if header:
         ctx.response.http.headers.set("cache-control", header.value())
+    internals.inline_trace.will_send_response(ctx, internals.schema)
 
 
 def _send_error_response[
@@ -363,6 +381,7 @@ def _send_error_response[
     500 unless an error gives one."""
     ctx.errors = errors^
     plugin.did_encounter_errors(ctx)
+    internals.inline_trace.did_encounter_errors(ctx, internals.schema)
     var normalized = _format_errors(internals, ctx.errors)
     swap(ctx.response.errors, normalized.formatted_errors)
     ctx.response.has_errors = True
@@ -390,6 +409,7 @@ def _execute(
     try:
         args.assume_valid_schema = True
         args.max_coercion_errors = internals.max_coercion_errors
+        args.field_timing = ctx.will_resolve_field
         args.context_value = ctx.context_value
         args.operation_name = ctx.request.operation_name
         if ctx.request.variables != NO_JSON:
@@ -398,7 +418,9 @@ def _execute(
             )
         ref document = ctx.document.value()[]
         if internals.root_value:
-            args.root_value = internals.root_value.value()(args.values, document)
+            args.root_value = internals.root_value.value()(
+                args.values, document
+            )
         var result = execute(internals.schema, document, args)
         swap(args.values, ctx.values)
         swap(args.resolvers, internals.resolvers)
@@ -411,9 +433,16 @@ def _execute(
 
 def process_graphql_request[
     P: ServerPlugin
-](mut internals: ServerInternals, mut plugin: P, mut ctx: GraphQLRequestContext) raises:
+](
+    mut internals: ServerInternals,
+    mut plugin: P,
+    mut ctx: GraphQLRequestContext,
+) raises:
     """Run a request through the pipeline: upstream
     `processGraphQLRequest`. The response is in `ctx.response`.
+
+    Parameters:
+        P: The type of the plugins.
 
     Args:
         internals: The configuration and the caches of the server.
@@ -425,6 +454,7 @@ def process_graphql_request[
             `Internal server error`.
     """
     plugin.request_did_start(ctx)
+    internals.inline_trace.request_did_start(ctx)
     var query = ctx.request.query.copy()
     var query_hash: String
     ctx.metrics.persisted_query_hit = False
@@ -437,7 +467,10 @@ def process_graphql_request[
     if js_truthy(json, persisted):
         if not internals.persisted_queries:
             _send_error_response(
-                internals, plugin, ctx, _one(persisted_query_not_supported_error())
+                internals,
+                plugin,
+                ctx,
+                _one(persisted_query_not_supported_error()),
             )
             return
         var version = NO_JSON
@@ -464,7 +497,10 @@ def process_graphql_request[
                 ctx.metrics.persisted_query_hit = True
             else:
                 _send_error_response(
-                    internals, plugin, ctx, _one(persisted_query_not_found_error())
+                    internals,
+                    plugin,
+                    ctx,
+                    _one(persisted_query_not_found_error()),
                 )
                 return
         else:
@@ -580,9 +616,7 @@ def _run_operation[
     ctx.operation_name = None
     if operation != NO_NODE and document.name(operation).byte_length() > 0:
         ctx.operation_name = String(document.name(operation))
-    var is_get = (
-        ctx.request.http and ctx.request.http.value().method == "GET"
-    )
+    var is_get = ctx.request.http and ctx.request.http.value().method == "GET"
     if (
         is_get
         and operation != NO_NODE
@@ -649,6 +683,7 @@ def _complete[
     var result: ExecutionResult,
 ) raises:
     """Turn the result of execution into the response."""
+    swap(ctx.field_timings, result.field_timings)
     var errors = List[ServerError]()
     for ref error in result.errors:
         var converted = ServerError.from_graphql_error(
@@ -661,6 +696,7 @@ def _complete[
     if len(errors) > 0:
         ctx.errors = errors.copy()
         plugin.did_encounter_errors(ctx)
+        internals.inline_trace.did_encounter_errors(ctx, internals.schema)
         var normalized = _format_errors(internals, errors)
         swap(ctx.response.errors, normalized.formatted_errors)
         ctx.response.has_errors = True
@@ -693,6 +729,9 @@ def internal_execute_operation[
 ) raises -> GraphQLResponse:
     """Run one operation: upstream `internalExecuteOperation` of
     `ApolloServer.ts`.
+
+    Parameters:
+        P: The type of the plugins.
 
     Args:
         internals: The configuration and the caches of the server.

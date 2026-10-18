@@ -34,8 +34,10 @@ def test_get_query_missing() raises:
         400,
         "no-store",
         error_body(
-            "GraphQL operations must contain a non-empty `query` or a"
-            " `persistedQuery` extension.",
+            (
+                "GraphQL operations must contain a non-empty `query` or a"
+                " `persistedQuery` extension."
+            ),
             "BAD_REQUEST",
         ),
     )
@@ -44,8 +46,10 @@ def test_get_query_missing() raises:
 def test_get_content_types() raises:
     var server = make_server()
     var expected = error_body(
-        "GET requests may not have a content-type header other than"
-        " application/json.",
+        (
+            "GET requests may not have a content-type header other than"
+            " application/json."
+        ),
         "BAD_REQUEST",
     )
     for content_type in ["text/plain", "application/graphql", "invalid"]:
@@ -56,7 +60,9 @@ def test_get_content_types() raises:
             content_type,
         ]
         check(
-            run(server, http_request("GET", "?query={testString}", headers, "")),
+            run(
+                server, http_request("GET", "?query={testString}", headers, "")
+            ),
             415,
             "",
             expected,
@@ -69,7 +75,9 @@ def test_get_content_types() raises:
             content_type,
         ]
         check(
-            run(server, http_request("GET", "?query={testString}", headers, "")),
+            run(
+                server, http_request("GET", "?query={testString}", headers, "")
+            ),
             0,
             "no-store",
             OK_STRING,
@@ -78,7 +86,12 @@ def test_get_content_types() raises:
 
 def test_basic_get_request() raises:
     var server = make_server()
-    check(run(server, preflight_get("?query={testString}")), 0, "no-store", OK_STRING)
+    check(
+        run(server, preflight_get("?query={testString}")),
+        0,
+        "no-store",
+        OK_STRING,
+    )
     # A body of a GET is not a batch.
     var headers: List[String] = ["apollo-require-preflight", "t"]
     check(
@@ -107,8 +120,10 @@ def test_get_mutation() raises:
         405,
         "no-store",
         error_body(
-            "GET requests only support query operations, not mutation"
-            " operations",
+            (
+                "GET requests only support query operations, not mutation"
+                " operations"
+            ),
             "BAD_REQUEST",
         ),
     )
@@ -152,8 +167,10 @@ def test_get_search_parameters() raises:
         400,
         "",
         error_body(
-            "The variables search parameter should contain a JSON-encoded"
-            " object.",
+            (
+                "The variables search parameter should contain a JSON-encoded"
+                " object."
+            ),
             "BAD_REQUEST",
         ),
     )
@@ -162,8 +179,10 @@ def test_get_search_parameters() raises:
         400,
         "",
         error_body(
-            "The extensions search parameter should contain a JSON-encoded"
-            " object.",
+            (
+                "The extensions search parameter should contain a JSON-encoded"
+                " object."
+            ),
             "BAD_REQUEST",
         ),
     )
@@ -171,19 +190,28 @@ def test_get_search_parameters() raises:
 
 def _post_error(body: String, message: String) raises:
     var server = make_server()
-    check(run(server, json_post(body)), 400, "", error_body(message, "BAD_REQUEST"))
+    check(
+        run(server, json_post(body)),
+        400,
+        "",
+        error_body(message, "BAD_REQUEST"),
+    )
 
 
 def test_post_member_checks() raises:
     _post_error(
         '{"query":"{ testString }","variables":"{}"}',
-        "`variables` in a POST body should be provided as an object, not a"
-        " recursively JSON-encoded string.",
+        (
+            "`variables` in a POST body should be provided as an object, not a"
+            " recursively JSON-encoded string."
+        ),
     )
     _post_error(
         '{"query":"{ testString }","extensions":"{}"}',
-        "`extensions` in a POST body should be provided as an object, not a"
-        " recursively JSON-encoded string.",
+        (
+            "`extensions` in a POST body should be provided as an object, not a"
+            " recursively JSON-encoded string."
+        ),
     )
     _post_error(
         '{"query":"{ testString }","variables":[]}',
@@ -202,16 +230,20 @@ def test_post_member_checks() raises:
 def test_post_query_ast() raises:
     _post_error(
         '{"query":{"kind":"Document","definitions":[]}}',
-        "GraphQL queries must be strings. It looks like you're sending the"
-        " internal graphql-js representation of a parsed query in your"
-        " request instead of a request in the GraphQL query language. You"
-        " can convert an AST to a string using the `print` function from"
-        " `graphql`, or use a client like `apollo-client` which converts the"
-        " internal representation to a string for you.",
+        (
+            "GraphQL queries must be strings. It looks like you're sending the"
+            " internal graphql-js representation of a parsed query in your"
+            " request instead of a request in the GraphQL query language. You"
+            " can convert an AST to a string using the `print` function from"
+            " `graphql`, or use a client like `apollo-client` which converts"
+            " the internal representation to a string for you."
+        ),
     )
     _post_error('{"query":5}', "GraphQL queries must be strings.")
     _post_error('{"query":{"kind":5}}', "GraphQL queries must be strings.")
-    _post_error('{"query":{"kind":"Field"}}', "GraphQL queries must be strings.")
+    _post_error(
+        '{"query":{"kind":"Field"}}', "GraphQL queries must be strings."
+    )
     _post_error('{"query":[1]}', "GraphQL queries must be strings.")
     # A falsy `query` counts as missing.
     var server = make_server()
@@ -258,7 +290,12 @@ def test_batch_requests() raises:
         '[{"data":{"testString":"it works"}}\n]',
         final_newline=False,
     )
-    check(run(server, json_post('{"query":"{ testString }"}')), 0, "no-store", OK_STRING)
+    check(
+        run(server, json_post('{"query":"{ testString }"}')),
+        0,
+        "no-store",
+        OK_STRING,
+    )
 
 
 def test_batch_errors() raises:
@@ -274,8 +311,10 @@ def test_batch_errors() raises:
         400,
         "",
         error_body(
-            "POST body missing, invalid Content-Type, or JSON object has no"
-            " keys.",
+            (
+                "POST body missing, invalid Content-Type, or JSON object has no"
+                " keys."
+            ),
             "BAD_REQUEST",
         ),
     )
@@ -286,7 +325,9 @@ def test_batch_clones_context() raises:
     check(
         run(
             server,
-            json_post('[{"query":"{ testContext }"},{"query":"{ testContext }"}]'),
+            json_post(
+                '[{"query":"{ testContext }"},{"query":"{ testContext }"}]'
+            ),
         ),
         0,
         "no-store",

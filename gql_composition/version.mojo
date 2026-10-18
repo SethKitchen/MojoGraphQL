@@ -19,7 +19,10 @@ The versions are one table, `VERSION_NAMES`. The source of each version:
 
 **Differences from upstream.** Upstream compares versions with
 `parseFloat`, which puts `v2.10` below `v2.9`. This port keeps a version as
-`major * 100 + minor`: `v2.3` is 203 and `v2.10` is 210. Upstream v0.27.0
+`major * 100 + minor`: `v2.3` is 203 and `v2.10` is 210.
+`satisfies_version_range` reads a bound such as `>= v2.9`. It compares only
+the versions in `VERSION_NAMES`, and returns False for other text. Upstream
+types both arguments as federation versions. Upstream v0.27.0
 does not know `v2.10` to `v2.15`.
 """
 
@@ -154,3 +157,31 @@ struct FederationVersion(Equatable, ImplicitlyCopyable, Writable):
             writer: The writer.
         """
         writer.write(self.text())
+
+
+def satisfies_version_range(version: String, bounds: String) -> Bool:
+    """Return True when a version meets a bound, as upstream
+    `satisfiesVersionRange`.
+
+    Args:
+        version: A version in `VERSION_NAMES`, such as `v2.10`.
+        bounds: A sign, a space and a version in `VERSION_NAMES`, such as
+            `>= v2.9`, `> v1.0`, or `< v2.3`.
+
+    Returns:
+        Whether the version meets the bound. `v2.10` meets `>= v2.9`.
+        False when the version or the bound is not in that form.
+    """
+    var space = bounds.find(" ")
+    if space < 1:
+        return False
+    var sign = String(bounds[byte=0:space])
+    var left = FederationVersion.from_text(version)
+    var right = FederationVersion.from_text(bounds[byte = space + 1 :])
+    if left < 0 or right < 0:
+        return False
+    if sign == "<":
+        return left < right
+    if sign == ">":
+        return left > right
+    return left >= right

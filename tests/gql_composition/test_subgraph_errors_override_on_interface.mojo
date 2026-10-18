@@ -21,12 +21,25 @@ def test_v2_0_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [billing] Cannot use @key on interface \"Bill\": @key is not yet supported on interfaces",
-            "[OVERRIDE_FROM_SELF_ERROR] [billing] Source and destination subgraphs \"billing\" are the same for overridden field \"Bill.amount\"",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [billing] Cannot use @key on"
+                ' interface "Bill": @key is not yet supported on interfaces'
+            ),
+            (
+                "[OVERRIDE_FROM_SELF_ERROR] [billing] Source and destination"
+                ' subgraphs "billing" are the same for overridden field'
+                ' "Bill.amount"'
+            ),
         ],
     )
 
@@ -37,12 +50,25 @@ def test_v2_1_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [billing] Cannot use @key on interface \"Bill\": @key is not yet supported on interfaces",
-            "[OVERRIDE_FROM_SELF_ERROR] [billing] Source and destination subgraphs \"billing\" are the same for overridden field \"Bill.amount\"",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [billing] Cannot use @key on"
+                ' interface "Bill": @key is not yet supported on interfaces'
+            ),
+            (
+                "[OVERRIDE_FROM_SELF_ERROR] [billing] Source and destination"
+                ' subgraphs "billing" are the same for overridden field'
+                ' "Bill.amount"'
+            ),
         ],
     )
 
@@ -53,12 +79,25 @@ def test_v2_2_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[KEY_UNSUPPORTED_ON_INTERFACE] [billing] Cannot use @key on interface \"Bill\": @key is not yet supported on interfaces",
-            "[OVERRIDE_FROM_SELF_ERROR] [billing] Source and destination subgraphs \"billing\" are the same for overridden field \"Bill.amount\"",
+            (
+                "[KEY_UNSUPPORTED_ON_INTERFACE] [billing] Cannot use @key on"
+                ' interface "Bill": @key is not yet supported on interfaces'
+            ),
+            (
+                "[OVERRIDE_FROM_SELF_ERROR] [billing] Source and destination"
+                ' subgraphs "billing" are the same for overridden field'
+                ' "Bill.amount"'
+            ),
         ],
     )
 
@@ -69,11 +108,21 @@ def test_v2_3_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on field \"Bill.amount\" on subgraph \"billing\": @override is not supported on interface type fields.",
+            (
+                "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on"
+                ' field "Bill.amount" on subgraph "billing": @override is not'
+                " supported on interface type fields."
+            ),
         ],
     )
 
@@ -84,11 +133,21 @@ def test_v2_4_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on field \"Bill.amount\" on subgraph \"billing\": @override is not supported on interface type fields.",
+            (
+                "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on"
+                ' field "Bill.amount" on subgraph "billing": @override is not'
+                " supported on interface type fields."
+            ),
         ],
     )
 
@@ -99,11 +158,21 @@ def test_v2_5_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on field \"Bill.amount\" on subgraph \"billing\": @override is not supported on interface type fields.",
+            (
+                "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on"
+                ' field "Bill.amount" on subgraph "billing": @override is not'
+                " supported on interface type fields."
+            ),
         ],
     )
 
@@ -114,11 +183,21 @@ def test_v2_6_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on field \"Bill.amount\" on subgraph \"billing\": @override is not supported on interface type fields.",
+            (
+                "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on"
+                ' field "Bill.amount" on subgraph "billing": @override is not'
+                " supported on interface type fields."
+            ),
         ],
     )
 
@@ -129,11 +208,21 @@ def test_v2_7_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on field \"Bill.amount\" on subgraph \"billing\": @override is not supported on interface type fields.",
+            (
+                "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on"
+                ' field "Bill.amount" on subgraph "billing": @override is not'
+                " supported on interface type fields."
+            ),
         ],
     )
 
@@ -144,11 +233,21 @@ def test_v2_8_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on field \"Bill.amount\" on subgraph \"billing\": @override is not supported on interface type fields.",
+            (
+                "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on"
+                ' field "Bill.amount" on subgraph "billing": @override is not'
+                " supported on interface type fields."
+            ),
         ],
     )
 
@@ -159,11 +258,21 @@ def test_v2_9_override_on_interface() raises:
         [
             sg(
                 "billing",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@override\"])\n\ntype Query {\n  bills: [Bill]\n}\n\ninterface Bill @key(fields: \"id\") {\n  id: ID!\n  amount: Int! @override(from: \"billing\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@override"])\n\ntype Query {\n  bills:'
+                    ' [Bill]\n}\n\ninterface Bill @key(fields: "id") {\n  id:'
+                    ' ID!\n  amount: Int! @override(from: "billing")\n}'
+                ),
             ),
         ],
         [
-            "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on field \"Bill.amount\" on subgraph \"billing\": @override is not supported on interface type fields.",
+            (
+                "[OVERRIDE_ON_INTERFACE] [billing] @override cannot be used on"
+                ' field "Bill.amount" on subgraph "billing": @override is not'
+                " supported on interface type fields."
+            ),
         ],
     )
 

@@ -21,16 +21,32 @@ def test_interface_object_composition_if_link_directive_is_not_present_on_all_su
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: String\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    ' String\n}\n\ninterface MyInterface @key(fields: "id") {\n'
+                    "  id: ID!\n  field: String\n}"
+                ),
             ),
             sg(
                 "b",
-                "type Query {\n  otherField: String\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "type Query {\n  otherField: String\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [b] Unknown directive \"@interfaceObject\". If you meant the \"@interfaceObject\" federation 2 directive, note that this schema is a federation 1 schema. To be a federation 2 schema, it needs to @link to the federation specification v2.",
-            "[INVALID_GRAPHQL] [b] Unknown directive \"@interfaceObject\".",
+            (
+                '[INVALID_GRAPHQL] [b] Unknown directive "@interfaceObject". If'
+                ' you meant the "@interfaceObject" federation 2 directive, note'
+                " that this schema is a federation 1 schema. To be a federation"
+                " 2 schema, it needs to @link to the federation"
+                " specification v2."
+            ),
+            '[INVALID_GRAPHQL] [b] Unknown directive "@interfaceObject".',
         ],
     )
 
@@ -41,15 +57,33 @@ def test_interface_object_composition_link_directive_should_have_url_pointing_to
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    " MyInterface\n}\n\ninterface MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}\n\ntype MyType'
+                    ' implements MyInterface @key(fields: "id") {\n  id: ID!\n '
+                    " field: String\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
         ],
         [
-            "[INVALID_LINK_DIRECTIVE_USAGE] [a] Cannot import unknown element \"@interfaceObject\".",
+            (
+                "[INVALID_LINK_DIRECTIVE_USAGE] [a] Cannot import unknown"
+                ' element "@interfaceObject".'
+            ),
         ],
     )
 
@@ -60,19 +94,41 @@ def test_interface_object_composition_external_requires_interfaceobject() raises
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String @shareable\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable"])\n\ntype Query'
+                    " {\n  hello: MyInterface\n}\n\ninterface MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field:'
+                    " String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String'
+                    " @shareable\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype MyInterface'
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\", \"@shareable\", \"@requires\", \"@external\"])\n\ntype MyInterface @key(fields: \"id\", resolvable: false) @interfaceObject {\n  id: ID!\n  newField: String @external\n  field: String @shareable @requires(fields: \"newField\")\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject", "@shareable", "@requires",'
+                    ' "@external"])\n\ntype MyInterface @key(fields: "id",'
+                    " resolvable: false) @interfaceObject {\n  id: ID!\n "
+                    " newField: String @external\n  field: String @shareable"
+                    ' @requires(fields: "newField")\n}'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -82,15 +138,29 @@ def test_interface_object_composition_link_directive_does_not_have_to_import_int
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  hello:'
+                    " MyInterface\n}\n\ninterface MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}\n\ntype MyType'
+                    ' implements MyInterface @key(fields: "id") {\n  id: ID!\n '
+                    " field: String\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -100,34 +170,68 @@ def test_interface_object_composition_target_interface_must_have_key_directive_o
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    " MyInterface\n}\n\ninterface MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}\n\ntype MyType'
+                    ' implements MyInterface @key(fields: "id") {\n  id: ID!\n '
+                    " field: String\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_interface_object_composition_subgraph_where_interface_is_defined_must_have_all_e() raises:
-    # interface object composition > subgraph where interface is defined must have all entity types which implement that interface defined 
+    # interface object composition > subgraph where interface is defined must have all entity types which implement that interface defined
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    " MyInterface\n}\n\ninterface MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}\n\ntype MyType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}\n\ntype MyType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
         ],
         [
-            "[INVALID_GRAPHQL] [b] Cannot implement non-interface type MyInterface (of type ObjectType)",
-            "[INVALID_GRAPHQL] [b] Interface field MyInterface.newField expected but MyType does not provide it.",
+            (
+                "[INVALID_GRAPHQL] [b] Cannot implement non-interface type"
+                " MyInterface (of type ObjectType)"
+            ),
+            (
+                "[INVALID_GRAPHQL] [b] Interface field MyInterface.newField"
+                " expected but MyType does not provide it."
+            ),
         ],
     )
 
@@ -138,14 +242,31 @@ def test_interface_object_composition_interfaceobject_definition_at_least_one_ot
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    " String\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " newField: String\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INTERFACE_OBJECT_USAGE_ERROR] Type "MyInterface" is declared'
+                " with @interfaceObject in all the subgraphs in which is is"
+                " defined"
+            ),
         ],
     )
 
@@ -156,15 +277,32 @@ def test_interface_object_composition_interfaceobject_definition_at_least_one_ot
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface {\n  id: ID!\n  field: String\n}\n\ntype SomeType implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    " MyInterface\n}\n\ninterface MyInterface {\n  id: ID!\n "
+                    " field: String\n}\n\ntype SomeType implements MyInterface"
+                    ' @key(fields: "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @interfaceObject {\n  id: ID!\n  newField: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    " @interfaceObject {\n  id: ID!\n  newField: String\n}"
+                ),
             ),
         ],
         [
-            "[INTERFACE_OBJECT_USAGE_ERROR] [b] The @interfaceObject directive can only be applied to entity types but type \"MyInterface\" has no @key in this subgraph.",
+            (
+                "[INTERFACE_OBJECT_USAGE_ERROR] [b] The @interfaceObject"
+                " directive can only be applied to entity types but type"
+                ' "MyInterface" has no @key in this subgraph.'
+            ),
         ],
     )
 
@@ -175,15 +313,29 @@ def test_interface_object_composition_interfaceobject_definition_at_least_one_ot
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype IimplementMyInterface implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    " MyInterface\n}\n\ninterface MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}\n\ntype'
+                    " IimplementMyInterface implements MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  hello: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " hello: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -193,15 +345,28 @@ def test_interface_object_composition_interfaceobject_definition_at_least_one_ot
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@interfaceObject\"])\n\ninterface Media @key(fields: \"id\") {\n  id: ID!\n  title: String!\n}\n\ntype Book implements Media @key(fields: \"id\") {\n  id: ID!\n  title: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@interfaceObject"])\n\ninterface Media'
+                    ' @key(fields: "id") {\n  id: ID!\n  title:'
+                    " String!\n}\n\ntype Book implements Media @key(fields:"
+                    ' "id") {\n  id: ID!\n  title: String!\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Media @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  reviews: [Review!]!\n}\n\ntype Review {\n  score: Int!\n}\n\ntype Query {\n  topRatedMedia: [Media!]!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Media @key(fields:'
+                    ' "id") @interfaceObject {\n  id: ID!\n  reviews:'
+                    " [Review!]!\n}\n\ntype Review {\n  score: Int!\n}\n\ntype"
+                    " Query {\n  topRatedMedia: [Media!]!\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -211,19 +376,40 @@ def test_interface_object_composition_interfaceobject_definition_fields_contribu
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  hello: MyInterface\n}\n\ninterface MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}\n\ntype IimplementMyInterface implements MyInterface @key(fields: \"id\") {\n  id: ID!\n  field: String\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n  hello:'
+                    " MyInterface\n}\n\ninterface MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}\n\ntype'
+                    " IimplementMyInterface implements MyInterface @key(fields:"
+                    ' "id") {\n  id: ID!\n  field: String\n}'
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  otherField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  hello: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " otherField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " hello: Int\n}"
+                ),
             ),
             sg(
                 "c",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])\n\ntype Query {\n  someNewField: MyInterface\n}\n\ntype MyInterface @key(fields: \"id\") @interfaceObject {\n  id: ID!\n  hello2: Int\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])\n\ntype Query {\n '
+                    " someNewField: MyInterface\n}\n\ntype MyInterface"
+                    ' @key(fields: "id") @interfaceObject {\n  id: ID!\n '
+                    " hello2: Int\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -233,19 +419,36 @@ def test_interface_object_composition_satisfiability_with_interfaceobject() rais
         [
             sg(
                 "a",
-                "type Query {\n  book: Book!\n}\n\ninterface Media @key(fields: \"id\") {\n  id: ID!\n}\n\ntype Book implements Media @key(fields: \"id\") {\n  id: ID!\n  isbn: String!\n}\n\nextend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])",
+                (
+                    "type Query {\n  book: Book!\n}\n\ninterface Media"
+                    ' @key(fields: "id") {\n  id: ID!\n}\n\ntype Book'
+                    ' implements Media @key(fields: "id") {\n  id: ID!\n  isbn:'
+                    " String!\n}\n\nextend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])'
+                ),
             ),
             sg(
                 "b",
-                "type Media @key(fields: \"id\") @interfaceObject {\n  id: ID!\n}\n\ntype Query {\n  topRatedMedia: [Media!]!\n}\n\nextend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@interfaceObject\"])",
+                (
+                    'type Media @key(fields: "id") @interfaceObject {\n  id:'
+                    " ID!\n}\n\ntype Query {\n  topRatedMedia:"
+                    " [Media!]!\n}\n\nextend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@interfaceObject"])'
+                ),
             ),
             sg(
                 "c",
-                "type Query {\n  cBook: Book\n}\n\ntype Book @key(fields: \"id\") {\n  id: ID!\n}\n\nextend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])",
+                (
+                    "type Query {\n  cBook: Book\n}\n\ntype Book @key(fields:"
+                    ' "id") {\n  id: ID!\n}\n\nextend schema @link(url:'
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])'
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

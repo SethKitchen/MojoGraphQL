@@ -1,0 +1,10 @@
+{
+    "typeToFieldsToArguments": {
+        "Character": {},
+        "Float": {},
+        "Episode": {},
+        "String": {},
+        "ID": {},
+        "Query": {}
+    }
+}

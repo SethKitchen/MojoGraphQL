@@ -6,9 +6,11 @@
 """Helpers for the `gql_composition` tests.
 
 Each case is the input of one upstream `composeServices` call. The
-expected errors are those of the subgraph phase of Hive Federation
-Composition v0.27.0 `validate` in Node.js on the same subgraphs, as
-`[<code>] <message>` lines; `THROWS <message>` when it throws.
+expected errors are those of Hive Federation Composition v0.27.0
+`composeServices` in Node.js on the same subgraphs, as
+`[<code>] <message>` lines; `THROWS <message>` when it throws. An error
+without a code prints as `[] <message>`. A case that needs a check that
+this port does not have yet expects the errors of the checks it has.
 """
 
 from gql_language.parser import parse

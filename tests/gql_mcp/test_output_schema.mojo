@@ -9,8 +9,8 @@ Ports the tests of Apollo MCP Server 2.0.0 (04e4e6e)
 `crates/apollo-mcp-server/src/operations/schema_walker/output.rs` that do
 not use `@private`. The upstream checks two of them with the `jsonschema`
 validator; here each case compares the whole schema with the upstream's
-output. `fixtures/output_cases.txt` holds the cases (SDL, `----`, the
-operation; `====` between cases), and `fixtures/output_expected.txt` the
+output. `_output_fixture.mojo` holds the cases (SDL, `----`, the
+operation; `====` between cases), and the expected text: the
 upstream `serde_json::to_value` text of each, one line each, from a dump
 test added to a copy of `output.rs` that uses the custom scalar map
 `{"Mapped": {"type": "string", "description": "mapped"}, "Yes": true}`.
@@ -22,7 +22,7 @@ from gql_mcp.custom_scalar_map import CustomScalarMap
 from gql_mcp.json_tree import JsonTree
 from gql_mcp.output_schema import selection_set_to_schema
 from gql_schema.build import BuildOptions, build_schema
-from std.pathlib import Path
+from _output_fixture import OUTPUT_CASES, OUTPUT_EXPECTED
 from std.testing import TestSuite, assert_equal
 
 
@@ -49,10 +49,8 @@ def output_of(sdl: StringSlice, query: StringSlice) raises -> String:
 
 
 def check_case(index: Int) raises:
-    var cases = Path("tests/gql_mcp/fixtures/output_cases.txt").read_text()
-    var expected = Path(
-        "tests/gql_mcp/fixtures/output_expected.txt"
-    ).read_text()
+    var cases = String(OUTPUT_CASES)
+    var expected = String(OUTPUT_EXPECTED)
     var one = String(cases.split("\n====\n")[index])
     var parts = one.split("\n----\n")
     assert_equal(

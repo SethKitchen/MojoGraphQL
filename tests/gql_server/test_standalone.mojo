@@ -39,7 +39,9 @@ comptime OK = '{"data":{"testString":"it works"}}\n'
 
 
 def _handler() raises -> StandaloneHandler[NoPlugin]:
-    var server = ApolloServer.from_type_defs(SDL, resolvers(), options(), NoPlugin())
+    var server = ApolloServer.from_type_defs(
+        SDL, resolvers(), options(), NoPlugin()
+    )
     server.start()
     return StandaloneHandler(server^, context)
 
@@ -79,7 +81,9 @@ def _body(writer: ResponseWriter) -> String:
 
 def test_post() raises:
     var handler = _handler()
-    var writer = _send(handler, _post("application/json", '{"query":"{ testString }"}'))
+    var writer = _send(
+        handler, _post("application/json", '{"query":"{ testString }"}')
+    )
     assert_equal(writer.status.code, 200)
     assert_equal(
         _fields(writer),
@@ -99,7 +103,8 @@ def test_get_and_head() raises:
     assert_equal(writer.status.code, 200)
     assert_equal(_body(writer), OK)
     writer = _send(
-        handler, "HEAD / HTTP/1.1\r\nHost: x\r\napollo-require-preflight: t\r\n\r\n"
+        handler,
+        "HEAD / HTTP/1.1\r\nHost: x\r\napollo-require-preflight: t\r\n\r\n",
     )
     assert_equal(writer.status.code, 405)
     assert_true("allow: GET, POST" in _fields(writer))
@@ -124,3 +129,154 @@ def test_cors_preflight() raises:
     writer = _send(handler, "OPTIONS / HTTP/1.1\r\nHost: x\r\n\r\n")
     assert_equal(writer.status.code, 204)
     assert_false("Allow-Headers" in _fields(writer))
+
+
+comptime MISSING = (
+    '{"errors":[{"message":"POST body missing, invalid Content-Type, or JSON'
+    ' object has no keys.","extensions":{"code":"BAD_REQUEST"}}]}\n'
+)
+comptime QUERY = '{"query":"{ testString }"}'
+
+
+def _page(reason: String) -> String:
+    return (
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        "<title>Error</title>\n</head>\n<body>\n<pre>"
+        + reason
+        + "</pre>\n</body>\n</html>\n"
+    )
+
+
+comptime PAGE_FIELDS = (
+    "Access-Control-Allow-Origin: *\r\n"
+    "Content-Security-Policy: default-src 'none'\r\n"
+    "X-Content-Type-Options: nosniff\r\n"
+    "Content-Type: text/html; charset=utf-8\r\n"
+)
+
+
+def test_throws_an_error_if_post_body_is_empty() raises:
+    var handler = _handler()
+    var writer = _send(handler, _post("application/json", ""))
+    assert_equal(writer.status.code, 400)
+    assert_equal(_body(writer), MISSING)
+    writer = _send(
+        handler,
+        "POST / HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\n\r\n",
+    )
+    assert_equal(writer.status.code, 400)
+    assert_equal(_body(writer), MISSING)
+
+
+def test_a_body_that_is_not_json() raises:
+    var handler = _handler()
+    var writer = _send(handler, _post("text/plain", QUERY))
+    assert_equal(writer.status.code, 400)
+    assert_true("Cross-Site Request Forgery" in _body(writer))
+    writer = _send(
+        handler,
+        "POST / HTTP/1.1\r\nHost: x\r\nContent-Length: 26\r\n\r\n" + QUERY,
+    )
+    assert_equal(writer.status.code, 400)
+    assert_true("Cross-Site Request Forgery" in _body(writer))
+    writer = _send(handler, _post("invalid", QUERY))
+    assert_equal(writer.status.code, 400)
+    assert_equal(_body(writer), MISSING)
+
+
+def test_throws_an_error_if_post_json_is_malformed() raises:
+    var handler = _handler()
+    var bodies: List[String] = [
+        String('{"query":'),
+        String("   "),
+        String('"str"'),
+    ]
+    var index = 0
+    while index < len(bodies):
+        var writer = _send(handler, _post("application/json", bodies[index]))
+        assert_equal(writer.status.code, 400)
+        assert_equal(_fields(writer), PAGE_FIELDS)
+        assert_equal(_body(writer), _page("Bad Request"))
+        index += 1
+
+
+def test_a_charset_that_is_not_utf_8() raises:
+    var handler = _handler()
+    var writer = _send(
+        handler, _post("application/json; charset=latin1", QUERY)
+    )
+    assert_equal(writer.status.code, 415)
+    assert_equal(_fields(writer), PAGE_FIELDS)
+    assert_equal(_body(writer), _page("Unsupported Media Type"))
+    writer = _send(
+        handler, _post("application/json; charset=UTF-8", " \r\n" + QUERY)
+    )
+    assert_equal(writer.status.code, 200)
+    assert_equal(_body(writer), OK)
+
+
+def test_chunked_bodies_and_batches() raises:
+    var handler = _handler()
+    var writer = _send(
+        handler,
+        "POST / HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\n"
+        + "Transfer-Encoding: chunked\r\n\r\n1a\r\n"
+        + QUERY
+        + "\r\n0\r\n\r\n",
+    )
+    assert_equal(writer.status.code, 200)
+    assert_equal(_body(writer), OK)
+    writer = _send(handler, _post("application/json", "[]"))
+    assert_equal(writer.status.code, 400)
+    assert_equal(
+        _body(writer),
+        '{"errors":[{"message":"Operation batching disabled.","extensions":'
+        + '{"code":"BAD_REQUEST"}}]}\n',
+    )
+
+
+def test_request_headers_join_as_node_js_does() raises:
+    var raw = String(
+        "GET / HTTP/1.1\r\nHost: a\r\nReferer: r\r\nReferer: s\r\n"
+        "Cookie: x=1\r\n"
+        "X-Foo: 1\r\nCookie: y=2\r\nx-foo: 2\r\nContent-Type: a/b\r\n"
+        "content-type: c/d\r\nUser-Agent: u\r\nUser-Agent: v\r\n\r\n"
+    )
+    var reader = RequestReader(Limits())
+    reader.append(raw.as_bytes())
+    _ = reader.next()
+    var headers = request_headers(reader.request)
+    assert_equal(headers.get("referer").value(), "r")
+    assert_equal(headers.get("cookie").value(), "x=1; y=2")
+    assert_equal(headers.get("x-foo").value(), "1, 2")
+    assert_equal(headers.get("content-type").value(), "a/b")
+    assert_equal(headers.get("user-agent").value(), "u")
+    assert_equal(len(headers), 6)
+
+
+def test_start_standalone_server() raises:
+    var config = ServerConfig()
+    config.host = IPv4Address.LOOPBACK
+    config.port = 0
+    config.workers = 1
+    var server = ApolloServer.from_type_defs(
+        SDL, resolvers(), options(), NoPlugin()
+    )
+    var running = start_standalone_server(server^, config^, context)
+    assert_equal(
+        running.url, "http://localhost:" + String(running.pool.port) + "/"
+    )
+    var client = Client()
+    var response = client.post(
+        "http://127.0.0.1:" + String(running.pool.port) + "/graphql",
+        "application/json",
+        QUERY,
+    )
+    assert_equal(response.status.code, 200)
+    assert_equal(response.text(), OK)
+    client.close_idle()
+    assert_equal(running.stop(), 0)
+
+
+def main() raises:
+    TestSuite.discover_tests[__functions_in_module()]().run()

@@ -21,25 +21,48 @@ def test_v2_0_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -49,25 +72,48 @@ def test_v2_1_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -77,25 +123,48 @@ def test_v2_2_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -105,25 +174,48 @@ def test_v2_3_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -133,25 +225,48 @@ def test_v2_4_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -161,25 +276,48 @@ def test_v2_5_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -189,25 +327,48 @@ def test_v2_6_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -217,25 +378,48 @@ def test_v2_7_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -245,25 +429,48 @@ def test_v2_8_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -273,25 +480,48 @@ def test_v2_9_interface_field_object_field_subtype() raises:
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n}\n\ntype User implements Node {\n  id: ID!\n}\n\ninterface Node {\n  id: ID!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n}\n\ntype"
+                    " User implements Node {\n  id: ID!\n}\n\ninterface Node"
+                    " {\n  id: ID!\n}"
+                ),
             ),
             sg(
                 "b",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin @key(fields: \"id\") {\n  id: ID\n  name: String!\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  b: Admin\n}\n\ntype Admin'
+                    ' @key(fields: "id") {\n  id: ID\n  name: String!\n}'
+                ),
             ),
         ],
         [
+            (
+                "[INVALID_GRAPHQL] Interface field Node.id expects type ID! but"
+                " Admin.id of type ID is not a proper subtype."
+            ),
         ],
     )
     check(
         [
             sg(
                 "a",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@shareable\"])\n\ntype Query {\n  a: Admin\n}\n\ntype Admin implements Node {\n  id: ID! @shareable\n  parent: Node\n}\n\ntype User implements Node {\n  id: ID!\n  parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent: Node\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@shareable"])\n\ntype Query {\n  a: Admin\n}\n\ntype'
+                    " Admin implements Node {\n  id: ID! @shareable\n  parent:"
+                    " Node\n}\n\ntype User implements Node {\n  id: ID!\n "
+                    " parent: User\n}\n\ninterface Node {\n  id: ID!\n  parent:"
+                    " Node\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

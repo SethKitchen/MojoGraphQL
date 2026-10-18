@@ -136,6 +136,62 @@ struct ErrorCode(Equatable, ImplicitlyCopyable, Writable):
     """`LIST_SIZE_APPLIED_TO_NON_LIST`."""
     comptime LIST_SIZE_INVALID_REQUIRE_ONE_SLICING_ARGUMENT = ErrorCode(54)
     """`LIST_SIZE_INVALID_REQUIRE_ONE_SLICING_ARGUMENT`."""
+    comptime LINK_IMPORT_NAME_MISMATCH = ErrorCode(55)
+    """`LINK_IMPORT_NAME_MISMATCH`."""
+    comptime NO_QUERIES = ErrorCode(56)
+    """`NO_QUERIES`."""
+    comptime TYPE_KIND_MISMATCH = ErrorCode(57)
+    """`TYPE_KIND_MISMATCH`."""
+    comptime FIELD_TYPE_MISMATCH = ErrorCode(58)
+    """`FIELD_TYPE_MISMATCH`."""
+    comptime INVALID_FIELD_SHARING = ErrorCode(59)
+    """`INVALID_FIELD_SHARING`."""
+    comptime EXTENSION_WITH_NO_BASE = ErrorCode(60)
+    """`EXTENSION_WITH_NO_BASE`."""
+    comptime FIELD_ARGUMENT_TYPE_MISMATCH = ErrorCode(61)
+    """`FIELD_ARGUMENT_TYPE_MISMATCH`."""
+    comptime ENUM_VALUE_MISMATCH = ErrorCode(62)
+    """`ENUM_VALUE_MISMATCH`."""
+    comptime EMPTY_MERGED_ENUM_TYPE = ErrorCode(63)
+    """`EMPTY_MERGED_ENUM_TYPE`."""
+    comptime OVERRIDE_SOURCE_HAS_OVERRIDE = ErrorCode(64)
+    """`OVERRIDE_SOURCE_HAS_OVERRIDE`."""
+    comptime EXTERNAL_MISSING_ON_BASE = ErrorCode(65)
+    """`EXTERNAL_MISSING_ON_BASE`."""
+    comptime EMPTY_MERGED_INPUT_TYPE = ErrorCode(66)
+    """`EMPTY_MERGED_INPUT_TYPE`."""
+    comptime REQUIRED_ARGUMENT_MISSING_IN_SOME_SUBGRAPH = ErrorCode(67)
+    """`REQUIRED_ARGUMENT_MISSING_IN_SOME_SUBGRAPH`."""
+    comptime REQUIRED_INPUT_FIELD_MISSING_IN_SOME_SUBGRAPH = ErrorCode(68)
+    """`REQUIRED_INPUT_FIELD_MISSING_IN_SOME_SUBGRAPH`."""
+    comptime EXTERNAL_ARGUMENT_MISSING = ErrorCode(69)
+    """`EXTERNAL_ARGUMENT_MISSING`."""
+    comptime INPUT_FIELD_DEFAULT_MISMATCH = ErrorCode(70)
+    """`INPUT_FIELD_DEFAULT_MISMATCH`."""
+    comptime FIELD_ARGUMENT_DEFAULT_MISMATCH = ErrorCode(71)
+    """`FIELD_ARGUMENT_DEFAULT_MISMATCH`."""
+    comptime DEFAULT_VALUE_USES_INACCESSIBLE = ErrorCode(72)
+    """`DEFAULT_VALUE_USES_INACCESSIBLE`."""
+    comptime ONLY_INACCESSIBLE_CHILDREN = ErrorCode(73)
+    """`ONLY_INACCESSIBLE_CHILDREN`."""
+    comptime REFERENCED_INACCESSIBLE = ErrorCode(74)
+    """`REFERENCED_INACCESSIBLE`."""
+    comptime EXTERNAL_TYPE_MISMATCH = ErrorCode(75)
+    """`EXTERNAL_TYPE_MISMATCH`."""
+    comptime INTERFACE_FIELD_NO_IMPLEM = ErrorCode(76)
+    """`INTERFACE_FIELD_NO_IMPLEM`."""
+    comptime INTERFACE_KEY_MISSING_IMPLEMENTATION_TYPE = ErrorCode(77)
+    """`INTERFACE_KEY_MISSING_IMPLEMENTATION_TYPE`."""
+    comptime REQUIRED_INACCESSIBLE = ErrorCode(78)
+    """`REQUIRED_INACCESSIBLE`."""
+    comptime IMPLEMENTED_BY_INACCESSIBLE = ErrorCode(79)
+    """`IMPLEMENTED_BY_INACCESSIBLE`."""
+    comptime CONTEXTUAL_ARGUMENT_NOT_CONTEXTUAL_IN_ALL_SUBGRAPHS = ErrorCode(80)
+    """`CONTEXTUAL_ARGUMENT_NOT_CONTEXTUAL_IN_ALL_SUBGRAPHS`."""
+    comptime MISSING_TRANSITIVE_AUTH_REQUIREMENTS = ErrorCode(81)
+    """`MISSING_TRANSITIVE_AUTH_REQUIREMENTS`."""
+    comptime SATISFIABILITY_ERROR = ErrorCode(82)
+    """`SATISFIABILITY_ERROR`."""
 
     def is_valid(self) -> Bool:
         """Return True if the value names one of the codes.
@@ -143,7 +199,7 @@ struct ErrorCode(Equatable, ImplicitlyCopyable, Writable):
         Returns:
             Whether the value is in range.
         """
-        return self.value <= 54
+        return self.value <= 82
 
     def text(self) -> StaticString:
         """Return the upstream code string, such as `INVALID_GRAPHQL`.
@@ -151,7 +207,7 @@ struct ErrorCode(Equatable, ImplicitlyCopyable, Writable):
         Returns:
             The code, empty for `NONE`, or `<invalid>`.
         """
-        comptime names: Array[StaticString, 55] = [
+        comptime names: Array[StaticString, 83] = [
             "",
             "INVALID_GRAPHQL",
             "INVALID_LINK_DIRECTIVE_USAGE",
@@ -207,6 +263,34 @@ struct ErrorCode(Equatable, ImplicitlyCopyable, Writable):
             "LIST_SIZE_INVALID_SIZED_FIELD",
             "LIST_SIZE_APPLIED_TO_NON_LIST",
             "LIST_SIZE_INVALID_REQUIRE_ONE_SLICING_ARGUMENT",
+            "LINK_IMPORT_NAME_MISMATCH",
+            "NO_QUERIES",
+            "TYPE_KIND_MISMATCH",
+            "FIELD_TYPE_MISMATCH",
+            "INVALID_FIELD_SHARING",
+            "EXTENSION_WITH_NO_BASE",
+            "FIELD_ARGUMENT_TYPE_MISMATCH",
+            "ENUM_VALUE_MISMATCH",
+            "EMPTY_MERGED_ENUM_TYPE",
+            "OVERRIDE_SOURCE_HAS_OVERRIDE",
+            "EXTERNAL_MISSING_ON_BASE",
+            "EMPTY_MERGED_INPUT_TYPE",
+            "REQUIRED_ARGUMENT_MISSING_IN_SOME_SUBGRAPH",
+            "REQUIRED_INPUT_FIELD_MISSING_IN_SOME_SUBGRAPH",
+            "EXTERNAL_ARGUMENT_MISSING",
+            "INPUT_FIELD_DEFAULT_MISMATCH",
+            "FIELD_ARGUMENT_DEFAULT_MISMATCH",
+            "DEFAULT_VALUE_USES_INACCESSIBLE",
+            "ONLY_INACCESSIBLE_CHILDREN",
+            "REFERENCED_INACCESSIBLE",
+            "EXTERNAL_TYPE_MISMATCH",
+            "INTERFACE_FIELD_NO_IMPLEM",
+            "INTERFACE_KEY_MISSING_IMPLEMENTATION_TYPE",
+            "REQUIRED_INACCESSIBLE",
+            "IMPLEMENTED_BY_INACCESSIBLE",
+            "CONTEXTUAL_ARGUMENT_NOT_CONTEXTUAL_IN_ALL_SUBGRAPHS",
+            "MISSING_TRANSITIVE_AUTH_REQUIREMENTS",
+            "SATISFIABILITY_ERROR",
         ]
         if not self.is_valid():
             return "<invalid>"

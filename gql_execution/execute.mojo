@@ -54,6 +54,14 @@ the same order, and the same errors with their locations and paths.
 - A meta field and an introspection field always use their own resolver.
   An introspection type used by a schema field, with a source that is not
   an introspection handle, uses the default field resolver.
+- `ExecutionArgs.field_timing` is an addition for the Apollo Server
+  inline trace plugin. Apollo Server wraps each field resolver of the
+  schema to call `willResolveField` before it and the returned function
+  after it. Here execution records a `FieldTiming` for each field that
+  Apollo Server wraps: the fields of the object types whose names do not
+  start with `__`. The timings are in `ExecutionResult.field_timings`, in
+  the order that the resolvers started. When `field_timing` is False,
+  execution records nothing and the result is the same.
 """
 
 from gql_json.value import FLAG_KEY_DECODED, JsonDocument, JsonKind
@@ -90,6 +98,7 @@ from gql_execution.values import (
     get_variable_values,
 )
 from gql_schema.values import js_number_to_string, print_default
+from std.time import perf_counter_ns
 
 comptime FieldResolver = def(
     mut values: Values, source: Int, args: Int, info: ResolveInfo
@@ -269,6 +278,48 @@ struct ResolveInfo(Copyable, Movable):
         self.variable_values = UNDEFINED
 
 
+struct FieldTiming(Copyable, Movable):
+    """The resolver of one field and its times: what the Apollo Server
+    `willResolveField` hook gets, and when its end function runs."""
+
+    var path: List[PathSegment]
+    """The response path of the field."""
+    var field_name: String
+    """The field's name; the last key of `path` is its response key."""
+    var return_type: TypeRef
+    """The field's type."""
+    var parent_type: Int
+    """The object type whose field this is."""
+    var start_ns: Int
+    """The `perf_counter_ns` before the resolver."""
+    var end_ns: Int
+    """The `perf_counter_ns` after the resolver returned or raised."""
+
+    def __init__(
+        out self,
+        var path: List[PathSegment],
+        field_name: String,
+        return_type: TypeRef,
+        parent_type: Int,
+        start_ns: Int,
+    ):
+        """Record the start of a resolver.
+
+        Args:
+            path: The response path.
+            field_name: The field's name.
+            return_type: The field's type.
+            parent_type: The object type.
+            start_ns: The `perf_counter_ns` before the resolver.
+        """
+        self.path = path^
+        self.field_name = field_name
+        self.return_type = return_type
+        self.parent_type = parent_type
+        self.start_ns = start_ns
+        self.end_ns = start_ns
+
+
 struct ExecutionArgs(Movable):
     """The inputs of an execution, as graphql-js `ExecutionArgs`, with the
     arena of their values."""
@@ -290,6 +341,9 @@ struct ExecutionArgs(Movable):
     """The graphql-js `options.maxCoercionErrors`."""
     var assume_valid_schema: Bool
     """Skip `assertValidSchema`, for a schema that is known to be valid."""
+    var field_timing: Bool
+    """Record a `FieldTiming` for each resolved field, for the Apollo
+    Server `willResolveField` hook."""
 
     def __init__(out self):
         """Start with no values and no resolvers."""
@@ -301,6 +355,7 @@ struct ExecutionArgs(Movable):
         self.resolvers = Resolvers()
         self.max_coercion_errors = DEFAULT_MAX_ERRORS
         self.assume_valid_schema = False
+        self.field_timing = False
 
 
 struct ExecutionResult(Movable):
@@ -311,6 +366,9 @@ struct ExecutionResult(Movable):
     result has no `data` key."""
     var errors: List[GraphQLError]
     """The errors, in the order they happened."""
+    var field_timings: List[FieldTiming]
+    """The timings of the resolved fields when
+    `ExecutionArgs.field_timing` is set; empty otherwise."""
 
     def __init__(
         out self, var data: JsonDocument, var errors: List[GraphQLError]
@@ -323,6 +381,7 @@ struct ExecutionResult(Movable):
         """
         self.data = data^
         self.errors = errors^
+        self.field_timings = List[FieldTiming]()
 
     def take_data(deinit self) -> JsonDocument:
         """End the result and return its data.
@@ -387,6 +446,32 @@ comptime META_TYPE = -4
 """The field index that stands for `__type`."""
 comptime _UNKNOWN = -5
 comptime _SKIP = -2
+
+
+@fieldwise_init
+struct _GroupCache(ImplicitlyCopyable, Movable):
+    """What the executor keeps for one field group of the collector, in
+    one list so that an execution makes one allocation for all of it."""
+
+    var key: Int64
+    """The response key in the result bytes, start and end, or -1."""
+    var field: Int32
+    """The field of `_field_def`, or `_UNKNOWN`."""
+    var args: Int32
+    """The coerced arguments of an introspection field, or `_UNKNOWN`."""
+    var sub_type: Int32
+    """The first type whose subfields were collected, or `_UNKNOWN`."""
+    var sub_plan: Int32
+    """The plan of the subfields of `sub_type`."""
+
+    @staticmethod
+    def empty() -> _GroupCache:
+        """Return the entry of a group that has nothing kept."""
+        return _GroupCache(
+            -1, Int32(_UNKNOWN), Int32(_UNKNOWN), Int32(_UNKNOWN), 0
+        )
+
+
 comptime _VALUE: Int32 = 0
 
 
@@ -478,17 +563,20 @@ struct _Executor[
     var operation: Int
     var path: List[Int32]
     var subfields: Dict[Int, Int]
-    var group_field: List[Int32]
-    var group_key: List[Int64]
-    var group_args: List[Int32]
-    var field_resolvers: Dict[Int, Int]
-    var type_resolvers: Dict[Int, Int]
-    var type_checks: Dict[Int, Int]
+    var cache: List[_GroupCache]
+    # The resolver of each field and type, by index, or empty when there
+    # are no resolvers of that kind: see `_slot`.
+    var field_resolvers: List[Int32]
+    var type_resolvers: List[Int32]
+    var type_checks: List[Int32]
     var custom_default: Bool
-    var intro_types: List[Int]
+    var intro_types: Array[Int, 6]
     var intro_starts: List[Int]
     var intro_codes: List[Int8]
     var string_type: Int
+    # `ExecutionArgs.field_timing`, and the timings it records.
+    var field_timing: Bool
+    var field_timings: List[FieldTiming]
 
     def __init__(
         out self,
@@ -503,6 +591,8 @@ struct _Executor[
         self.resolvers = Pointer(to=resolvers)
         self.values = values^
         self.data = JsonDocument()
+        self.data.nodes.reserve(32)
+        self.data.bytes.reserve(512)
         self.errors = List[GraphQLError]()
         self.collector = FieldCollector(schema, document)
         self.variables = UNDEFINED
@@ -511,23 +601,32 @@ struct _Executor[
         self.operation = NO_NODE
         self.path = List[Int32](capacity=32)
         self.subfields = Dict[Int, Int]()
-        self.group_field = List[Int32]()
-        self.group_key = List[Int64]()
-        self.group_args = List[Int32]()
-        self.field_resolvers = Dict[Int, Int]()
-        self.type_resolvers = Dict[Int, Int]()
-        self.type_checks = Dict[Int, Int]()
+        self.cache = List[_GroupCache]()
+        self.field_resolvers = List[Int32]()
+        self.type_resolvers = List[Int32]()
+        self.type_checks = List[Int32]()
         self.custom_default = False
-        self.intro_types = List[Int]()
+        self.intro_types = Array[Int, 6](fill=NO_TYPE)
         self.intro_starts = List[Int]()
         self.intro_codes = List[Int8]()
         self.string_type = schema.type_named("String")
+        self.field_timing = False
+        self.field_timings = List[FieldTiming]()
         self._bind(schema, resolvers)
         self._index_introspection(schema)
 
     def _bind(mut self, schema: Schema, resolvers: Resolvers):
         """Find the schema element of each resolver; a resolver of an
-        element the schema does not have is not used."""
+        element the schema does not have is not used. A table is made only
+        for a kind of resolver that there is."""
+        if len(resolvers.field_functions) > 0:
+            self.field_resolvers = List[Int32](
+                length=len(schema.fields), fill=-1
+            )
+        if len(resolvers.type_functions) > 0:
+            self.type_resolvers = List[Int32](length=len(schema.types), fill=-1)
+        if len(resolvers.object_functions) > 0:
+            self.type_checks = List[Int32](length=len(schema.types), fill=-1)
         var index = 0
         while index < len(resolvers.field_functions):
             var type = schema.type_named(resolvers.field_types[index])
@@ -536,23 +635,25 @@ struct _Executor[
                     type, resolvers.field_names[index]
                 )
                 if field != NO_TYPE:
-                    self.field_resolvers[field] = index
+                    self.field_resolvers[field] = Int32(index)
             index += 1
         index = 0
         while index < len(resolvers.type_functions):
             var type = schema.type_named(resolvers.type_names[index])
             if type != NO_TYPE:
-                self.type_resolvers[type] = index
+                self.type_resolvers[type] = Int32(index)
             index += 1
         index = 0
         while index < len(resolvers.object_functions):
             var type = schema.type_named(resolvers.object_names[index])
             if type != NO_TYPE:
-                self.type_checks[type] = index
+                self.type_checks[type] = Int32(index)
             index += 1
 
     def _index_introspection(mut self, schema: Schema):
-        """Give each field of the introspection types its resolver code."""
+        """Find the six introspection types. Their resolver codes are found
+        when an operation first reads an introspection field, so an
+        operation without introspection does not pay for them."""
         comptime names: Array[StaticString, 6] = [
             "__Schema",
             "__Type",
@@ -563,9 +664,17 @@ struct _Executor[
         ]
         var which = 0
         while which < 6:
-            var type = schema.type_named(materialize[names]()[which])
-            self.intro_types.append(type)
-            var span = schema.types[type].fields
+            self.intro_types[which] = schema.type_named(
+                materialize[names]()[which]
+            )
+            which += 1
+
+    def _index_introspection_codes(mut self):
+        """Give each field of the introspection types its resolver code."""
+        ref schema = self.schema[]
+        var which = 0
+        while which < 6:
+            var span = schema.types[self.intro_types[which]].fields
             self.intro_starts.append(len(self.intro_codes) - Int(span.start))
             var field = Int(span.start)
             while field < span.end():
@@ -580,16 +689,14 @@ struct _Executor[
     def _sync_groups(mut self):
         """Give each new group of the collector its cache entries."""
         var count = len(self.collector.groups)
-        if len(self.group_field) < count:
-            self.group_field.resize(count, Int32(_UNKNOWN))
-            self.group_key.resize(count, -1)
-            self.group_args.resize(count, Int32(_UNKNOWN))
+        if len(self.cache) < count:
+            self.cache.resize(count, _GroupCache.empty())
 
     def _field_def(mut self, parent: Int, group: Int) -> Int:
         """Return graphql-js `getFieldDef` for a group of a plan of the
         parent type: a field index, a `META_` index, or `NO_TYPE`. A plan
         belongs to one type, so the result is kept per group."""
-        var cached = Int(self.group_field.unsafe_ptr()[unsafe_offset=group])
+        var cached = Int(self.cache.unsafe_ptr()[unsafe_offset=group].field)
         if cached != _UNKNOWN:
             return cached
         ref schema = self.schema[]
@@ -604,7 +711,7 @@ struct _Executor[
             field = META_TYPE
         else:
             field = schema.field_named(parent, name)
-        self.group_field[group] = Int32(field)
+        self.cache[group].field = Int32(field)
         return field
 
     def _field_name(self, field: Int) -> String:
@@ -625,13 +732,13 @@ struct _Executor[
     def _add_member(mut self, object: Int, group: Int, child: Int):
         """Make a value the last member of a result object, under the
         group's response key. The key's text is written once per group."""
-        var key = self.group_key.unsafe_ptr()[unsafe_offset=group]
+        var key = self.cache.unsafe_ptr()[unsafe_offset=group].key
         if key < 0:
             var start = len(self.data.bytes)
             var node = Int(self.collector.group(group).key)
             self.data.bytes.extend(self.document[].text(node).as_bytes())
             key = (Int64(start) << 32) | Int64(len(self.data.bytes))
-            self.group_key[group] = key
+            self.cache[group].key = key
         ref member = self.data.nodes[child]
         member.key_start = Int32(key >> 32)
         member.key_end = Int32(key & 0xFFFFFFFF)
@@ -713,12 +820,18 @@ struct _Executor[
 
     def _subfields(mut self, type: Int, group: Int) raises GraphQLError -> Int:
         """Return graphql-js `collectSubfields`, memoized on the type and
-        the group."""
+        the group. The plan of the first type of a group is kept with the
+        group; the plans of other types, for an abstract type, in a map."""
+        var entry = self.cache.unsafe_ptr()[unsafe_offset=group]
+        var first = Int(entry.sub_type)
+        if first == type:
+            return Int(entry.sub_plan)
         var key = (type << 32) | group
-        var plan = self.subfields.get(key, -1)
-        if plan >= 0:
-            return plan
-        plan = self.collector.collect_subfields(
+        if first != _UNKNOWN:
+            var known = self.subfields.get(key, -1)
+            if known >= 0:
+                return known
+        var plan = self.collector.collect_subfields(
             self.schema[],
             self.document[],
             self.values,
@@ -727,7 +840,11 @@ struct _Executor[
             group,
         )
         self._sync_groups()
-        self.subfields[key] = plan
+        if first == _UNKNOWN:
+            self.cache[group].sub_type = Int32(type)
+            self.cache[group].sub_plan = Int32(plan)
+        else:
+            self.subfields[key] = plan
         return plan
 
     # --- execution ------------------------------------------------------
@@ -782,9 +899,13 @@ struct _Executor[
             )
         var node = self.collector.node(Int(self.collector.group(group).start))
         var source_value = source.id
-        var resolver = self.field_resolvers.get(field, -1)
+        var resolver = _slot(self.field_resolvers, field)
         var result: Int
-        if resolver < 0 and not self.custom_default:
+        if self.field_timing:
+            result = self._timed_resolve(
+                parent, source_value, node, group, field, type, resolver
+            )
+        elif resolver < 0 and not self.custom_default:
             if self.schema[].fields[field].arguments.count > 0:
                 _ = get_argument_values(
                     self.schema[],
@@ -811,6 +932,51 @@ struct _Executor[
             var info = self._info(parent, field, group, type)
             result = self._call_field(resolver, source_value, args, info)
         return self._complete_value(type, group, parent, field, result)
+
+    @no_inline
+    def _timed_resolve(
+        mut self,
+        parent: Int,
+        source: Int,
+        node: Int,
+        group: Int,
+        field: Int,
+        type: TypeRef,
+        resolver: Int,
+    ) raises GraphQLError -> Int:
+        """Resolve a field as `_resolve_field` does, and record its
+        `FieldTiming`. The arguments are coerced first, as graphql-js
+        `executeField` coerces them before it calls the resolver that
+        Apollo Server wraps."""
+        var args = get_argument_values(
+            self.schema[],
+            ArgumentOwner.FIELD,
+            field,
+            self.document[],
+            node,
+            self.values,
+            self.variables,
+        )
+        var info = self._info(parent, field, group, type)
+        if self.schema[].types[parent].name.startswith("__"):
+            return self._call_field(resolver, source, args, info)
+        var at = len(self.field_timings)
+        self.field_timings.append(
+            FieldTiming(
+                info.path.copy(),
+                info.field_name,
+                type,
+                parent,
+                Int(perf_counter_ns()),
+            )
+        )
+        try:
+            var result = self._call_field(resolver, source, args, info)
+            self.field_timings[at].end_ns = Int(perf_counter_ns())
+            return result
+        except e:
+            self.field_timings[at].end_ns = Int(perf_counter_ns())
+            raise e^
 
     def _call_field(
         mut self, resolver: Int, source: Int, args: Int, info: ResolveInfo
@@ -1032,7 +1198,7 @@ struct _Executor[
     ) raises GraphQLError -> Int:
         """Call the type resolver of an abstract type, or graphql-js
         `defaultTypeResolver`."""
-        var resolver = self.type_resolvers.get(type, -1)
+        var resolver = _slot(self.type_resolvers, type)
         try:
             if resolver >= 0:
                 return self.resolvers[].type_functions[resolver](
@@ -1046,7 +1212,7 @@ struct _Executor[
             if self.values.kind(name) == ValueKind.STRING:
                 return name
             for possible in self.schema[].possible_types(type):
-                var check = self.type_checks.get(possible, -1)
+                var check = _slot(self.type_checks, possible)
                 if check >= 0 and self.resolvers[].object_functions[check](
                     self.values, value, info
                 ):
@@ -1126,7 +1292,7 @@ struct _Executor[
     ) raises GraphQLError -> Int:
         """Return graphql-js `completeObjectValue`."""
         var plan = self._subfields(type, group)
-        var check = self.type_checks.get(type, -1)
+        var check = _slot(self.type_checks, type)
         if check >= 0:
             var info = self._info(
                 parent, field, group, self._return_type(field)
@@ -1210,9 +1376,11 @@ struct _Executor[
             return self.data.add_null()
         return self._intro_object(1, group, _Source.type(TypeRef.of(type)))
 
-    def _intro_field_code(self, parent: Int, field: Int) -> Int:
+    def _intro_field_code(mut self, parent: Int, field: Int) -> Int:
         """Return the introspection resolver code of a field of an
         introspection type."""
+        if len(self.intro_codes) == 0:
+            self._index_introspection_codes()
         var which = 0
         while self.intro_types[which] != parent:
             which += 1
@@ -1223,7 +1391,7 @@ struct _Executor[
     ) raises GraphQLError -> Bool:
         """Return the `includeDeprecated` argument of an introspection
         field; the coerced arguments are kept per group."""
-        var args = Int(self.group_args[group])
+        var args = Int(self.cache[group].args)
         if args == _UNKNOWN:
             var node = self.collector.node(
                 Int(self.collector.group(group).start)
@@ -1237,7 +1405,7 @@ struct _Executor[
                 self.values,
                 self.variables,
             )
-            self.group_args[group] = Int32(args)
+            self.cache[group].args = Int32(args)
         var flag = self.values.get(args, "includeDeprecated")
         return self.values.kind(
             flag
@@ -1603,7 +1771,9 @@ struct _Executor[
         swap(data, self.data)
         var errors = List[GraphQLError]()
         swap(errors, self.errors)
-        return ExecutionResult(data^, errors^)
+        var result = ExecutionResult(data^, errors^)
+        swap(result.field_timings, self.field_timings)
+        return result^
 
     def _only_errors(self, var error: GraphQLError) -> ExecutionResult:
         """Return a result with one error and no `data` key."""
@@ -1660,6 +1830,40 @@ def execute(
             value. Perhaps look to see if an unparsed JSON string was
             provided.` for variable values that are not an object.
     """
+    var resolvers = Resolvers()
+    swap(resolvers, args.resolvers)
+    var result: ExecutionResult
+    try:
+        result = execute_with_resolvers(schema, document, resolvers, args)
+    except e:
+        swap(resolvers, args.resolvers)
+        raise e^
+    swap(resolvers, args.resolvers)
+    return result^
+
+
+def execute_with_resolvers(
+    schema: Schema,
+    document: Document,
+    resolvers: Resolvers,
+    mut args: ExecutionArgs,
+) raises -> ExecutionResult:
+    """Execute an operation with resolvers that the caller keeps, as
+    `execute` does with `args.resolvers`. A program that runs many
+    operations with one set of resolvers does not copy them for each.
+
+    Args:
+        schema: The schema.
+        document: The document; execution does not validate it.
+        resolvers: The resolvers; `args.resolvers` is not read.
+        args: The other inputs, as `execute` takes them.
+
+    Returns:
+        The result: the data and the errors.
+
+    Raises:
+        Error: As `execute` raises.
+    """
     if not args.assume_valid_schema:
         assert_valid_schema(schema)
     var kind = args.values.kind(args.variable_values)
@@ -1669,10 +1873,11 @@ def execute(
             " a variable value. Perhaps look to see if an unparsed JSON"
             " string was provided."
         )
-    var values = Values()
+    var values = Values(capacity=0)
     swap(values, args.values)
-    var executor = _Executor(schema, document, args.resolvers, values^)
-    executor.custom_default = args.resolvers.has_default_field
+    var executor = _Executor(schema, document, resolvers, values^)
+    executor.custom_default = resolvers.has_default_field
+    executor.field_timing = args.field_timing
     var result: ExecutionResult
     try:
         result = executor.run(
@@ -1896,6 +2101,15 @@ comptime _CODES = (
 )
 """The fields of the six introspection types, in the order of `_intro_code`:
 type `t` field `f` (from 0) has code `20 * t + f + 1`."""
+
+
+def _slot(table: List[Int32], index: Int) -> Int:
+    """Return the resolver of a field or a type from a table of the
+    executor, or -1 when the table is empty: there are no resolvers of
+    that kind."""
+    if len(table) == 0:
+        return -1
+    return Int(table.unsafe_ptr()[unsafe_offset=index])
 
 
 def _intro_code(which: Int, name: StringSlice) -> Int:

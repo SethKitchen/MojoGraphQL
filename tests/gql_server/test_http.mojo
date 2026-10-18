@@ -61,7 +61,9 @@ def test_rejects_methods_other_than_post_and_get() raises:
     )
     assert_equal(response.headers.get("allow").value(), "GET, POST")
     headers = ["content-type", "application/json"]
-    response = run(server, http_request("PUT", "", headers, '{"query":"{testString}"}'))
+    response = run(
+        server, http_request("PUT", "", headers, '{"query":"{testString}"}')
+    )
     assert_equal(response.status, 405)
 
 
@@ -73,8 +75,10 @@ def test_post_body_missing() raises:
         400,
         "",
         error_body(
-            "POST body missing, invalid Content-Type, or JSON object has no"
-            " keys.",
+            (
+                "POST body missing, invalid Content-Type, or JSON object has no"
+                " keys."
+            ),
             "BAD_REQUEST",
         ),
     )
@@ -91,8 +95,10 @@ def test_post_operation_is_empty() raises:
         400,
         "no-store",
         error_body(
-            "GraphQL operations must contain a non-empty `query` or a"
-            " `persistedQuery` extension.",
+            (
+                "GraphQL operations must contain a non-empty `query` or a"
+                " `persistedQuery` extension."
+            ),
             "BAD_REQUEST",
         ),
     )
@@ -138,7 +144,10 @@ def test_unknown_operation_name() raises:
         expected,
     )
     check(
-        run(server, preflight_get("?query=query%20q%7BtestString%7D&operationName=x")),
+        run(
+            server,
+            preflight_get("?query=query%20q%7BtestString%7D&operationName=x"),
+        ),
         400,
         "no-store",
         expected,
@@ -150,13 +159,17 @@ def test_multiple_operations_without_name() raises:
     check(
         run(
             server,
-            json_post('{"query":"query a { testString } query b { testString }"}'),
+            json_post(
+                '{"query":"query a { testString } query b { testString }"}'
+            ),
         ),
         400,
         "no-store",
         error_body(
-            "Must provide operation name if query contains multiple"
-            " operations.",
+            (
+                "Must provide operation name if query contains multiple"
+                " operations."
+            ),
             "OPERATION_RESOLUTION_FAILURE",
         ),
     )
@@ -164,7 +177,12 @@ def test_multiple_operations_without_name() raises:
 
 def test_basic_request_and_operation_name() raises:
     var server = make_server()
-    check(run(server, json_post('{"query":"{ testString }"}')), 0, "no-store", OK_STRING)
+    check(
+        run(server, json_post('{"query":"{ testString }"}')),
+        0,
+        "no-store",
+        OK_STRING,
+    )
     check(
         run(
             server,
@@ -207,7 +225,10 @@ def test_variables_mutation_context_and_root_value() raises:
         '{"data":{"testArgument":"hello world"}}',
     )
     check(
-        run(server, json_post('{"query":"mutation { testMutation(echo: \\"yay\\") }"}')),
+        run(
+            server,
+            json_post('{"query":"mutation { testMutation(echo: \\"yay\\") }"}'),
+        ),
         0,
         "no-store",
         '{"data":{"testMutation":"not really a mutation, but who cares: yay"}}',
@@ -251,7 +272,10 @@ def test_variable_coercion_errors() raises:
         + '[{"line":1,"column":9}],"extensions":{"code":"BAD_USER_INPUT"}}]}',
     )
     check(
-        run(server, json_post('{"query":"query q($n: Int!) { testInt(n: $n) }"}')),
+        run(
+            server,
+            json_post('{"query":"query q($n: Int!) { testInt(n: $n) }"}'),
+        ),
         400,
         "no-store",
         '{"errors":[{"message":"Variable \\"$n\\" of required type \\"Int!\\"'
@@ -274,7 +298,12 @@ def test_variable_coercion_errors() raises:
 def test_introspection_request() raises:
     var server = make_server()
     check(
-        run(server, json_post('{"query":"{ __type(name: \\"PersonType\\") { name } }"}')),
+        run(
+            server,
+            json_post(
+                '{"query":"{ __type(name: \\"PersonType\\") { name } }"}'
+            ),
+        ),
         0,
         "no-store",
         '{"data":{"__type":{"name":"PersonType"}}}',

@@ -124,7 +124,8 @@ def _cost_on_value(
             return
         var at = context.state.entity_field(type_name, name)
         context.state.types[at.type].fields[at.field].cost = weight
-    elif kind == Kind.INPUT_VALUE_DEFINITION:
+    else:
+        # The caller passes a field definition or an input value definition.
         var field_name = String(context.document.name(context.info.field_def))
         if (
             type_kind == Kind.INPUT_OBJECT_TYPE_DEFINITION
@@ -185,15 +186,8 @@ def enter_interface_object(mut context: SubgraphContext):
     Args:
         context: The context.
     """
-    if context.version.below(203):
-        context.report(
-            (
-                "@interfaceObject is not yet supported. See"
-                " https://github.com/graphql-hive/federation-composition/issues/7"
-            ),
-            ErrorCode.UNSUPPORTED_FEATURE,
-        )
-        return
+    # Upstream reports `UNSUPPORTED_FEATURE` below `v2.3`, but no version
+    # below `v2.3` has `@interfaceObject`, so this rule does not run there.
     var type_def = context.info.type_def
     if type_def == NO_NODE or not _is_object(context.document.kind(type_def)):
         return
@@ -295,8 +289,7 @@ def enter_external(mut context: SubgraphContext) raises:
     var field_def = context.info.field_def
     var fields = List[Int]()
     if field_def != NO_NODE:
-        if context.document.kind(field_def) != Kind.FIELD_DEFINITION:
-            return
+        # In an object type, the field of an argument is a field definition.
         fields.append(field_def)
     elif context.version.at_least(200):
         fields = _fields_of(context.document, type_def)
@@ -316,7 +309,10 @@ def enter_external(mut context: SubgraphContext) raises:
                     conflicts.append(child)
             child = context.document.next_sibling(child)
         if len(conflicts) > 0 and context.version.at_least(200):
-            for directive in conflicts:
+            var position = 0
+            while position < len(conflicts):
+                var directive = conflicts[position]
+                position += 1
                 context.report(
                     "Cannot apply merged directive "
                     + print_node(context.document, directive).strip()
@@ -369,10 +365,13 @@ def _is_percent(text: String) -> Bool:
     var fraction = len(digits) - index - 1
     if fraction < 1 or fraction > 8:
         return False
-    for position in range(index + 1, len(digits)):
+    # The fraction has at least one byte.
+    var position = index + 1
+    while position < len(digits):
         var digit = digits[position]
         if digit < 48 or digit > 57 or (index == 3 and digit != 48):
             return False
+        position += 1
     return True
 
 
@@ -419,7 +418,8 @@ def enter_override(mut context: SubgraphContext, node: Int) raises:
     """
     var type_def = context.info.type_def
     var field_def = context.info.field_def
-    if field_def == NO_NODE or type_def == NO_NODE:
+    # A field definition is always in a type definition.
+    if field_def == NO_NODE:
         return
     var kind = context.document.kind(type_def)
     var coordinate = (
@@ -521,12 +521,14 @@ def is_valid_context_name(name: String) -> Bool:
     var bytes = name.as_bytes()
     if len(bytes) == 0:
         return False
-    for index in range(len(bytes)):
+    var index = 0
+    while index < len(bytes):
         var byte = bytes[index]
         var letter = (byte >= 65 and byte <= 90) or (byte >= 97 and byte <= 122)
         var digit = byte >= 48 and byte <= 57
         if not letter and (index == 0 or not digit):
             return False
+        index += 1
     return True
 
 
@@ -584,8 +586,8 @@ def enter_compose_directive(mut context: SubgraphContext, node: Int) raises:
     Raises:
         Error: When the state has a conflict of kinds.
     """
-    if not context.version.at_least(201):
-        return
+    # Upstream returns below `v2.1`, but no version below `v2.1` has
+    # `@composeDirective`, so this rule does not run there.
     var value = argument_value(context.document, node, "name")
     if value == NO_NODE or context.document.kind(value) != Kind.STRING:
         return
@@ -595,13 +597,17 @@ def enter_compose_directive(mut context: SubgraphContext, node: Int) raises:
         name = stripped^
     var subgraph = context.name
     var matching = False
-    for definition in context.definitions:
+    # The schema definition or extension that holds the directive is one
+    # of the definitions.
+    var at = 0
+    while at < len(context.definitions) and not matching:
+        var definition = context.definitions[at]
+        at += 1
         if (
             context.document.kind(definition) == Kind.DIRECTIVE_DEFINITION
             and context.document.name(definition) == name
         ):
             matching = True
-            break
     if not matching:
         context.errors.append(
             CompositionError(
@@ -618,14 +624,16 @@ def enter_compose_directive(mut context: SubgraphContext, node: Int) raises:
         return
     var linked = False
     for ref link in context.state.links:
-        for ref item in link.imports:
+        # The state keeps only a link that imports a directive.
+        var position = 0
+        while position < len(link.imports):
+            ref item = link.imports[position]
+            position += 1
             if item.kind.value != 0:
                 continue
             var local = item.alias.value() if item.alias else item.name
-            if local.startswith("@"):
-                var stripped = String(local[byte=1:])
-                local = stripped^
-            if local == name:
+            # A directive import and its alias start with `@`.
+            if String(local[byte=1:]) == name:
                 linked = True
     if not linked:
         context.errors.append(

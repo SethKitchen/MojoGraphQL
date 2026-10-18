@@ -61,8 +61,8 @@ def _mark_input_value(
         else:
             value.inaccessible = True
         return
-    if not _is_object(kind) and not _is_interface(kind):
-        return
+    # Else the input value is an argument of a field of an object type or
+    # of an interface type.
     var field_name = String(context.document.name(context.info.field_def))
     var at = context.state.owner_field(
         type_name, field_name, _is_interface(kind)

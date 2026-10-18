@@ -119,9 +119,7 @@ struct CachePolicy(Copyable, ImplicitlyCopyable, Movable):
         """
         if not self.max_age or self.max_age.value() == 0:
             return None
-        return CacheHint(
-            self.max_age, self.scope.or_else(CacheScope.PUBLIC)
-        )
+        return CacheHint(self.max_age, self.scope.or_else(CacheScope.PUBLIC))
 
 
 @fieldwise_init

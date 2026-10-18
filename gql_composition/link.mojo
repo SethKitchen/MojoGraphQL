@@ -12,6 +12,11 @@ Port of `parseLinkUrl`, `parseLinkImport`, `parseLink` and
 A link URL such as `https://specs.apollo.dev/federation/v2.3` has an
 identity (`https://specs.apollo.dev/federation`), a name (`federation`) and
 a version (`v2.3`). A URL that does not parse is an opaque identity.
+`LinkUrl.supports` is `FederatedLinkUrl.supports` from
+`src/utils/link/link-url.ts`. A major version above zero accepts an equal
+or lower minor version. Major version zero accepts only the same minor
+version. `links_from_document` and `resolve_imported_name` are
+`extractLinkImplementations` from `src/utils/link/index.ts`.
 
 **Differences from upstream.**
 
@@ -132,6 +137,67 @@ struct LinkUrl(Copyable, Writable):
         writer.write(" version=")
         writer.write(self.version.value() if self.version else String("null"))
 
+    def supports(self, major: Int, minor: Int) -> Bool:
+        """Return True when this URL's version accepts another version, as
+        upstream `isCompatibleVersion`.
+
+        Args:
+            major: The required major version.
+            minor: The required minor version.
+
+        Returns:
+            Whether the versions are compatible.
+        """
+        var own = _match_version(
+            self.version.value() if self.version else String("")
+        )
+        if own.major != major:
+            return False
+        if own.major == 0:
+            return own.minor == minor
+        return own.minor >= minor
+
+    def supports_version(self, version: String) -> Bool:
+        """Return True when this URL accepts a version string, as upstream
+        `supports`.
+
+        Args:
+            version: A string such as `v2.0`.
+
+        Returns:
+            Whether `supports` accepts the parsed major and minor.
+        """
+        var asked = _match_version(version)
+        return self.supports(asked.major, asked.minor)
+
+    def supports_link(self, other: LinkUrl) -> Bool:
+        """Return True when another link URL is the same feature at a
+        compatible version.
+
+        Args:
+            other: The required link URL.
+
+        Returns:
+            Whether the identities match and the version is compatible.
+        """
+        if other.identity != self.identity:
+            return False
+        var asked = _match_version(
+            other.version.value() if other.version else String("")
+        )
+        return self.supports(asked.major, asked.minor)
+
+    def supports_missing(self) -> Bool:
+        """Return True when this URL has no version, as upstream
+        `supports(null)`.
+
+        Returns:
+            Whether the version is absent.
+        """
+        if self.version:
+            return False
+        return True
+
 
 @fieldwise_init
 struct Link(Copyable):
@@ -145,6 +211,8 @@ struct Link(Copyable):
     """The identity of the feature."""
     var imports: List[LinkImport]
     """The imported directives and types."""
+    var alias: Optional[String]
+    """The `@link(as:)` name, if any."""
 
     def is_federation(self) -> Bool:
         """Return True for a link to the federation specification, as
@@ -154,6 +222,40 @@ struct Link(Copyable):
             Whether the identity is `https://specs.apollo.dev/federation`.
         """
         return self.identity == "https://specs.apollo.dev/federation"
+
+    def resolve_import_name(self, element: String) -> String:
+        """Return the local name of an imported element, as upstream
+        `FederatedLink.resolveImportName`.
+
+        Args:
+            element: The specification name, such as `@key` or `FieldSet`.
+
+        Returns:
+            The local name without a leading `@`.
+        """
+        # A link URL never has an empty feature name.
+        if self.name and element == "@" + self.name.value():
+            if self.alias:
+                return String(self.alias.value())
+            return String(self.name.value())
+        var resolved = String("")
+        var found = False
+        for index in range(len(self.imports)):
+            if self.imports[index].name == element:
+                found = True
+                if self.imports[index].alias:
+                    resolved = self.imports[index].alias.value()
+                else:
+                    resolved = String(self.imports[index].name)
+                break
+        if not found:
+            var namespace = String("")
+            if self.alias:
+                namespace = self.alias.value()
+            elif self.name:
+                namespace = self.name.value()
+            resolved = _namespaced(namespace, element)
+        return _drop_at(resolved)
 
 
 @fieldwise_init
@@ -167,14 +269,12 @@ struct _ParsedUrl(Copyable):
 
 
 def _default_port(scheme: String) -> String:
-    """Return the default port of a special scheme, or empty."""
+    """Return the default port of a special scheme other than `file`."""
     if scheme == "http" or scheme == "ws":
         return String("80")
     if scheme == "https" or scheme == "wss":
         return String("443")
-    if scheme == "ftp":
-        return String("21")
-    return String("")
+    return String("21")
 
 
 def _is_special(scheme: String) -> Bool:
@@ -238,9 +338,12 @@ def _is_forbidden_host_byte(byte: UInt8) -> Bool:
     """Return True for a byte that a WHATWG domain cannot hold."""
     if byte < 32 or byte == 127:
         return True
-    for forbidden in _FORBIDDEN_HOST.as_bytes():
-        if byte == forbidden:
+    var forbidden = _FORBIDDEN_HOST.as_bytes()
+    var index = 0
+    while index < len(forbidden):
+        if byte == forbidden[index]:
             return True
+        index += 1
     return False
 
 
@@ -404,15 +507,20 @@ def _parse_url(url: String) -> Optional[_ParsedUrl]:
     if name_end == host_start:
         return None
     var host = _decoded_host(bytes, host_start, name_end)
-    for byte in host:
-        if _is_forbidden_host_byte(byte):
+    var host_index = 0
+    while host_index < len(host):
+        if _is_forbidden_host_byte(host[host_index]):
             return None
+        host_index += 1
     if port.byte_length() > 0:
         var number = 0
-        for byte in port.as_bytes():
-            number = number * 10 + Int(byte) - 48
+        var digits = port.as_bytes()
+        var digit_index = 0
+        while digit_index < len(digits):
+            number = number * 10 + Int(digits[digit_index]) - 48
             if number > 65535:
                 return None
+            digit_index += 1
         port = String(number)
         if port == _default_port(scheme):
             port = String("")
@@ -423,6 +531,64 @@ def _parse_url(url: String) -> Optional[_ParsedUrl]:
     while path_end < size and not _is_path_end(bytes[path_end]):
         path_end += 1
     return _ParsedUrl(origin^, _path_parts(bytes, position, path_end), False)
+
+
+@fieldwise_init
+struct _Version(Copyable):
+    """A major and minor version read from a link URL."""
+
+    var major: Int
+    """The major version, or `-1` when the text has no version."""
+    var minor: Int
+    """The minor version, or `-1` when the text has no version."""
+
+
+def _read_digits(bytes: Span[UInt8, _], start: Int, limit: Int) -> Int:
+    """Return how many digits, at most `limit`, start at `start`."""
+    var count = 0
+    var index = start
+    while count < limit and index < len(bytes) and _is_digit(bytes[index]):
+        count += 1
+        index += 1
+    return count
+
+
+def _digits_value(bytes: Span[UInt8, _], start: Int, count: Int) -> Int:
+    """Return the integer stored in `count` digits."""
+    var value = 0
+    var index = 0
+    while index < count:
+        value = value * 10 + Int(bytes[start + index] - 48)
+        index += 1
+    return value
+
+
+def _match_version(text: String) -> _Version:
+    """Find `vMAJOR.MINOR` in text, as upstream `parseVersion`.
+
+    Args:
+        text: A version such as `v2.3`, or empty.
+
+    Returns:
+        The first match. Major has one to three digits and minor has one
+        to four. No match is major `-1` and minor `-1`.
+    """
+    var bytes = text.as_bytes()
+    var index = 0
+    while index < len(bytes):
+        var mark = bytes[index]
+        if mark == 118 or mark == 86:
+            var major_count = _read_digits(bytes, index + 1, 3)
+            var dot = index + 1 + major_count
+            if major_count > 0 and dot < len(bytes) and bytes[dot] == 46:
+                var minor_count = _read_digits(bytes, dot + 1, 4)
+                if minor_count > 0:
+                    return _Version(
+                        _digits_value(bytes, index + 1, major_count),
+                        _digits_value(bytes, dot + 1, minor_count),
+                    )
+        index += 1
+    return _Version(-1, -1)
 
 
 def _is_version(part: String) -> Bool:
@@ -458,14 +624,18 @@ def parse_link_url(url: String) -> LinkUrl:
     if _is_version(last):
         if count >= 2:
             var identity = found.origin
-            for index in range(count - 1):
+            var index = 0
+            while index < count - 1:
                 identity += "/" + found.parts[index]
+                index += 1
             return LinkUrl(found.parts[count - 2], last, identity^)
         return LinkUrl(None, last, found.origin)
     # Node gives a `file:` URL the origin `null`; upstream writes `file://`.
     var identity = String("file://") if found.is_file else found.origin
-    for part in found.parts:
-        identity += "/" + part
+    var index = 0
+    while index < count:
+        identity += "/" + found.parts[index]
+        index += 1
     return LinkUrl(last, None, identity^)
 
 
@@ -473,9 +643,12 @@ def _code_points(text: StringSlice) -> Int:
     """Return the number of code points of a string, as JSON5 counts
     columns."""
     var count = 0
-    for byte in text.as_bytes():
-        if byte & 0xC0 != 0x80:
+    var bytes = text.as_bytes()
+    var index = 0
+    while index < len(bytes):
+        if bytes[index] & 0xC0 != 0x80:
             count += 1
+        index += 1
     return count
 
 
@@ -549,23 +722,27 @@ def _format_char(text: String, column: Int) -> String:
         current += 1
     if index >= len(bytes):
         return String("invalid end of input")
-    var char_end = index + 1
-    while char_end < len(bytes) and bytes[char_end] & 0xC0 == 0x80:
-        char_end += 1
-    var char = String(unsafe_from_utf8=bytes[index:char_end])
-    if char == '"' or char == "'":
-        char = "\\" + char
+    # The refused character is ASCII: the start of an enum value, a letter
+    # of a literal, or the third quote of a block string.
+    var char = String(unsafe_from_utf8=bytes[index : index + 1])
+    if char == '"':
+        char = '\\"'
     return "invalid character '" + char + "'"
 
 
 def _is_falsy_number(text: StringSlice) -> Bool:
     """Return True when a number literal is zero, which JavaScript reads
     as false."""
-    for byte in text.as_bytes():
+    var bytes = text.as_bytes()
+    var index = 0
+    while index < len(bytes):
+        var byte = bytes[index]
         if byte == 101 or byte == 69:
             return True
-        if byte >= 49 and byte <= 57:
+        # Past `e` and `E`, a number holds no byte above `9`.
+        if byte >= 49:
             return False
+        index += 1
     return True
 
 
@@ -680,20 +857,6 @@ def parse_link_import(document: Document, node: Int) raises -> List[LinkImport]:
     return imports^
 
 
-def _argument(document: Document, directive: Int, name: StringSlice) -> Int:
-    """Return the first argument of a directive with a name, or
-    `NO_NODE`."""
-    var argument = document.first_child(directive)
-    while argument != NO_NODE:
-        if (
-            document.role(argument) == Role.ARGUMENT
-            and document.name(argument) == name
-        ):
-            return argument
-        argument = document.next_sibling(argument)
-    return NO_NODE
-
-
 def parse_link_directive(
     document: Document, directive: Int
 ) raises -> Optional[Link]:
@@ -712,6 +875,8 @@ def parse_link_directive(
     """
     var url = NO_NODE
     var import_value = NO_NODE
+    var alias = String("")
+    var has_alias = False
     var argument = document.first_child(directive)
     while argument != NO_NODE:
         if document.role(argument) == Role.ARGUMENT:
@@ -728,9 +893,205 @@ def parse_link_directive(
                 and document.kind(value) == Kind.LIST
             ):
                 import_value = value
+            if (
+                not has_alias
+                and document.name(argument) == "as"
+                and document.kind(value) == Kind.STRING
+            ):
+                alias = document.string_value(value)
+                has_alias = True
         argument = document.next_sibling(argument)
     if url == NO_NODE:
         return None
     var spec = parse_link_url(document.string_value(url))
     var imports = parse_link_import(document, import_value)
-    return Link(spec.name, spec.version, spec.identity, imports^)
+    var local: Optional[String] = None
+    if has_alias:
+        local = Optional[String](alias)
+    return Link(spec.name, spec.version, spec.identity, imports^, local)
+
+
+def _drop_at(name: String) -> String:
+    """Return a name without one leading `@`."""
+    if name.startswith("@"):
+        var rest = String(name[byte=1:])
+        return rest^
+    return name
+
+
+def _namespaced(namespace: String, name: String) -> String:
+    """Return a name under a link namespace, as upstream `namespaced`.
+
+    Args:
+        namespace: The `@link(as:)` name, or the feature name.
+        name: The element name.
+
+    Returns:
+        The namespaced name. An empty namespace leaves the name unchanged.
+    """
+    if namespace.byte_length() == 0:
+        return name
+    if name.startswith("@"):
+        var rest = String(name[byte=1:])
+        return "@" + namespace + "__" + rest
+    return namespace + "__" + name
+
+
+def _core_link(document: Document, directive: Int) -> Optional[Link]:
+    """Read a `@core(feature:)` directive as a link with no imports.
+
+    Args:
+        document: The document that holds the directive.
+        directive: The `Directive` node.
+
+    Returns:
+        The link, or nothing when `feature` is not a string.
+    """
+    var argument = document.first_child(directive)
+    while argument != NO_NODE:
+        if (
+            document.role(argument) == Role.ARGUMENT
+            and document.name(argument) == "feature"
+        ):
+            var value = document.child(argument, Role.VALUE)
+            if document.kind(value) == Kind.STRING:
+                var spec = parse_link_url(document.string_value(value))
+                return Link(
+                    spec.name,
+                    spec.version,
+                    spec.identity,
+                    List[LinkImport](),
+                    None,
+                )
+            return None
+        argument = document.next_sibling(argument)
+    return None
+
+
+def links_from_document(document: Document) raises -> List[Link]:
+    """Return the `@link` and `@core` directives on schema definitions, as
+    upstream `FederatedLink.fromTypedefs`.
+
+    Args:
+        document: A subgraph document.
+
+    Returns:
+        The links. Each schema definition lists `@link`, then `@core`.
+
+    Raises:
+        Error: When an `import` list does not hold bindings.
+    """
+    var found = List[Link]()
+    var definitions = document.children(document.root, Role.DEFINITION)
+    var index = 0
+    while index < len(definitions):
+        var definition = definitions[index]
+        index += 1
+        var kind = document.kind(definition)
+        if kind != Kind.SCHEMA_DEFINITION and kind != Kind.SCHEMA_EXTENSION:
+            continue
+        var directives = document.children(definition, Role.DIRECTIVE)
+        for directive_index in range(len(directives)):
+            var directive = directives[directive_index]
+            if document.name(directive) == "link":
+                var parsed = parse_link_directive(document, directive)
+                if parsed:
+                    found.append(parsed.value().copy())
+        for directive_index in range(len(directives)):
+            var directive = directives[directive_index]
+            if document.name(directive) == "core":
+                var parsed = _core_link(document, directive)
+                if parsed:
+                    found.append(parsed.value().copy())
+    return found^
+
+
+def _matching_link(links: List[Link], identity: String) -> Int:
+    """Return the last link with an identity, or -1.
+
+    Args:
+        links: The links from one document.
+        identity: The feature identity.
+
+    Returns:
+        The index, or -1.
+    """
+    var found = -1
+    for index in range(len(links)):
+        if links[index].identity == identity:
+            found = index
+    return found
+
+
+def resolve_imported_name(
+    links: List[Link], identity: String, name: String
+) -> String:
+    """Return the local name for a feature element, as upstream
+    `resolveImportName`.
+
+    Args:
+        links: The links from one document.
+        identity: The feature identity.
+        name: The specification name, such as `@key`.
+
+    Returns:
+        The local name. A feature that is not linked drops one leading `@`.
+    """
+    var at = _matching_link(links, identity)
+    if at < 0:
+        return _drop_at(name)
+    return links[at].resolve_import_name(name)
+
+
+def is_federation_v1(links: List[Link]) -> Bool:
+    """Return True when the document has no `@link`, as upstream
+    `FEDERATION_V1`.
+
+    Args:
+        links: The links from one document.
+
+    Returns:
+        Whether the document is treated as federation v1.
+    """
+    return len(links) == 0
+
+
+def link_supports_version(
+    links: List[Link], identity: String, version: String
+) -> Bool:
+    """Return True when a linked feature accepts a version string.
+
+    Args:
+        links: The links from one document.
+        identity: The feature identity.
+        version: A version such as `v2.0`.
+
+    Returns:
+        Whether the last link with that identity accepts the version.
+    """
+    var at = _matching_link(links, identity)
+    if at < 0:
+        return False
+    var spec = LinkUrl(
+        links[at].name, links[at].version, String(links[at].identity)
+    )
+    return spec.supports_version(version)
+
+
+def link_supports_missing(links: List[Link], identity: String) -> Bool:
+    """Return True when a linked feature has no version.
+
+    Args:
+        links: The links from one document.
+        identity: The feature identity.
+
+    Returns:
+        Whether the last link with that identity has no version.
+    """
+    var at = _matching_link(links, identity)
+    if at < 0:
+        return False
+    var spec = LinkUrl(
+        links[at].name, links[at].version, String(links[at].identity)
+    )
+    return spec.supports_missing()

@@ -70,3 +70,5 @@ Each function with compound decisions has a private operand buffer, so recursion
 ## Get to 100%
 
 Read the report lines under each module. Add a test that runs the line, or that gives the missing outcome. Do not exclude code from the measurement, and do not weaken the check.
+
+A `for` loop over a sequence that is never empty has an outcome that no test can give. Write it as a `while` loop. When a `while` loop is less clear, put `# pragma: no branch` on the `for` header. Add a comment that states why the sequence is never empty. The pragma removes only the "sequence was empty" outcome of that loop. Do not use it anywhere else.

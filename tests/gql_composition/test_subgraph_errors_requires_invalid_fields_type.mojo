@@ -21,15 +21,30 @@ def test_v2_0_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -40,15 +55,22 @@ def test_v2_0_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -58,15 +80,30 @@ def test_v2_1_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -77,15 +114,22 @@ def test_v2_1_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -95,15 +139,30 @@ def test_v2_2_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -114,15 +173,22 @@ def test_v2_2_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -132,15 +198,30 @@ def test_v2_3_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -151,15 +232,22 @@ def test_v2_3_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -169,15 +257,30 @@ def test_v2_4_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -188,15 +291,22 @@ def test_v2_4_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -206,15 +316,30 @@ def test_v2_5_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -225,15 +350,22 @@ def test_v2_5_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -243,15 +375,30 @@ def test_v2_6_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -262,15 +409,22 @@ def test_v2_6_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -280,15 +434,30 @@ def test_v2_7_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -299,15 +468,22 @@ def test_v2_7_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -317,15 +493,30 @@ def test_v2_8_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -336,15 +527,22 @@ def test_v2_8_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -354,15 +552,30 @@ def test_v2_9_requires_invalid_fields_type_int() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"@requires\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: 123)\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "@requires"])\n\nextend type User @key(fields:'
+                    ' "id") {\n  id: ID\n  friends: [User!]! @requires(fields:'
+                    " 123)\n}"
+                ),
             ),
         ],
         [
-            "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field \"User.friends\", for @requires(fields: 123): Invalid value for argument \"fields\": must be a string.",
+            (
+                "[REQUIRES_INVALID_FIELDS_TYPE] [friends] On field"
+                ' "User.friends", for @requires(fields: 123): Invalid value for'
+                ' argument "fields": must be a string.'
+            ),
         ],
     )
 
@@ -373,15 +586,22 @@ def test_v2_9_requires_invalid_fields_type_enum() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n}'
+                ),
             ),
             sg(
                 "friends",
-                "extend type User @key(fields: \"id\") {\n  id: ID\n  friends: [User!]! @requires(fields: id)\n}",
+                (
+                    'extend type User @key(fields: "id") {\n  id: ID\n '
+                    " friends: [User!]! @requires(fields: id)\n}"
+                ),
             ),
         ],
-        [
-        ],
+        [],
     )
 
 

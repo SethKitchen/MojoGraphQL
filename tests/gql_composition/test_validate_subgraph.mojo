@@ -11,36 +11,75 @@ Node.js on the same subgraphs.
 """
 
 from _harness import check, sg
-from std.testing import TestSuite
+from gql_composition.validate import (
+    Subgraph,
+    validate_subgraph_phase,
+    validate_subgraphs,
+)
+from std.testing import TestSuite, assert_equal
 
 
 def test_subgraph_spec_types_v1() raises:
     check(
         [
-            sg("a", "type Query { _service: _Service! _entities(representations: [_Any!]!): [_Entity]! a: Int }\nscalar _Any\nunion _Entity = T\ntype _Service { sdl: String }\ntype T @key(fields: \"id\") { id: ID! }\n"),
+            sg(
+                "a",
+                (
+                    "type Query { _service: _Service!"
+                    " _entities(representations: [_Any!]!): [_Entity]! a: Int"
+                    " }\nscalar _Any\nunion _Entity = T\ntype _Service { sdl:"
+                    ' String }\ntype T @key(fields: "id") { id: ID! }\n'
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_subgraph_spec_types_v2() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\ntype Query { _entities(representations: [_Any!]!): [_Entity]! a: Int _service: _Service! }\nextend type Query { _service: _Service! b: Int }\nscalar _Any\nunion _Entity = T\ntype _Service { sdl: String }\ntype T @key(fields: \"id\") { id: ID! }\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\ntype Query { _entities(representations:'
+                    " [_Any!]!): [_Entity]! a: Int _service: _Service!"
+                    " }\nextend type Query { _service: _Service! b: Int"
+                    " }\nscalar _Any\nunion _Entity = T\ntype _Service { sdl:"
+                    ' String }\ntype T @key(fields: "id") { id: ID! }\n'
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_subgraph_spec_types_custom_query() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\nschema { query: Root }\ntype Root { _service: _Service! a: Int }\ntype Query { _service: _Service! }\ninput _Any { a: Int }\nunion _Entity = T\ntype _Service { sdl: String }\ntype T @key(fields: \"id\") { id: ID! }\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\nschema { query: Root }\ntype Root { _service:'
+                    " _Service! a: Int }\ntype Query { _service: _Service!"
+                    " }\ninput _Any { a: Int }\nunion _Entity = T\ntype"
+                    ' _Service { sdl: String }\ntype T @key(fields: "id") { id:'
+                    " ID! }\n"
+                ),
+            ),
         ],
         [
-            "[ROOT_QUERY_USED] [a] The schema has a type named \"Query\" but it is not set as the query root type (\"Root\" is instead): this is not supported by federation. If a root type does not use its default name, there should be no other type with that default name.",
+            (
+                '[ROOT_QUERY_USED] [a] The schema has a type named "Query" but'
+                ' it is not set as the query root type ("Root" is instead):'
+                " this is not supported by federation. If a root type does not"
+                " use its default name, there should be no other type with that"
+                " default name."
+            ),
             "[INVALID_GRAPHQL] [a] Unknown type _Service",
         ],
     )
@@ -49,19 +88,39 @@ def test_subgraph_spec_types_custom_query() raises:
 def test_subgraph_spec_names_of_other_kinds() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\ntype Query { a: Int }\ntype _Any { a: Int }\nenum _Entity { A }\ninterface _Service { a: Int }\nextend schema { mutation: M }\ntype M { a: Int }\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\ntype Query { a: Int }\ntype _Any { a: Int'
+                    " }\nenum _Entity { A }\ninterface _Service { a: Int"
+                    " }\nextend schema { mutation: M }\ntype M { a: Int }\n"
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_schema_extension_sets_query() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\nextend schema { query: Root }\ntype Root { _entities: Int a: Int }\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\nextend schema { query: Root }\ntype Root {'
+                    " _entities: Int a: Int }\n"
+                ),
+            ),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
 
@@ -69,50 +128,90 @@ def test_schema_extension_sets_query() raises:
 def test_descriptions() raises:
     check(
         [
-            sg("a", "\"\"\"schema\"\"\"\nschema { query: Query }\n\"type\"\ntype Query {\n  \"field\"\n  a(\"arg\" x: Int): Int\n}\n\"enum\"\nenum E {\n  \"value\"\n  A\n}\n\"input\"\ninput In {\n  \"input field\"\n  a: Int\n}\n\"directive\"\ndirective @d(\"arg\" x: Int) on OBJECT\n\"scalar\"\nscalar S\n\"union\"\nunion U = Query\n\"interface\"\ninterface I { a: Int }\n"),
+            sg(
+                "a",
+                (
+                    '"""schema"""\nschema { query: Query }\n"type"\ntype Query'
+                    ' {\n  "field"\n  a("arg" x: Int): Int\n}\n"enum"\nenum E'
+                    ' {\n  "value"\n  A\n}\n"input"\ninput In {\n  "input'
+                    ' field"\n  a: Int\n}\n"directive"\ndirective @d("arg" x:'
+                    ' Int) on OBJECT\n"scalar"\nscalar S\n"union"\nunion U ='
+                    ' Query\n"interface"\ninterface I { a: Int }\n'
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_descriptions_v2() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\"type\"\ntype Query {\n  \"field\"\n  a(\"arg\" x: Int): Int\n}\n\"directive\"\ndirective @d(\"arg\" x: Int) on OBJECT\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n"type"\ntype Query {\n  "field"\n  a("arg" x:'
+                    ' Int): Int\n}\n"directive"\ndirective @d("arg" x: Int) on'
+                    " OBJECT\n"
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_own_link_import_scalar() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\ntype Query { a: Int }\nscalar link__Import\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\ntype Query { a: Int }\nscalar link__Import\n'
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_own_link_directive() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\ntype Query { a: Int }\ndirective @link(url: String, as: String, import: [link__Import], for: link__Purpose) repeatable on SCHEMA\nscalar link__Import\nenum link__Purpose { SECURITY EXECUTION }\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\ntype Query { a: Int }\ndirective @link(url:'
+                    " String, as: String, import: [link__Import], for:"
+                    " link__Purpose) repeatable on SCHEMA\nscalar"
+                    " link__Import\nenum link__Purpose { SECURITY EXECUTION }\n"
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
 def test_own_link_directive_on_two_locations() raises:
     check(
         [
-            sg("a", "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\ntype Query { a: Int }\ndirective @link(url: String, import: [link__Import]) repeatable on SCHEMA | OBJECT\nscalar link__Import\n"),
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\ntype Query { a: Int }\ndirective @link(url:'
+                    " String, import: [link__Import]) repeatable on SCHEMA |"
+                    " OBJECT\nscalar link__Import\n"
+                ),
+            ),
         ],
-        [
-        ],
+        [],
     )
 
 
@@ -122,8 +221,29 @@ def test_only_subgraph_spec_types() raises:
             sg("a", "scalar _Any\n"),
         ],
         [
+            (
+                "[NO_QUERIES] No queries found in any subgraph: a supergraph"
+                " must have a query root type."
+            ),
         ],
     )
+
+
+def test_the_subgraph_phase_skips_the_supergraph_rules() raises:
+    # Two subgraphs that share a non-shareable field: the supergraph rule
+    # `InvalidFieldSharingRule` reports it, the subgraph phase does not.
+    var sdl = String(
+        "extend schema @link(url:"
+        ' "https://specs.apollo.dev/federation/v2.3", import: ["@key"])\n'
+        "type Query { a: Int }\n"
+    )
+    var subgraphs: List[Subgraph] = [sg("a", sdl), sg("b", sdl)]
+    assert_equal(len(validate_subgraph_phase(subgraphs)), 0)
+    assert_equal(len(validate_subgraphs(subgraphs)), 1)
+    var invalid: List[Subgraph] = [
+        sg("a", "type Query { a: Int }\ntype Query { b: Int }\n")
+    ]
+    assert_equal(len(validate_subgraph_phase(invalid)), 1)
 
 
 def main() raises:

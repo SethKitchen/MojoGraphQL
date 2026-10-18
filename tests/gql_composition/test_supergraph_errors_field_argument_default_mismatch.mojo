@@ -7,8 +7,9 @@
 
 Each test is one upstream test, for the Guild implementation. Each check is
 the input of one `composeServices` call in it.
-The expected errors are those of the subgraph phase of upstream
-`validate` in Node.js on the same subgraphs, printed by graphql-js.
+The expected errors are Hive `FIELD_ARGUMENT_DEFAULT_MISMATCH` from
+`composeServices` on the same subgraphs. A sharing error that Hive
+reports for the same field comes first.
 """
 
 from _harness import check, sg
@@ -21,14 +22,39 @@ def test_v2_0_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -39,14 +65,39 @@ def test_v2_1_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -57,14 +108,39 @@ def test_v2_2_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -75,14 +151,39 @@ def test_v2_3_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -93,14 +194,39 @@ def test_v2_4_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -111,14 +237,39 @@ def test_v2_5_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -129,14 +280,39 @@ def test_v2_6_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -147,14 +323,39 @@ def test_v2_7_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -165,14 +366,39 @@ def test_v2_8_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
         ],
     )
 
@@ -183,14 +409,90 @@ def test_v2_9_field_argument_default_mismatch() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\ntype Query {\n  users: [User!]!\n}\n\ntype'
+                    ' User @key(fields: "id") {\n  id: ID\n  friends(type:'
+                    " FriendType = FAMILY): [User!]!\n}\n\nenum FriendType {\n "
+                    " FAMILY\n  FRIEND\n}"
+                ),
             ),
             sg(
                 "friends",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\"])\n\nextend type User @key(fields: \"id\") {\n  id: ID\n  friends(type: FriendType = FRIEND): [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key"])\n\nextend type User @key(fields: "id") {\n  id:'
+                    " ID\n  friends(type: FriendType = FRIEND):"
+                    " [User!]!\n}\n\nenum FriendType {\n  FAMILY\n  FRIEND\n}"
+                ),
             ),
         ],
         [
+            (
+                '[INVALID_FIELD_SHARING] Non-shareable field "User.friends" is'
+                " resolved from multiple subgraphs: it is resolved from"
+                ' subgraphs "friends" and "users" and defined as non-shareable'
+                " in all of them"
+            ),
+            (
+                "[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument"
+                ' "User.friends(type:)" has incompatible default values across'
+                ' subgraphs: it has default value FRIEND in subgraph "friends"'
+                ' but default value FAMILY in subgraph "users"'
+            ),
+        ],
+    )
+
+
+def test_three_defaults_and_a_shared_default() raises:
+    check(
+        [
+            sg(
+                "a",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\ntype Query { f(x: Int = 1): Int'
+                    " @shareable }\n"
+                ),
+            ),
+            sg(
+                "b",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\ntype Query { f(x: Int = 2): Int'
+                    " @shareable }\n"
+                ),
+            ),
+            sg(
+                "c",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\ntype Query { f(x: Int = 1): Int'
+                    " @shareable }\n"
+                ),
+            ),
+            sg(
+                "d",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@shareable"])\ntype Query { f(x: Int = 3): Int'
+                    " @shareable }\n"
+                ),
+            ),
+        ],
+        [
+            (
+                '[FIELD_ARGUMENT_DEFAULT_MISMATCH] Argument "Query.f(x:)" has'
+                " incompatible default values across subgraphs: it has default"
+                ' value 1 in subgraphs "a", "c" but default value 2 in subgraph'
+                ' "b" and default value 3 in subgraph "d"'
+            ),
         ],
     )
 

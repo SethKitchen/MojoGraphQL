@@ -51,7 +51,9 @@ def _skip_ignored(text: String, start: Int) -> Int:
         var byte = bytes[position]
         if _is_ignored(byte):
             position += 1
-        elif byte == 0xEF and text[byte = position : position + 3] == chr(0xFEFF):
+        elif byte == 0xEF and text[byte = position : position + 3] == chr(
+            0xFEFF
+        ):
             position += 3
         elif byte == UInt8(ord("#")):
             position += 1
@@ -516,11 +518,19 @@ def _runtime_types(
     if owner.kind == _OBJECT:
         out[context.merged[owner.index].name] = True
     elif owner.kind == _UNION:
-        for ref member in context.union_members[owner.index].items:
-            out[member] = True
+        # A union has at least one member.
+        ref members = context.union_members[owner.index].items
+        var index = 0
+        while index < len(members):
+            out[members[index]] = True
+            index += 1
     else:
+        # The interface itself is one of the merged types.
         var name = context.merged[owner.index].name
-        for ref candidate in context.merged:
+        var index = 0
+        while index < len(context.merged):
+            ref candidate = context.merged[index]
+            index += 1
             if candidate.is_object() and candidate.implements(
                 context.document, name
             ):
@@ -715,12 +725,11 @@ def enter_from_context(
     for interface in context.merged[merged].interfaces.copy():
         var interface_name = String(context.document.name(interface))
         var found = context.merged_type(interface_name)
+        # A subgraph that implements an object type raises before the rules
+        # run, so a found type is an interface.
         if (
             found != -1
-            and context.merged[found].is_interface()
-            and context.merged[found].find_field(
-                context.document, field_name
-            )
+            and context.merged[found].find_field(context.document, field_name)
             != NO_NODE
         ):
             context.report(

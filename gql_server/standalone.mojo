@@ -173,7 +173,11 @@ def read_json_body(
 
 
 struct StandaloneHandler[P: ServerPlugin](Handler):
-    """The `gql_http` handler of the standalone server."""
+    """The `gql_http` handler of the standalone server.
+
+    Parameters:
+        P: The type of the plugins.
+    """
 
     var server: ApolloServer[Self.P]
     """The GraphQL server."""
@@ -214,7 +218,9 @@ struct StandaloneHandler[P: ServerPlugin](Handler):
             response.add_header("Vary", "Access-Control-Request-Headers")
             var asked = headers.get("access-control-request-headers")
             if asked:
-                response.add_header("Access-Control-Allow-Headers", asked.value())
+                response.add_header(
+                    "Access-Control-Allow-Headers", asked.value()
+                )
             response.set_status(Status(204))
             return
         var http_request = HTTPGraphQLRequest(method)
@@ -229,7 +235,9 @@ struct StandaloneHandler[P: ServerPlugin](Handler):
         var answer = self.server.execute_http_graphql_request(
             http_request^, self.context
         )
-        response.set_status(Status(answer.status if answer.status != 0 else 200))
+        response.set_status(
+            Status(answer.status if answer.status != 0 else 200)
+        )
         var index = 0
         while index < len(answer.headers):
             response.add_header(
@@ -279,6 +287,9 @@ def start_standalone_server[
 ) raises -> StandaloneServer:
     """Start the server and serve it over HTTP: upstream
     `startStandaloneServer`.
+
+    Parameters:
+        P: The type of the plugins.
 
     Args:
         server: The GraphQL server; it must not be started.

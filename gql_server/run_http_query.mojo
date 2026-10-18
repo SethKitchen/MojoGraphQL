@@ -25,7 +25,11 @@ from gql_execution.value import Values
 from gql_json.parser import parse as parse_json
 from gql_json.value import NO_NODE as NO_JSON
 from gql_json.value import JsonDocument, JsonKind
-from gql_server.errors import ServerError, bad_request_error, ensure_graphql_error
+from gql_server.errors import (
+    ServerError,
+    bad_request_error,
+    ensure_graphql_error,
+)
 from gql_server.http_types import (
     HTTPGraphQLHead,
     HTTPGraphQLRequest,
@@ -96,8 +100,10 @@ def _negotiate(
 ) -> Optional[String]:
     """`_choose_content_type`, with the last answer kept: clients send the
     same `accept` field again and again."""
-    if accept and internals.accept_memo and (
-        internals.accept_memo.value() == accept.value()
+    if (
+        accept
+        and internals.accept_memo
+        and (internals.accept_memo.value() == accept.value())
     ):
         return internals.accept_memo_result.copy()
     var result = _choose_content_type(accept)
@@ -174,12 +180,14 @@ def prevent_csrf(
             and name != "text/plain"
         ):
             return
-    for ref name in request_headers:
-        var value = headers.get(name)
+    var index = 0
+    while index < len(request_headers):
+        var value = headers.get(request_headers[index])
         if value and value.value().byte_length() > 0:
             return
+        index += 1
     var names = String("")
-    var index = 0
+    index = 0
     while index < len(request_headers):
         names += (", " if index > 0 else "") + request_headers[index]
         index += 1
@@ -223,10 +231,15 @@ def _decode(text: Span[UInt8, _]) -> String:
         var byte = text[index]
         if byte == 43:
             out.append(32)
-        elif byte == 37 and index + 2 < len(text) and _hex(
-            text[index + 1]
-        ) >= 0 and _hex(text[index + 2]) >= 0:
-            out.append(UInt8(_hex(text[index + 1]) * 16 + _hex(text[index + 2])))
+        elif (
+            byte == 37
+            and index + 2 < len(text)
+            and _hex(text[index + 1]) >= 0
+            and _hex(text[index + 2]) >= 0
+        ):
+            out.append(
+                UInt8(_hex(text[index + 1]) * 16 + _hex(text[index + 2]))
+            )
             index += 2
         else:
             out.append(byte)
@@ -257,7 +270,8 @@ def search_params(search: StringSlice) -> List[SearchParam]:
             var value_start = min(equals + 1, end)
             out.append(
                 SearchParam(
-                    _decode(bytes[start:equals]), _decode(bytes[value_start:end])
+                    _decode(bytes[start:equals]),
+                    _decode(bytes[value_start:end]),
                 )
             )
         start = end + 1
@@ -269,7 +283,9 @@ def _is_record(json: JsonDocument, node: Int) -> Bool:
     return node != NO_JSON and json.kind(node) == JsonKind.OBJECT
 
 
-def _post_request(var http: HTTPGraphQLRequest) raises ServerError -> GraphQLRequest:
+def _post_request(
+    var http: HTTPGraphQLRequest,
+) raises ServerError -> GraphQLRequest:
     """Read the request of a `POST` from its JSON content."""
     var out = GraphQLRequest()
     swap(out.json, http.body)
@@ -390,15 +406,19 @@ def _json_once(
     return json.add_copy(parsed, parsed.root)
 
 
-def _get_request(var http: HTTPGraphQLRequest) raises ServerError -> GraphQLRequest:
+def _get_request(
+    var http: HTTPGraphQLRequest,
+) raises ServerError -> GraphQLRequest:
     """Read the request of a `GET` from its query string."""
     var content_type = http.headers.get("content-type")
     if content_type:
         var essence = mime_essence(content_type.value())
         if not essence or essence.value() != "application/json":
             raise bad_request_error(
-                "GET requests may not have a content-type header other than"
-                " application/json.",
+                (
+                    "GET requests may not have a content-type header other than"
+                    " application/json."
+                ),
                 HTTPGraphQLHead(415),
             )
     var params = search_params(http.search)
@@ -424,6 +444,9 @@ def run_http_query[
 ) raises ServerError -> HTTPGraphQLResponse:
     """Run one GraphQL request of an HTTP request: upstream
     `runHttpQuery`.
+
+    Parameters:
+        P: The type of the plugins.
 
     Args:
         internals: The configuration and the caches of the server.
@@ -501,6 +524,9 @@ def run_potentially_batched_http_query[
     A `POST` with a JSON array runs each item as an operation. The items
     share the context value, which each operation copies, and one head.
     The content is the JSON array of their results.
+
+    Parameters:
+        P: The type of the plugins.
 
     Args:
         internals: The configuration and the caches of the server.

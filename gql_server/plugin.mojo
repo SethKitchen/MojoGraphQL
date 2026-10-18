@@ -26,8 +26,10 @@ upstream `invokeDidStartHook` does.
   `response_for_operation` fills `ctx.response` and returns True.
 - `willResolveField`, `didEncounterSubsequentErrors`,
   `willSendSubsequentPayload`, `startupDidFail`, `renderLandingPage` and
-  the gateway hooks are not ported: `gql_execution` has no field hook and
-  no incremental delivery.
+  the gateway hooks are not ported: `gql_execution` has no incremental
+  delivery. The inline trace plugin of `gql_server.inline_trace` gets the
+  `FieldTiming` of each field from execution in place of
+  `willResolveField`.
 - A hook raises a Mojo `Error`. `did_resolve_operation` raises a
   `ServerError`, so that it can give a code and an HTTP status, as an
   upstream hook that throws a `GraphQLError`.
@@ -263,7 +265,12 @@ struct NoPlugin(ServerPlugin):
 @fieldwise_init
 struct PluginPair[A: ServerPlugin, B: ServerPlugin](ServerPlugin):
     """Two plugins as one. The hooks of `first` run before the hooks of
-    `second`, and the end hooks run in the reverse order."""
+    `second`, and the end hooks run in the reverse order.
+
+    Parameters:
+        A: The type of the first plugin.
+        B: The type of the second plugin.
+    """
 
     var first: Self.A
     """The first plugin."""

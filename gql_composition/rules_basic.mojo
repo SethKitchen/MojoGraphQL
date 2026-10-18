@@ -54,10 +54,17 @@ struct BasicRules(Movable):
         self.type_names = Dict[String, Bool]()
         self.root_query_name = String("Query")
         self.default_roots = [String(""), String(""), String("")]
-        for ref definition in context.known.directives:
-            self.known_directives[definition.name] = True
-        for ref definition in context.available.directives:
-            self.available_directives[definition.name] = True
+        # Each federation version has directives, so each list has items.
+        var at = 0
+        while at < len(context.known.directives):
+            self.known_directives[context.known.directives[at].name] = True
+            at += 1
+        at = 0
+        while at < len(context.available.directives):
+            self.available_directives[
+                context.available.directives[at].name
+            ] = True
+            at += 1
         ref document = context.document
         for definition in context.definitions:
             var kind = document.kind(definition)
@@ -97,9 +104,8 @@ struct BasicRules(Movable):
                 ErrorCode.INVALID_GRAPHQL,
             )
             return
-        if name in self.known_directives and not name.startswith(
-            "federation__"
-        ):
+        # A known name with the `federation__` prefix is also available.
+        if name in self.known_directives:
             context.report(
                 'Unknown directive "@'
                 + name
@@ -167,7 +173,11 @@ struct BasicRules(Movable):
                 self.root_query_name = name
                 break
         if context.document.kind(node) == Kind.SCHEMA_DEFINITION:
-            for operation in operations:
+            # The grammar gives a schema definition at least one operation.
+            var position = 0
+            while position < len(operations):
+                var operation = operations[position]
+                position += 1
                 var name = String(
                     context.document.name(
                         context.document.child(operation, Role.TYPE)

@@ -96,12 +96,44 @@ def invalid_schema(messages: List[String]) -> Error:
     return Error(message)
 
 
+def _is_builtin_directive(name: StringSlice) -> Bool:
+    """Return True for the name of a directive that graphql-js defines."""
+    var index = 0
+    while index < 5:
+        if name == materialize[_BUILTIN_DIRECTIVES]()[index]:
+            return True
+        index += 1
+    return False
+
+
 def _collect(
     doc: Document, mut model: SubgraphModel, mut schema_nodes: List[Int]
-) raises:
-    """Add each definition of the user's SDL to the model."""
+) raises -> Bool:
+    """Add each definition of the user's SDL to the model, the directive
+    definitions first; return whether the SDL has an executable
+    definition."""
+    var known = NameTable()
     var definition = doc.first_child(doc.root)
+    while definition != NO_NODE:
+        if doc.kind(definition) == Kind.DIRECTIVE_DEFINITION:
+            var name = doc.name(definition)
+            if not known.insert(-1, name, 0):
+                raise Error(
+                    "Directive @"
+                    + String(name)
+                    + " already exists in this schema"
+                )
+            # printSubgraphSchema leaves out a definition of a graphql-js
+            # directive, as it leaves out the federation definitions.
+            model.directives.append(
+                DirectiveEntry(
+                    Ref(USER, definition), _is_builtin_directive(name)
+                )
+            )
+        definition = doc.next_sibling(definition)
+    var executable = False
     var schema_definition = NO_NODE
+    definition = doc.first_child(doc.root)
     while definition != NO_NODE:
         var kind = doc.kind(definition)
         if kind == Kind.SCHEMA_DEFINITION and schema_definition == NO_NODE:
@@ -110,16 +142,15 @@ def _collect(
         elif kind == Kind.SCHEMA_DEFINITION or kind == Kind.SCHEMA_EXTENSION:
             schema_nodes.append(definition)
             model.schema_parts.append(Part(USER, definition, True))
-        elif kind == Kind.DIRECTIVE_DEFINITION:
-            model.directives.append(
-                DirectiveEntry(Ref(USER, definition), False)
-            )
         elif kind.is_type_definition() or kind.is_type_extension():
             _ = model.add_part(
                 USER, definition, kind, String(doc.name(definition))
             )
+        elif kind != Kind.DIRECTIVE_DEFINITION:
+            executable = True
         definition = doc.next_sibling(definition)
     model.schema_parts.insert(0, Part(USER, schema_definition, False))
+    return executable
 
 
 def _added_type_names(info: LinkInfo) -> List[String]:
@@ -129,11 +160,12 @@ def _added_type_names(info: LinkInfo) -> List[String]:
         String("_Service"),
         String("_Entity"),
     ]
+    if info.version.is_fed2() or info.links_link_spec:
+        names.append(String("link__Purpose"))
+        names.append(String("link__Import"))
     if not info.version.is_fed2():
         names.append(String("_FieldSet"))
         return names^
-    names.append(String("link__Purpose"))
-    names.append(String("link__Import"))
     var index = 0
     while index < TYPE_COUNT:
         if has_type(info.version, index):
@@ -211,11 +243,13 @@ def _check_directives(
     var candidates = List[String]()
     var index = 0
     while index < len(model.directives):
+        # `_collect` refused a second definition of a name.
         var name = String(doc.name(model.directives[index].at.node))
-        if known.insert(-1, name, 0):
-            candidates.append("@" + name)
+        _ = known.insert(-1, name, 0)
+        candidates.append("@" + name)
         index += 1
-    if info.version.is_fed2() and known.insert(-1, "link", 0):
+    var links = info.version.is_fed2() or info.links_link_spec
+    if links and known.insert(-1, "link", 0):
         candidates.append("@link")
     index = 0
     while index < DIRECTIVE_COUNT:
@@ -245,12 +279,13 @@ def _check_directives(
 
 
 def _weight(byte: Int) -> Int:
-    """Return the primary collation weight of a byte of a name."""
-    if byte >= 97 and byte <= 122:
+    """Return the primary collation weight of a byte of a name: a GraphQL
+    name has only `_`, letters and digits."""
+    if byte >= 97:
         return byte + 1000 - 97
     if byte >= 65 and byte <= 90:
         return byte + 1000 - 65
-    if byte >= 48 and byte <= 57:
+    if byte <= 57:
         return byte + 500
     return byte
 
@@ -354,7 +389,9 @@ def _generate(
         sdl += (
             'extend schema @link(url: "https://specs.apollo.dev/link/v1.0")\n'
         )
-    if fed2:
+    # A link to the link specification alone adds its definitions too.
+    var links = fed2 or info.links_link_spec
+    if links:
         _add_directive(doc, model, sdl, "link", LINK_SDL[byte=15:])
     var index = 0
     while index < DIRECTIVE_COUNT:
@@ -367,7 +404,7 @@ def _generate(
                 directive_body(index, info.version, info.type_refs),
             )
         index += 1
-    if fed2:
+    if links:
         _add_type(model, sdl, "link__Purpose", LINK_PURPOSE_SDL)
         _add_type(model, sdl, "link__Import", "scalar link__Import")
     index = 0
@@ -480,15 +517,17 @@ def build_subgraph(documents: List[Document]) raises -> SubgraphModel:
         The model, with the federation definitions added.
 
     Raises:
-        Error: `There can be only one type named "X"`, `Unknown type X`,
-            a malformed federation version, or `INVALID_SCHEMA` with the
-            unknown directives, the import
-            errors or an unsupported federation version.
+        Error: `Directive @x already exists in this schema`, `There can be
+            only one type named "X"`, `Unknown type X`, a malformed
+            federation version, a second link to the federation
+            specification, or `INVALID_SCHEMA` with an executable
+            definition, the unknown directives, the link and import
+            errors, or an unsupported federation version.
     """
     var user = concat_ast(documents)
     var model = SubgraphModel()
     var schema_nodes = List[Int]()
-    _collect(user, model, schema_nodes)
+    var executable = _collect(user, model, schema_nodes)
     var info: LinkInfo
     try:
         info = read_links(user, schema_nodes)
@@ -498,6 +537,10 @@ def build_subgraph(documents: List[Document]) raises -> SubgraphModel:
             raise invalid_schema([message])
         raise error^
     _check_types(user, model, info)
+    if executable:
+        raise invalid_schema(
+            ["Invalid executable definition found while building schema"]
+        )
     var errors = info.errors.copy()
     errors.extend(_check_directives(user, model, info))
     if len(errors) > 0:

@@ -1,0 +1,79 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+directive @defer(label: String, if: Boolean! = true) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+interface Character {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+}
+
+enum Episode {
+  NEWHOPE
+  EMPIRE
+  JEDI
+}
+
+enum LengthUnit {
+  METER
+  FOOT
+}
+
+scalar Date
+
+type Human implements Character {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+  height(unit: LengthUnit = METER): Float
+  mass: Float
+  birthDate: Date
+}
+
+type Droid implements Character {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+  primaryFunction: String
+}
+
+union SearchResult = Human | Droid
+
+input ColorInput {
+  red: Int! = 0
+  green: Int!
+  blue: Int!
+}
+
+input ReviewInput {
+  stars: Int!
+  commentary: String
+  favoriteColor: ColorInput
+  tags: [String!] = []
+  episodes: [Episode]
+  when: Date
+  isFan: Boolean
+}
+
+type Review {
+  stars: Int!
+  commentary: String
+  from: String
+}
+
+type Query {
+  hero(episode: Episode): Character
+  search(text: String!): [SearchResult!]!
+  reviews(episode: Episode!): [Review]
+  matrix: [[Int!]]
+}
+
+type Mutation {
+  createReview(episode: Episode, review: ReviewInput!): Review
+}

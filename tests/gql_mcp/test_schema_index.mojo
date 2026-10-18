@@ -208,7 +208,7 @@ def test_many_types() raises:
     assert_equal(results[0].score, results[9].score)
 
 
-comptime _DESCRIBED = '''
+comptime _DESCRIBED = """
 "The root"
 type Query {
   "Find a planet by its orbit"
@@ -235,7 +235,7 @@ enum Kind {
   GAS
   ICE
 }
-'''
+"""
 
 
 def _joined(index: SchemaIndex, term: String) -> String:
@@ -256,7 +256,9 @@ def test_descriptions() raises:
             " (0.66322136)\n"
         ),
     )
-    assert_equal(_joined(index, "gas rocky"), "Query -> kind -> Kind (5.264669)\n")
+    assert_equal(
+        _joined(index, "gas rocky"), "Query -> kind -> Kind (5.264669)\n"
+    )
 
 
 def main() raises:

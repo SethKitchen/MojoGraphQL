@@ -21,12 +21,28 @@ def test_v2_0_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.0\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.0", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -37,12 +53,28 @@ def test_v2_1_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.1\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.1", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -53,12 +85,28 @@ def test_v2_2_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.2\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.2", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -69,12 +117,28 @@ def test_v2_3_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.3\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.3", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -85,12 +149,28 @@ def test_v2_4_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.4\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.4", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -101,12 +181,28 @@ def test_v2_5_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.5\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.5", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -117,12 +213,28 @@ def test_v2_6_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.6\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.6", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -133,12 +245,28 @@ def test_v2_7_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.7\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.7", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -149,12 +277,28 @@ def test_v2_8_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.8\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.8", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 
@@ -165,12 +309,28 @@ def test_v2_9_type_definition_invalid() raises:
         [
             sg(
                 "users",
-                "extend schema @link(url: \"https://specs.apollo.dev/federation/v2.9\", import: [\"@key\", \"FieldSet\"])\n\ndirective @key(fields: FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE\n\ninput FieldSet {\n  fields: [String!]!\n}\n\ntype User @key(fields: \"id name \") {\n  id: ID!\n  name: String\n}\n\nextend type Query {\n  user(id: ID!): User\n}",
+                (
+                    "extend schema @link(url:"
+                    ' "https://specs.apollo.dev/federation/v2.9", import:'
+                    ' ["@key", "FieldSet"])\n\ndirective @key(fields:'
+                    " FieldSet!, resolvable: Boolean = true) repeatable on"
+                    " OBJECT | INTERFACE\n\ninput FieldSet {\n  fields:"
+                    ' [String!]!\n}\n\ntype User @key(fields: "id name ") {\n '
+                    " id: ID!\n  name: String\n}\n\nextend type Query {\n "
+                    " user(id: ID!): User\n}"
+                ),
             ),
         ],
         [
-            "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type FieldSet: FieldSet should be a ScalarType but is defined as a InputObjectType",
-            "[INVALID_GRAPHQL] [users] Invalid value for \"@key(fields:)\" of type \"FieldSet!\" in application of \"@key\" to \"User\".",
+            (
+                "[TYPE_DEFINITION_INVALID] [users] Invalid definition for type"
+                " FieldSet: FieldSet should be a ScalarType but is defined as a"
+                " InputObjectType"
+            ),
+            (
+                '[INVALID_GRAPHQL] [users] Invalid value for "@key(fields:)" of'
+                ' type "FieldSet!" in application of "@key" to "User".'
+            ),
         ],
     )
 

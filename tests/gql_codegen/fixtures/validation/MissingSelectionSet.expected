@@ -1,0 +1,2 @@
+OtherValidationIssue (2:3)
+Field `hero` of type `Character` must have a selection of sub-fields

@@ -592,7 +592,8 @@ struct McpServer(Movable):
                 self.config.search_minify,
             )
         if name == VALIDATE_TOOL_NAME and self.config.validate_enabled:
-            return run_validate(self.schema, document, arguments)
+            # The schema of a server must be valid; see `__init__`.
+            return run_validate(self.schema, document, arguments, True)
         var index = 0
         while index < len(self.operations):
             if self.operations[index].name == name:

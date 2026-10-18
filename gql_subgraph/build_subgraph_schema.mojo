@@ -31,7 +31,10 @@ var result = subgraph.execute(parse("{ _service { sdl } }"), args)
   `gql_execution` has no such things.
 - The result is a `SubgraphSchema`: the `gql_schema` schema with its
   resolvers and its SDL. Execute it with `SubgraphSchema.execute`, which
-  replaces `args.resolvers` with those of the subgraph.
+  runs with the resolvers of the subgraph, not with `args.resolvers`.
+  Another executor, such as `gql_server`, runs `schema` with
+  `resolvers.resolvers` when it calls `SubgraphSchema.attach` on the arena
+  of each operation.
 - An error has no source excerpt; a schema error has the message of
   upstream, with `[<unnamed>] ` before each graphql-js validation message.
 - `buildFederatedSchema`, the deprecated name, is not ported.
@@ -45,7 +48,7 @@ from gql_execution.execute import (
     ResolveInfo,
     Resolvers,
     TypeResolver,
-    execute,
+    execute_with_resolvers,
 )
 from gql_execution.value import ValueKind, Values
 from gql_language.ast import Document
@@ -231,6 +234,20 @@ struct SubgraphSchema(Movable):
         self.model = model^
         self.order = order^
 
+    def attach(self, mut values: Values):
+        """Add the handle that the federation resolvers find this subgraph
+        through to the arena of an operation.
+
+        `execute` calls it. Call it yourself when another executor runs
+        the operation with `schema` and `resolvers.resolvers`, such as a
+        `gql_server` plugin in `execution_did_start`. The subgraph must
+        not move while the operation runs.
+
+        Args:
+            values: The arena that the operation runs in.
+        """
+        _ = values.add_handle(CONTEXT_TAG, Int(Pointer(to=self)))
+
     def execute(
         self, document: Document, mut args: ExecutionArgs
     ) raises -> ExecutionResult:
@@ -240,8 +257,8 @@ struct SubgraphSchema(Movable):
         Args:
             document: The operation; it is not validated.
             args: The root value, the context, the variables and the
-                options. Its resolvers are replaced by those of the
-                subgraph.
+                options. Its resolvers are not read: the operation runs
+                with those of the subgraph.
 
         Returns:
             The result.
@@ -249,10 +266,11 @@ struct SubgraphSchema(Movable):
         Raises:
             Error: As `gql_execution.execute.execute` raises.
         """
-        _ = args.values.add_handle(CONTEXT_TAG, Int(Pointer(to=self)))
-        args.resolvers = self.resolvers.resolvers.copy()
+        self.attach(args.values)
         args.assume_valid_schema = True
-        return execute(self.schema, document, args)
+        return execute_with_resolvers(
+            self.schema, document, self.resolvers.resolvers, args
+        )
 
 
 def _context(

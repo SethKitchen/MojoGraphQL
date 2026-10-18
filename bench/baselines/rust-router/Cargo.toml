@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Hive Router baseline of gql_router. build.sh clones Hive Router
+# (MIT) at the pinned revision 1a29df9 into upstream/, and this program
+# links its query planner from upstream/bin/router. It times the
+# `query_plan` workload of upstream bin/router/benches/qp_benches.rs.
+# The toolchain is the upstream pin, 1.98.1.
+
+[package]
+name = "mojographql-bench-router-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+# The `graphiql` feature embeds the static GraphiQL page instead of running
+# `npm install` for the Laboratory page. The query planner is the same.
+hive-router = { path = "upstream/bin/router", features = ["graphiql"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

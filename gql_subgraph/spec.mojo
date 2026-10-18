@@ -8,14 +8,16 @@
 `@apollo/subgraph` 2.14.4 takes these definitions from
 `@apollo/federation-internals`, which is Elastic licensed and is not read.
 This module implements them from the public specifications instead:
-https://specs.apollo.dev/federation/v2.0 to v2.14, the federation 1
+https://specs.apollo.dev/federation/v2.0 to v2.15, the federation 1
 subgraph specification, and https://specs.apollo.dev/link/v1.0. Hive
 Federation Composition v0.27.0 `src/specifications/federation.ts` (MIT) is
 the reference for the version history. The order of the definitions and
 their exact text are what `@apollo/subgraph` 2.14.4 prints, observed as a
 black box.
 
-**Differences from upstream.** None known.
+**Differences from upstream.** `@apollo/subgraph` 2.14.4 rejects federation
+`v2.15`. The public specification for `v2.15` adds no directives or types,
+so this port accepts `v2.15` and uses the `v2.14` definitions.
 """
 
 comptime DIRECTIVE_COUNT = 19
@@ -27,7 +29,7 @@ comptime FED1_DIRECTIVE_COUNT = 6
 comptime TYPE_COUNT = 4
 """How many federation 2 types there are."""
 
-comptime LATEST_MINOR = 14
+comptime LATEST_MINOR = 15
 """The latest supported federation 2 minor version."""
 
 comptime LINK_URL = "https://specs.apollo.dev/link/v1.0"
@@ -150,7 +152,7 @@ comptime _TYPE_SINCE: Array[Int, TYPE_COUNT] = [0, 5, 6, 8]
 
 @fieldwise_init
 struct FederationVersion(Equatable, ImplicitlyCopyable, Writable):
-    """A federation version: federation 1, or federation 2.0 to 2.14."""
+    """A federation version: federation 1, or federation 2.0 to 2.15."""
 
     var value: UInt8
     """Zero for federation 1, or one more than the federation 2 minor
@@ -338,6 +340,38 @@ def _number(text: StringSlice, start: Int, end: Int) -> Int:
     return value
 
 
+def _version_numbers(version: String) -> List[Int]:
+    """Return the major and minor numbers of `v1.2`; -1 for one that is
+    not a number."""
+    var dot = version.find(".")
+    var numbers: List[Int] = [-1, -1]
+    if version.startswith("v") and dot > 0:
+        numbers[0] = _number(version, 1, dot)
+        numbers[1] = _number(version, dot + 1, version.byte_length())
+    return numbers^
+
+
+def check_federation_url(url: StringSlice) raises:
+    """Check the form of the version of a `@link` URL to the federation
+    specification, before the version is checked against those supported.
+
+    Args:
+        url: The URL, which starts with `FEDERATION_URL`.
+
+    Raises:
+        Error: `Expected a version string (of the form v1.2), got X` when
+            the version is not `v` and two numbers.
+    """
+    var version = String(
+        url[byte = StaticString(FEDERATION_URL).byte_length() :]
+    )
+    var numbers = _version_numbers(version)
+    if numbers[0] < 0 or numbers[1] < 0:
+        raise Error(
+            "Expected a version string (of the form v1.2), got " + version
+        )
+
+
 def parse_federation_url(url: StringSlice) raises -> FederationVersion:
     """Return the version of a `@link` URL to the federation specification.
 
@@ -348,24 +382,17 @@ def parse_federation_url(url: StringSlice) raises -> FederationVersion:
         The federation 2 version.
 
     Raises:
-        Error: `Expected a version string (of the form v1.2), got X` when
-            the version is not `v` and two numbers; `Invalid version X for
-            the federation feature in @link directive on schema` when it is
-            not supported.
+        Error: The error of `check_federation_url`; `Invalid version X for
+            the federation feature in @link directive on schema` when the
+            version is not supported.
     """
+    check_federation_url(url)
     var version = String(
         url[byte = StaticString(FEDERATION_URL).byte_length() :]
     )
-    var dot = version.find(".")
-    var major = -1
-    var minor = -1
-    if version.startswith("v") and dot > 0:
-        major = _number(version, 1, dot)
-        minor = _number(version, dot + 1, version.byte_length())
-    if major < 0 or minor < 0:
-        raise Error(
-            "Expected a version string (of the form v1.2), got " + version
-        )
+    var numbers = _version_numbers(version)
+    var major = numbers[0]
+    var minor = numbers[1]
     if major != 2 or minor > LATEST_MINOR:
         raise Error(
             "Invalid version "

@@ -77,10 +77,14 @@ def _resolvers() -> Resolvers:
     return out^
 
 
-def _server(var options: ApolloServerOptions = ApolloServerOptions()) raises -> ApolloServer[NoPlugin]:
+def _server(
+    var options: ApolloServerOptions = ApolloServerOptions(),
+) raises -> ApolloServer[NoPlugin]:
     if not options.node_env:
         options.node_env = String("test")
-    var server = ApolloServer.from_type_defs(TYPE_DEFS, _resolvers(), options^, NoPlugin())
+    var server = ApolloServer.from_type_defs(
+        TYPE_DEFS, _resolvers(), options^, NoPlugin()
+    )
     server.start()
     return server^
 
@@ -90,7 +94,9 @@ def _run(mut server: ApolloServer[NoPlugin], query: String) raises -> String:
 
 
 def test_construction() raises:
-    _ = ApolloServer(build_schema(TYPE_DEFS), _resolvers(), ApolloServerOptions(), NoPlugin())
+    _ = ApolloServer(
+        build_schema(TYPE_DEFS), _resolvers(), ApolloServerOptions(), NoPlugin()
+    )
     var raised = False
     try:
         _ = ApolloServer(
@@ -101,7 +107,9 @@ def test_construction() raises:
         )
     except e:
         raised = True
-        assert_equal(String(e), "Union type U must define one or more member types.")
+        assert_equal(
+            String(e), "Union type U must define one or more member types."
+        )
     assert_true(raised)
 
 
@@ -109,7 +117,8 @@ def test_error_without_details_by_default() raises:
     var server = _server()
     assert_equal(
         _run(server, "query { error }"),
-        '{"errors":[{"message":"A test error","locations":[{"line":1,"column":9}],'
+        '{"errors":[{"message":"A test'
+        ' error","locations":[{"line":1,"column":9}],'
         + '"path":["error"],"extensions":{"code":"INTERNAL_SERVER_ERROR"}}],'
         + '"data":{"error":null}}',
     )
@@ -119,9 +128,16 @@ def test_error_with_details_in_debug() raises:
     var options = ApolloServerOptions()
     options.include_stacktrace_in_error_responses = True
     var server = _server(options^)
-    var response = server.execute_operation(GraphQLRequest(String("query { error }")))
-    assert_equal(response.errors[0].extension("code").value(), '"INTERNAL_SERVER_ERROR"')
-    assert_equal(response.errors[0].extension("stacktrace").value(), '["Error: A test error"]')
+    var response = server.execute_operation(
+        GraphQLRequest(String("query { error }"))
+    )
+    assert_equal(
+        response.errors[0].extension("code").value(), '"INTERNAL_SERVER_ERROR"'
+    )
+    assert_equal(
+        response.errors[0].extension("stacktrace").value(),
+        '["Error: A test error"]',
+    )
 
 
 def test_works_with_string() raises:
@@ -177,7 +193,10 @@ def test_variable_coercion_errors() raises:
 
 def test_variable_coercion_additional_examples() raises:
     var server = _server()
-    var query = "query NeedsArg($arg: CompoundInput!) { needsCompoundArg(aCompound: $arg) }"
+    var query = (
+        "query NeedsArg($arg: CompoundInput!) { needsCompoundArg(aCompound:"
+        " $arg) }"
+    )
     for variables in [
         '{"arg":{"compound":{"nested1":"abc"}}}',
         '{"arg":{"compound":{"nested1":"abc","nested2":null}}}',
@@ -196,14 +215,27 @@ def test_max_coercion_errors() raises:
     options.max_coercion_errors = 1
     var server = _server(options^)
     var request = GraphQLRequest(
-        String("query NeedsArg($arg: CompoundInput!) { needsCompoundArg(aCompound: $arg) }")
+        String(
+            "query NeedsArg($arg: CompoundInput!) { needsCompoundArg(aCompound:"
+            " $arg) }"
+        )
     )
-    request.set_variables('{"arg":{"compound":{"error1":"1","error2":"2","error3":"3"}}}')
+    request.set_variables(
+        '{"arg":{"compound":{"error1":"1","error2":"2","error3":"3"}}}'
+    )
     var response = server.execute_operation(request^)
     assert_equal(len(response.errors), 2)
-    assert_equal(response.errors[0].extension("code").value(), '"BAD_USER_INPUT"')
-    assert_equal(response.errors[1].extension("code").value(), '"INTERNAL_SERVER_ERROR"')
-    assert_true(response.errors[1].message.startswith("Too many errors processing variables"))
+    assert_equal(
+        response.errors[0].extension("code").value(), '"BAD_USER_INPUT"'
+    )
+    assert_equal(
+        response.errors[1].extension("code").value(), '"INTERNAL_SERVER_ERROR"'
+    )
+    assert_true(
+        response.errors[1].message.startswith(
+            "Too many errors processing variables"
+        )
+    )
     assert_equal(response.http.status, 400)
 
 
@@ -212,7 +244,9 @@ def test_context_object() raises:
     var options = ExecuteOperationOptions()
     var foo = options.values.add_string("bla")
     options.values.add_member(options.context_value, "foo", foo)
-    var response = server.execute_operation(GraphQLRequest(String("{ contextFoo }")), options)
+    var response = server.execute_operation(
+        GraphQLRequest(String("{ contextFoo }")), options
+    )
     assert_equal(response.to_json(), '{"data":{"contextFoo":"bla"}}')
 
 
@@ -259,7 +293,9 @@ def test_validation_max_errors() raises:
     var strict = _server(options^)
     response = strict.execute_operation(GraphQLRequest(_many_variables()))
     assert_equal(len(response.errors), 2)
-    assert_equal(response.errors[0].message, 'There can be only one variable named "$a".')
+    assert_equal(
+        response.errors[0].message, 'There can be only one variable named "$a".'
+    )
     assert_equal(
         response.errors[1].message,
         "Too many validation errors, error limit reached. Validation aborted.",
