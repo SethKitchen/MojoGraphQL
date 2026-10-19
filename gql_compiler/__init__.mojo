@@ -9,4 +9,7 @@ apollo-rs.
 `gql_compiler.schema` holds the `Schema` model, and `gql_compiler.from_ast`
 builds it from gql_language documents with `SchemaBuilder`. A schema keeps
 its documents and points into them, so a build copies no AST data.
+`gql_compiler.serialize` prints a schema as apollo-compiler does.
+`gql_compiler.validation` validates a schema and an executable document,
+and returns a `DiagnosticList` from `gql_compiler.diagnostics`.
 """

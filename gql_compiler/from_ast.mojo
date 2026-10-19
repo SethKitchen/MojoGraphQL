@@ -182,12 +182,19 @@ struct SchemaBuilder(Copyable, Movable):
         """
         self.add_ast(parse(text))
 
-    def add_ast(mut self, var document: Document):
+    def add_ast(
+        mut self,
+        var document: Document,
+        executable_definitions_are_errors: Bool = True,
+    ):
         """Add an AST document: upstream `add_ast`.
 
         Args:
-            document: A schema document. Its executable definitions are
-                errors.
+            document: A schema document.
+            executable_definitions_are_errors: Whether an operation or a
+                fragment is an `EXECUTABLE_DEFINITION` error. A mixed
+                document, as upstream `parse_mixed_validate` reads, passes
+                False.
         """
         var source = len(self.schema.sources)
         self.schema.sources.append(document^)
@@ -200,10 +207,14 @@ struct SchemaBuilder(Copyable, Movable):
         var root = self.schema.sources[source].root
         var definition = self.schema.sources[source].first_child(root)
         while definition != NO_NODE:
-            self._add_definition(source, definition)
+            self._add_definition(
+                source, definition, executable_definitions_are_errors
+            )
             definition = self.schema.sources[source].next_sibling(definition)
 
-    def _add_definition(mut self, source: Int, node: Int):
+    def _add_definition(
+        mut self, source: Int, node: Int, executable_are_errors: Bool
+    ):
         """Add one top-level definition."""
         var kind = self.schema.sources[source].kind(node)
         var type_kind = definition_kind(kind)
@@ -243,6 +254,8 @@ struct SchemaBuilder(Copyable, Movable):
                 self._extend_schema_with(extension)
             else:
                 self.orphan_schema_extensions.append(extension)
+        elif kind.is_executable_definition() and not executable_are_errors:
+            pass
         else:
             var describe = "a directive extension"
             if kind == Kind.OPERATION_DEFINITION:

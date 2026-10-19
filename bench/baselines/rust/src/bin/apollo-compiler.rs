@@ -76,6 +76,15 @@ fn parse_and_validate(schema: &Valid<Schema>, query: &str) -> usize {
     }
 }
 
+/// Measure a validation workload under two names: `apollo-compiler/<name>`,
+/// which gql_validation is compared with, and
+/// `apollo-compiler-validate/<name>`, which gql_compiler validation is
+/// compared with. Both time the same `parse_and_validate`.
+fn measure_validate(name: &str, mut work: impl FnMut() -> usize) {
+    measure(&format!("apollo-compiler/{name}"), &mut work);
+    measure(&format!("apollo-compiler-validate/{name}"), &mut work);
+}
+
 fn main() {
     for name in SHARED {
         let text = fixture(&format!("{name}.graphql"));
@@ -136,6 +145,39 @@ fn main() {
             Err(errors) => errors.partial.types.len(),
         }
     });
+    // apollo-compiler schema printing: the schema is built outside the
+    // timer. gql_compiler.serialize runs the same workload.
+    {
+        let schema = Schema::builder()
+            .add_ast(&github)
+            .build()
+            .unwrap_or_else(|errors| errors.partial);
+        measure("apollo-compiler/schema-serialize", || schema.to_string().len());
+    }
+    // apollo-compiler executable document building, with no validation:
+    // the schema is built and the query parsed outside the timer.
+    // gql_compiler.executable runs the same workload.
+    {
+        use apollo_compiler::validation::DiagnosticList;
+        // The builder takes a `Valid` schema. As the Mojo side does, this
+        // does not validate it.
+        let schema = Valid::assume_valid(
+            Schema::builder()
+                .add_ast(&github)
+                .build()
+                .unwrap_or_else(|errors| errors.partial),
+        );
+        let query = parse(&fixture("github-query.graphql"));
+        measure("apollo-compiler/executable-from-ast", || {
+            let mut errors = DiagnosticList::new(Default::default());
+            let mut builder = ExecutableDocument::builder(Some(&schema), &mut errors);
+            builder.add_ast_document(&query, true);
+            let document = builder.build();
+            let count = document.operations.named.len() + document.fragments.len();
+            black_box(document);
+            count + errors.len()
+        });
+    }
     for name in ["github-schema", "go-tools-starwars.schema"] {
         let text = fixture(&format!("{name}.graphql"));
         measure(&format!("shared/parse-build-{name}"), || {
@@ -151,7 +193,7 @@ fn main() {
     // built and checked outside the timer, and parse_and_validate is timed.
     let hello = checked("type Query { hello: String! }");
     let query = format!("{{ {} }}", "hello ".repeat(1_000));
-    measure("apollo-compiler/many_same_field", || {
+    measure_validate("many_same_field", || {
         parse_and_validate(&hello, &query)
     });
     let nested = checked(
@@ -161,7 +203,7 @@ fn main() {
     ",
     );
     let query = format!("{{ {} }}", "nested { hello } ".repeat(1_000));
-    measure("apollo-compiler/many_same_nested_field", || {
+    measure_validate("many_same_nested_field", || {
         parse_and_validate(&nested, &query)
     });
     let args = (0..2_000).fold(String::new(), |mut acc, i| {
@@ -171,7 +213,7 @@ fn main() {
     });
     let field = format!("hello({args})");
     let query = format!("{{ {field} {field} }}");
-    measure("apollo-compiler/many_arguments", || {
+    measure_validate("many_arguments", || {
         parse_and_validate(&hello, &query)
     });
     let types = checked(
@@ -219,7 +261,7 @@ fn main() {
         open = "field { ...multiply ".repeat(100),
         close = "}".repeat(100)
     );
-    measure("apollo-compiler/many_types", || {
+    measure_validate("many_types", || {
         parse_and_validate(&types, &query)
     });
     let mut sdl = String::new();
@@ -238,7 +280,7 @@ fn main() {
         query.push_str(&format!("f{i} "));
     }
     query.push_str("} }");
-    measure("apollo-compiler/many_extensions", || {
+    measure_validate("many_extensions", || {
         parse_and_validate(&extensions, &query)
     });
     {
@@ -268,7 +310,7 @@ fn main() {
   {selection}}}
 {fragments}"
         );
-        measure("apollo-compiler/big_schema_many_fragments", || {
+        measure_validate("big_schema_many_fragments", || {
             parse_and_validate(&big, &query)
         });
     }
@@ -286,7 +328,7 @@ fn main() {
         type Query { hello: String! }
         "#,
     );
-    measure("apollo-compiler/many_same_directive_query", || {
+    measure_validate("many_same_directive_query", || {
         parse_and_validate(&repeatable, &query)
     });
     let plain = checked(
@@ -294,7 +336,7 @@ fn main() {
         type Query { hello: String! }
         "#,
     );
-    measure("apollo-compiler/many_invalid_directive", || {
+    measure_validate("many_invalid_directive", || {
         parse_and_validate(&plain, &query)
     });
     // graphql-js benchmark/introspectionFromSchema-benchmark.js, "Execute

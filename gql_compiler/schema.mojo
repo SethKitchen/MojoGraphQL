@@ -573,3 +573,34 @@ struct Schema(Copyable, Movable):
             The root operation, if any.
         """
         return self.roots[Int(operation.value)]
+
+    def serialize(
+        self,
+        indent_prefix: String = "  ",
+        newlines: Bool = True,
+        initial_indent_level: Int = 0,
+    ) -> String:
+        """Print the schema: upstream `Schema::serialize`.
+
+        Args:
+            indent_prefix: The indentation of one level.
+            newlines: False to print everything on one line: upstream
+                `no_indent`.
+            initial_indent_level: The indentation level to start at.
+
+        Returns:
+            The schema as GraphQL text, without the built-in definitions.
+        """
+        from gql_compiler.serialize import serialize_schema
+
+        return serialize_schema(
+            self, indent_prefix, newlines, initial_indent_level
+        )
+
+    def to_string(self) -> String:
+        """Print the schema: upstream `Display for Schema`.
+
+        Returns:
+            The schema as GraphQL text, without the built-in definitions.
+        """
+        return self.serialize()

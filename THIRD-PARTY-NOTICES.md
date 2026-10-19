@@ -61,9 +61,21 @@ the values of the public OpenSSL headers. A program that does not import
 - **apollo-rs.** The project is dual licensed MIT OR Apache-2.0. MojoGraphQL
   uses it under the MIT License only. `gql_compiler` ports these files of
   `crates/apollo-compiler` at `b7eee5c` (apollo-compiler 1.33.0):
-  `src/schema/mod.rs`, `src/schema/component.rs`, `src/schema/from_ast.rs`
-  and `src/built_in_types.graphql`, and the tests of `tests/extensions.rs`
-  and `tests/schema.rs`.
+  `src/schema/mod.rs`, `src/schema/component.rs`, `src/schema/from_ast.rs`,
+  `src/executable/mod.rs`, `src/executable/from_ast.rs`,
+  `src/schema/serialize.rs`, the type system part of `src/ast/serialize.rs`
+  and `src/built_in_types.graphql`, and the tests of `tests/extensions.rs`,
+  `tests/schema.rs` and `tests/executable.rs`. `tests/gql_compiler/serializer_fixtures/`
+  copies the type system documents of `test_data/ok/` and
+  `test_data/diagnostics/`, and their outputs in `test_data/serializer/`.
+  The validation ports `src/schema/validation.rs`,
+  `src/executable/validation.rs`, `src/validation/mod.rs`,
+  `src/validation/diagnostics.rs` and the other files of
+  `src/validation/`, and the tests of `tests/validation/` and of
+  `validation` in `tests/snapshot_tests.rs`.
+  `tests/gql_compiler/validation_fixtures/` copies the `.graphql` files of
+  `test_data/ok/`, and the `.graphql` and `.txt` files of
+  `test_data/diagnostics/`.
 - **Apollo Kotlin.** These files are Apache-2.0 licensed and are not ported:
   - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonReader.kt`
   - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonWriter.kt`

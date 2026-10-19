@@ -66,6 +66,9 @@ A workload compares two libraries only when both do the same work. A schema buil
 
 - `graphql-js/build-ast-schema` runs graphql-js `buildASTSchema`. It resolves every type reference and orders the type map. `gql_schema` does the same work, so it is compared with graphql-js.
 - `apollo-compiler/schema-from-ast` runs apollo-compiler `Schema::builder().add_ast(&ast).build()`. It points into the AST and resolves no types. `gql_compiler` ports that model, so it is compared with apollo-compiler.
+- `apollo-compiler/executable-from-ast` runs apollo-compiler `ExecutableDocument::builder` with `add_ast_document` and `build`, on the GitHub query against the GitHub schema. It resolves each field definition and does not validate. `gql_compiler.executable` ports that model, so it is compared with apollo-compiler.
+- `apollo-compiler/schema-serialize` runs apollo-compiler `schema.to_string()` on the GitHub schema. The schema is built outside the timer. `gql_compiler.serialize` ports that printer, so it is compared with apollo-compiler.
+- `apollo-compiler-validate/<name>` runs the same `ExecutableDocument::parse_and_validate` as `apollo-compiler/<name>`, for the eight executable validation benchmarks of apollo-compiler. The Rust baseline times each closure under both names. `gql_compiler` ports that validation, so it is compared with apollo-compiler under the `apollo-compiler-validate/` name. `gql_validation` is compared under the `apollo-compiler/` name.
 
 Until `gql_compiler` existed, the apollo-compiler build was a baseline of `graphql-js/build-ast-schema`. That pairing compared different work, so it moved to its own workload.
 

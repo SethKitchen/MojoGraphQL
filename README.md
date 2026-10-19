@@ -124,7 +124,7 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_router`](https://github.com/SethKitchen/MojoGraphQL/wiki/Router): a port of Hive Router. It plans a federated operation with the [query planner](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#planner), runs the plan against the subgraphs, and serves the supergraph over HTTP. It has the operation cache, [authorization](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#authorization) and [null bubbling](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#null-bubbling).
 - [x] [`gql_client`](https://github.com/SethKitchen/MojoGraphQL/wiki/Client): a port of the Apollo Client normalized cache, `InMemoryCache` with type and field policies.
 - [x] [`gql_codegen`](https://github.com/SethKitchen/MojoGraphQL/wiki/Codegen): code generation in the style of Apollo Kotlin. It writes Mojo models for operations.
-- [x] [`gql_compiler`](https://github.com/SethKitchen/MojoGraphQL/wiki/Compiler): a port of the apollo-compiler schema model from apollo-rs. Its validation and executable documents are not ported yet.
+- [x] [`gql_compiler`](https://github.com/SethKitchen/MojoGraphQL/wiki/Compiler): a port of apollo-compiler from apollo-rs: the schema and executable document models, the schema printer and validation, with the upstream diagnostics.
 - [x] [`gql_mcp`](https://github.com/SethKitchen/MojoGraphQL/wiki/Mcp): a port of Apollo MCP Server.
 - [x] [`gql_seamstress`](https://github.com/SethKitchen/MojoGraphQL/wiki/Seamstress): `seamstress`, a port of the MIT parts of the Rover CLI: `supergraph compose`, `subgraph introspect` and `graph introspect`.
 - [x] [Compatibility](https://github.com/SethKitchen/MojoGraphQL/wiki/Compatibility): the Apollo Federation subgraph compatibility suite, as tests of `gql_subgraph`. Every check passes, federated tracing (`ftv1`) included.
@@ -162,7 +162,7 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_router` | Done | `gql_language`, `gql_json`, `gql_http` | Hive Router `1a29df9` query planner, executor and pipeline |
 | `gql_client` | Done, except optimistic layers | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache` |
 | `gql_codegen` | Done, `operationBased` models only | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
-| `gql_compiler` | Schema model done; validation planned | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
+| `gql_compiler` | Done, except syntax error recovery | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
 | `gql_mcp` | Done | `gql_validation`, `gql_http` | Apollo MCP Server 2.0.0 |
 | `gql_seamstress` | Done, offline commands only | `gql_composition`, `gql_execution`, `gql_http` | Rover 1.0.0, MIT parts |
 
@@ -195,6 +195,10 @@ Mojo is faster than every baseline on every workload. Each package with a hot pa
 | `gql_schema` | Validate the GitHub schema SDL (graphql-js benchmark) | 3.32 ms | graphql-js, 8.01 ms | 2.4x |
 | `gql_schema` | Build a schema from a parsed AST, as graphql-js `buildASTSchema` (graphql-js benchmark) | 457 µs | graphql-js, 4.54 ms | 9.9x |
 | `gql_compiler` | Build a schema from a parsed AST, as apollo-compiler `Schema::from_ast` | 221 µs | apollo-compiler, 308 µs | 1.39x |
+| `gql_compiler` | Build the GitHub query against the GitHub schema | 56.2 µs | apollo-compiler, 85.9 µs | 1.53x |
+| `gql_compiler` | Print the GitHub schema, as apollo-compiler `Schema::to_string` | 470 µs | apollo-compiler, 780 µs | 1.66x |
+| `gql_compiler` | Validate `many_arguments` (apollo-compiler benchmark) | 1.81 ms | apollo-compiler, 4.01 ms | 2.2x |
+| `gql_compiler` | Validate `big_schema_many_fragments` (apollo-compiler benchmark) | 1.17 ms | apollo-compiler, 2.81 ms | 2.4x |
 | `gql_validation` | Validate the introspection query (graphql-js benchmark) | 40.2 µs | graphql-js, 409 µs | 10.2x |
 | `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 694 µs | apollo-compiler, 2.13 ms | 3.1x |
 | `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 418 µs | apollo-compiler, 3.03 ms | 7.2x |
