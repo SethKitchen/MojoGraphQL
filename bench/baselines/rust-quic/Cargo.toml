@@ -1,0 +1,59 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Rust QUIC baselines for gql_quic, and two HTTP/3 helper binaries for
+# the gql_http3 interop tests.
+#
+# `quic-stream` times the sans-I/O state machine of quinn-proto 0.11.19
+# (quinn-rs/quinn tag quinn-proto-0.11.19, MIT OR Apache-2.0, used under
+# MIT) through its public API: two `Endpoint`s exchange datagrams in memory,
+# with no sockets. `quic-echo` runs a stream echo over localhost UDP with
+# quinn 0.11 and tokio (MIT). The server runs on its own thread with a
+# current-thread tokio runtime; the client runs on the main thread.
+#
+# `h3-interop-server` and `h3-interop-client` use h3 0.0.8 and h3-quinn
+# 0.0.10 (MIT). They are test peers, not measurements.
+#
+# rustls 0.23 with ring (MIT OR Apache-2.0, used under MIT) does the TLS,
+# and rcgen (MIT OR Apache-2.0, used under MIT) makes the benchmark
+# certificate. bytes and http are MIT.
+
+[package]
+name = "mojographql-bench-quic-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+bytes = "1"
+futures = "0.3"
+h3 = "=0.0.8"
+h3-quinn = "=0.0.10"
+http = "1"
+quinn = { version = "=0.11.12", default-features = false, features = ["runtime-tokio", "rustls", "ring"] }
+quinn-proto = { version = "=0.11.19", default-features = false, features = ["rustls-ring"] }
+rcgen = "0.13"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+tokio = { version = "1.27", features = ["rt", "macros", "net", "time"] }
+
+[[bin]]
+name = "quic-stream"
+path = "src/bin/stream.rs"
+
+[[bin]]
+name = "quic-echo"
+path = "src/bin/echo.rs"
+
+[[bin]]
+name = "h3-interop-server"
+path = "src/bin/h3_server.rs"
+
+[[bin]]
+name = "h3-interop-client"
+path = "src/bin/h3_client.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

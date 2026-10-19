@@ -40,9 +40,19 @@ summary = "TLS 1.3 and ALPN through the system OpenSSL, loaded at run time; HTTP
 depends = ["gql_http"]
 upstream = ["RFC 8446 and RFC 7301; OpenSSL 3 (Apache-2.0) is loaded with dlopen at run time, and no OpenSSL code is ported"]
 
+[packages.gql_https2]
+summary = "HTTP/2 over TLS with ALPN h2: the TlsProtocol of gql_http2 for TlsServer, a Transport over TLS, and an HTTPS client that falls back to HTTPS/1.1"
+depends = ["gql_http", "gql_http2", "gql_tls"]
+upstream = ["RFC 9113 section 3.2 and RFC 7301; no code is ported: the package joins gql_http2 and gql_tls"]
+
+[packages.gql_quic]
+summary = "QUIC transport (RFC 9000, 9001, 9002): packets, frames, streams, flow control, loss recovery and NewReno, with the TLS handshake and the AEAD of the system OpenSSL 3.5"
+depends = ["gql_tls"]
+upstream = ["quinn-proto 0.11.19 (8192ed3) quinn-proto/src: packet.rs, frame.rs, varint.rs, transport_parameters.rs, transport_error.rs, range_set, connection (mod.rs, spaces.rs, assembler.rs, send_buffer.rs, streams, paths.rs RttEstimator), congestion/new_reno.rs, endpoint.rs, and the tests of src/tests (MIT OR Apache-2.0, used under MIT); RFC 9000, RFC 9001 and RFC 9002; the TLS and libcrypto API of OpenSSL 3.5 (Apache-2.0) is loaded with dlopen at run time, and no OpenSSL code is ported"]
+
 [packages.gql_http3]
-summary = "HTTP/3 and QPACK over QUIC from the system OpenSSL; Alt-Svc and the client fallback chain"
-depends = ["gql_http", "gql_tls"]
+summary = "HTTP/3 and QPACK over QUIC: gql_quic by default, or the QUIC stack of the system OpenSSL; Alt-Svc and the client fallback chain"
+depends = ["gql_http", "gql_tls", "gql_quic", "gql_http2", "gql_https2"]
 upstream = ["hyperium/h3 h3-v0.0.8 (22c1aa3) h3/src/qpack and h3/src/proto (MIT); RFC 9114, RFC 9204, RFC 9000 section 16 and RFC 7838; the QUIC API of OpenSSL 3.5 (Apache-2.0) is loaded with dlopen at run time, and no OpenSSL code is ported"]
 
 [packages.gql_schema]
@@ -82,9 +92,9 @@ test_depends = ["gql_server"]
 upstream = ["@apollo/subgraph 2.14.4 (b95c124) subgraph-js/src: buildSubgraphSchema.ts, printSubgraphSchema.ts, types.ts, schema-helper/buildSchemaFromSDL.ts (MIT); the Apollo Federation subgraph specification and federation/v2.x specifications; Hive Federation Composition v0.27.0 (MIT) as the reference for the federation-internals behavior"]
 
 [packages.gql_router]
-summary = "Hive Router: the query planner, operation cache, authorization and null bubbling"
+summary = "Hive Router: the query planner, the executor, the request pipeline and an HTTP server"
 depends = ["gql_language", "gql_json", "gql_http"]
-upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, executor/headers/request.rs, executor/headers/response.rs, pipeline/authorization, executor/operation_filter.rs, executor/execution/error_masking.rs, executor/execution/operation_name.rs, executor/execution/rewrites.rs, executor/response/merge.rs, executor/response/graphql_error.rs, executor/response/storage.rs, executor/response/subgraph_response.rs, and executor/execution/plan.rs (`select_fetch_variables`, `condition_node_by_variables`, `execute_plan_node`, `prepare_batch_fetch_job_state`), executor/utils/traverse.rs, `partition_batch_errors_by_alias`, `collect_batched_entities_by_alias`, and `merge_batch_alias_entities`; query_planner/consumer_schema, tests/generated.rs and apollo-router-workspace are excluded"]
+upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, consumer_schema, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, pipeline (mod.rs, parser.rs, normalize.rs, coerce_variables.rs, query_plan.rs, execution.rs, error.rs, execution_request.rs, header.rs, authorization), executor (execution, projection, variables, response, utils/traverse.rs, introspection, executors/http.rs, operation_filter.rs, and their tests); tests/generated.rs, the executor plugins, extensions, header propagation, error masking, operation name forwarding, subscriptions and apollo-router-workspace are excluded"]
 
 [packages.gql_server]
 summary = "GraphQL server: the Apollo Server request pipeline, HTTP handling and a standalone server"

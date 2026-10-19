@@ -17,6 +17,11 @@ make one kind of call fail, so that tests can reach the error paths.
 `function` looks up another function, such as the QUIC API that
 `gql_http3` uses.
 
+Loading OpenSSL ignores `SIGPIPE` in the process. The socket BIO of
+OpenSSL writes without `MSG_NOSIGNAL`, so a write to a socket that the peer
+closed would end the process. With the signal ignored, the write fails with
+`EPIPE`, and the caller closes the connection.
+
 An opaque OpenSSL object, such as `SSL_CTX *` or `SSL *`, is an `Int`
 address. A buffer is a typed `Pointer`, so that its owner stays alive for
 the call.
@@ -94,6 +99,10 @@ comptime X509_V_OK = 0
 """The certificate verified."""
 comptime OPENSSL_3 = 0x30000000
 """The version number of OpenSSL 3.0.0."""
+comptime _SIGPIPE = 13
+"""The signal of a write to a closed socket."""
+comptime _SIG_IGN = 1
+"""The handler that ignores a signal."""
 
 
 @fieldwise_init
@@ -404,6 +413,10 @@ struct OpenSsl(Copyable, Movable):
                 + hex(version),
                 0,
             )
+        # The socket BIO of OpenSSL writes without MSG_NOSIGNAL. A write to
+        # a socket that the peer closed must return EPIPE, and not end the
+        # process with SIGPIPE.
+        _ = external_call["signal", Int](Int32(_SIGPIPE), Int(_SIG_IGN))
         self._server_method = _find[Int](ssl, "TLS_server_method")
         self._client_method = _find[Int](ssl, "TLS_client_method")
         self._ctx_new = _find[Int](ssl, "SSL_CTX_new")

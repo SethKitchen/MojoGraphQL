@@ -96,14 +96,16 @@ def _has_complete_key(
     document: JsonDocument, entity: Int, type_keys: List[List[String]]
 ) -> Bool:
     """Return True if the entity has every field of one of its keys."""
-    for key_fields in type_keys:
+    var index = 0
+    while index < len(type_keys):
         var complete = True
-        for field in key_fields:
+        for field in type_keys[index]:
             if object_get(document, entity, field) == NO_NODE:
                 complete = False
                 break
         if complete:
             return True
+        index += 1
     return False
 
 
@@ -436,7 +438,9 @@ struct _Requires[
             )
             if projected:
                 first = False
-            elif first and object_start >= 0:
+            elif first:
+                # The object was opened for this field: `first` is still
+                # set, so `object_start` was set above.
                 buffer.resize(object_start, 0)
         return applied
 

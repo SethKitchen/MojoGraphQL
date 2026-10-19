@@ -318,5 +318,52 @@ def test_requires_hash_ignores_fields_outside_the_selection() raises:
     assert_true(_hash("id", "[true, false, null, 1.5]") != _hash("id", "[true]"))
 
 
+def test_project_requires_edge_values() raises:
+    # A null item of a list is left out of the list.
+    assert_equal(
+        _project("items { id }", '{"items":[{"id":1},null,{"id":2}]}'),
+        '{"items":[{"id":1},{"id":2}]}',
+    )
+    # A leaf with an object value is written whole.
+    assert_equal(
+        _project("meta", '{"meta":{"a":[1]}}'), '{"meta":{"a":[1]}}'
+    )
+    # Without `__typename`, a fragment applies, and known keys do not
+    # look the type up.
+    assert_equal(
+        _project(
+            "... on Product { upc }",
+            '{"upc":"1"}',
+            _keys("Product", ["upc"]),
+            True,
+        ),
+        '{"upc":"1"}',
+    )
+    # An escaped `__typename` is decoded to find the keys of its type.
+    assert_equal(
+        _project(
+            "__typename upc",
+            '{"__typename":"Pro\\u0064uct","upc":"1"}',
+            _keys("Product", ["upc"]),
+            True,
+        ),
+        '{"__typename":"Pro\\u0064uct","upc":"1"}',
+    )
+    # A nested object that writes nothing, after another field, is left
+    # out without undoing the parent.
+    assert_equal(
+        _project("upc nested { id }", '{"upc":"1","nested":{}}'),
+        '{"upc":"1"}',
+    )
+
+
+def test_requires_hash_looks_the_type_up_once() raises:
+    var requires = String("... on User { id } ... on User { name }")
+    assert_equal(
+        _hash(requires, '{"__typename":"User","id":"1","name":"a"}'),
+        _hash(requires, '{"__typename":"User","name":"a","id":"1"}'),
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

@@ -132,7 +132,7 @@ Then run `make bench` again, because the old results are then not comparable.
 
 ## The TLS files
 
-The files in `tls/` are the certificate and the key of the `tls/keepalive-roundtrip` workload. `bench/gql_tls/tls.mojo` reads them, and the Rust baseline in `bench/baselines/rust-tls/` includes them at build time. They are not from an upstream project.
+The files in `tls/` are the certificate and the key of the `tls/keepalive-roundtrip` and `https2/roundtrip-small-json` workloads. `bench/gql_tls/tls.mojo` and `bench/gql_https2/roundtrip.mojo` read them, and the Rust baselines in `bench/baselines/rust-tls/` include them at build time. They are not from an upstream project.
 
 - `cert.pem` is a self-signed P-256 certificate for `localhost` and `127.0.0.1`. It is a leaf certificate (`CA:FALSE`), because rustls refuses a CA certificate as the certificate of a server. It is valid until 2126.
 - `key.pem` is its private key. It protects nothing: the benchmark only.

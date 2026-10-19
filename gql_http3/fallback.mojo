@@ -11,8 +11,13 @@
    is set or the origin announced `h3` in an `Alt-Svc` field. The QUIC
    handshake has the short limit `h3_timeout_ms`, because a network that
    blocks UDP drops the packets silently.
-2. HTTPS over TCP, with TLS and ALPN `http/1.1`, for an `https` URL.
-3. Plain HTTP/1.1 over TCP, for an `http` URL.
+2. HTTP/2 over TLS, for an `https` URL: the TLS handshake offers ALPN
+   `h2` and then `http/1.1`, when `enable_h2` is set.
+3. HTTPS/1.1 over TLS, on the same connection, when the server does not
+   choose `h2`. `gql_https2` remembers the endpoint.
+4. h2c with prior knowledge, for an `http` URL, when `enable_h2c` is set.
+5. Plain HTTP/1.1 over TCP, for an `http` URL, and for a server that does
+   not answer the h2c preface.
 
 When HTTP/3 fails before a response, the client forgets the `Alt-Svc`
 entry, does not try HTTP/3 for that origin for `h3_retry_after_s`, and
@@ -32,13 +37,15 @@ from std.time import perf_counter_ns
 
 from gql_http.client import Client, ClientConfig, Response
 from gql_http.headers import Headers
-from gql_http.socket import Sys
 from gql_http.status import Method
 from gql_http.url import Url
-from gql_tls.client import HttpsClient
-from gql_tls.context import TlsContext
+from gql_http2.client import Client as H2cClient
+from gql_http2.client import ClientConfig as H2cConfig
+from gql_http2.client import Protocol as H2Version
+from gql_http2.client import Response as H2Response
 from gql_tls.error import TlsError, TlsErrorKind
 from gql_tls.openssl import OpenSsl
+from gql_https2.client import Https2Client, http1_response
 from gql_http3.alt_svc import AltSvcCache
 from gql_http3.client import H3Client
 from gql_http3.quic import Quic, QuicContext
@@ -59,6 +66,10 @@ struct Protocol(Equatable, ImplicitlyCopyable, Writable):
     """HTTP/1.1 over TLS."""
     comptime HTTP3 = Protocol(3)
     """HTTP/3 over QUIC."""
+    comptime HTTPS2 = Protocol(4)
+    """HTTP/2 over TLS, after ALPN chose `h2`."""
+    comptime H2C = Protocol(5)
+    """HTTP/2 over TCP with prior knowledge."""
 
     def is_valid(self) -> Bool:
         """Return True if the value names one of the protocols.
@@ -66,7 +77,7 @@ struct Protocol(Equatable, ImplicitlyCopyable, Writable):
         Returns:
             Whether the value is in range.
         """
-        return self.value <= 3
+        return self.value <= 5
 
     def write_to(self, mut writer: Some[Writer]):
         """Write the name of the protocol.
@@ -74,13 +85,15 @@ struct Protocol(Equatable, ImplicitlyCopyable, Writable):
         Args:
             writer: The destination.
         """
-        comptime names: Array[StaticString, 4] = [
+        comptime names: Array[StaticString, 6] = [
             "none",
             "http/1.1",
             "https/1.1",
             "h3",
+            "h2",
+            "h2c",
         ]
-        writer.write(materialize[names]()[Int(min(self.value, 3))])
+        writer.write(materialize[names]()[Int(min(self.value, 5))])
 
 
 @fieldwise_init
@@ -99,15 +112,22 @@ struct FallbackConfig(Copyable, Movable):
     """A PEM file of trusted CA certificates; empty for the system store."""
     var verify: Bool
     """Whether to verify servers. Turn it off only for tests."""
+    var enable_h2: Bool
+    """Whether the TLS handshake offers ALPN `h2` before `http/1.1`."""
+    var enable_h2c: Bool
+    """Whether an `http` URL gets h2c with prior knowledge first."""
 
     def __init__(out self):
-        """Make the default: HTTP/3 only after `Alt-Svc`, 300 ms to try."""
+        """Make the default: HTTP/3 only after `Alt-Svc`, 300 ms to try,
+        `h2` over TLS, and no h2c."""
         self.client = ClientConfig()
         self.enable_h3 = False
         self.h3_timeout_ms = 300
         self.h3_retry_after_s = 300
         self.ca_file = String()
         self.verify = True
+        self.enable_h2 = True
+        self.enable_h2c = False
 
 
 @fieldwise_init
@@ -122,7 +142,8 @@ def _now_s() -> Int:
 
 
 struct FallbackClient(Movable):
-    """A client that tries HTTP/3, then HTTPS, then plain HTTP/1.1."""
+    """A client that tries HTTP/3, then HTTP/2 or HTTPS/1.1 over TLS, then
+    h2c or plain HTTP/1.1."""
 
     var config: FallbackConfig
     """When to try HTTP/3, and the settings of every client."""
@@ -132,7 +153,8 @@ struct FallbackClient(Movable):
     """The protocol of the last response."""
     var http: Client
     """The plain HTTP/1.1 client."""
-    var _https: List[HttpsClient]
+    var _https: List[Https2Client]
+    var _h2c: List[H2cClient]
     var _h3: List[H3Client]
     var _broken: List[_Broken]
 
@@ -146,7 +168,8 @@ struct FallbackClient(Movable):
         self.alt_svc = AltSvcCache()
         self.protocol = Protocol.NONE
         self.http = Client(config.client)
-        self._https = List[HttpsClient]()
+        self._https = List[Https2Client]()
+        self._h2c = List[H2cClient]()
         self._h3 = List[H3Client]()
         self._broken = List[_Broken]()
 
@@ -237,17 +260,62 @@ struct FallbackClient(Movable):
         headers: Headers,
         body: Span[UInt8, _],
     ) raises TlsError -> Response:
-        """Send a request over TLS with HTTP/1.1."""
+        """Send a request over TLS with HTTP/2, or HTTP/1.1 when the server
+        does not choose `h2`."""
         if len(self._https) == 0:
-            var protocols = List[String]()
-            protocols.append("http/1.1")
-            var context = TlsContext.client(
-                OpenSsl(), protocols^, self.config.ca_file, self.config.verify
+            self._https.append(
+                Https2Client.create(
+                    OpenSsl(),
+                    self.config.ca_file,
+                    self.config.verify,
+                    self.config.enable_h2,
+                    self.config.client,
+                )
             )
-            self._https.append(HttpsClient(context^, self.config.client))
         var endpoint = self._https[0].endpoint(url)
         var target = endpoint.target.copy()
-        return self._https[0].send(endpoint, method, target, headers, body)
+        var response = self._https[0].send(
+            endpoint, method, target, headers, body
+        )
+        var h2 = response.protocol == H2Version.HTTP_2
+        self.protocol = Protocol.HTTPS2 if h2 else Protocol.HTTPS1
+        return http1_response(response, method, self.config.client)
+
+    def _send_http(
+        mut self,
+        method: Method,
+        url: StringSlice,
+        headers: Headers,
+        body: Span[UInt8, _],
+    ) raises TlsError -> Response:
+        """Send a request over TCP: h2c first when `enable_h2c` is set."""
+        if not self.config.enable_h2c:
+            try:
+                var endpoint = self.http.endpoint(url)
+                var target = endpoint.target.copy()
+                var response = self.http.send(
+                    endpoint, method, target, headers, body
+                )
+                self.protocol = Protocol.HTTP1
+                return response^
+            except e:
+                raise TlsError.from_http(e)
+        if len(self._h2c) == 0:
+            var settings = H2cConfig()
+            settings.http = self.config.client.copy()
+            self._h2c.append(H2cClient(settings))
+        var response: H2Response
+        try:
+            var endpoint = self._h2c[0].endpoint(url)
+            var target = endpoint.target.copy()
+            response = self._h2c[0].send(
+                endpoint, method, target, headers, body
+            )
+        except e:
+            raise TlsError.from_http(e)
+        var h2 = response.protocol == H2Version.HTTP_2
+        self.protocol = Protocol.H2C if h2 else Protocol.HTTP1
+        return http1_response(response, method, self.config.client)
 
     def send(
         mut self,
@@ -278,16 +346,7 @@ struct FallbackClient(Movable):
         except e:
             raise TlsError.from_http(e)
         if parsed.scheme == "http":
-            try:
-                var endpoint = self.http.endpoint(url)
-                var target = endpoint.target.copy()
-                var response = self.http.send(
-                    endpoint, method, target, headers, body
-                )
-                self.protocol = Protocol.HTTP1
-                return response^
-            except e:
-                raise TlsError.from_http(e)
+            return self._send_http(method, url, headers, body)
         if parsed.scheme != "https":
             raise TlsError(
                 TlsErrorKind.USAGE, "the URL is not http or https", 0
@@ -313,7 +372,6 @@ struct FallbackClient(Movable):
                         raise e^
                     self._mark_broken(origin, now)
         var response = self._send_https(method, url, headers, body)
-        self.protocol = Protocol.HTTPS1
         var announced = response.header("alt-svc")
         if announced:
             self.alt_svc.remember(origin, announced.value(), now)

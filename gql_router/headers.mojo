@@ -105,9 +105,8 @@ struct HeaderMap:
             The header text, in insertion order.
         """
         var text = String("")
+        # `insert` and `append_value` add a name and a value together.
         var limit = len(self._names)
-        if len(self._values) < limit:
-            limit = len(self._values)
         for index in range(limit):
             if index > 0:
                 text += " | "

@@ -17,7 +17,11 @@ appear once; other members are ignored. Missing `data` is `null`. A `null`
 `import_document`, so the data is never copied again. The text of a JSON
 syntax error is the `gql_json` text, not the `sonic_rs` text.
 `extensions` and custom scalar paths are not read: every value keeps its
-source text anyway.
+source text anyway. In an error object, a `locations`, `path` or
+`extensions` member of the wrong type is ignored, and a negative path index
+is kept; upstream rejects the body. In error extensions, a repeated or
+non-string `code`, `service` or `affectedPath` is not rejected: a
+non-string one is kept as an extra extension.
 """
 
 from gql_json.parser import parse_bytes

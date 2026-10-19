@@ -1,11 +1,12 @@
 # Copyright (c) 2026 Seth Kitchen, PE
 # SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
-# The Rust TLS baseline. `hyper-rustls` runs a hyper 1 server and a hyper 1
+# The Rust TLS baselines. `hyper-rustls` runs a hyper 1 server and a hyper 1
 # client over rustls (tokio-rustls), each on a tokio runtime with one
-# thread of its own: the TLS stack of Hive Router. hyper, hyper-util,
-# tokio and http-body-util are MIT; rustls, tokio-rustls and
-# rustls-pki-types are MIT OR Apache-2.0 OR ISC, used under MIT.
+# thread of its own: the TLS stack of Hive Router. `hyper-rustls-h2` runs
+# the same pair with HTTP/2 (h2) after ALPN `h2`, for gql_https2. hyper,
+# hyper-util, h2, tokio and http-body-util are MIT; rustls, tokio-rustls
+# and rustls-pki-types are MIT OR Apache-2.0 OR ISC, used under MIT.
 
 [package]
 name = "mojographql-bench-tls-rust"
@@ -15,7 +16,7 @@ publish = false
 license = "PolyForm-Noncommercial-1.0.0"
 
 [dependencies]
-hyper = { version = "1", features = ["server", "client", "http1"] }
+hyper = { version = "1", features = ["server", "client", "http1", "http2"] }
 hyper-util = { version = "0.1", features = ["tokio"] }
 http-body-util = "0.1"
 bytes = "1"
@@ -26,6 +27,10 @@ rustls = "0.23"
 [[bin]]
 name = "hyper-rustls"
 path = "src/main.rs"
+
+[[bin]]
+name = "hyper-rustls-h2"
+path = "src/h2.rs"
 
 [profile.release]
 opt-level = 3

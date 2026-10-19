@@ -1,0 +1,5 @@
+# Keep LF line endings in every checkout. Mojo docstrings and shell
+# scripts break on CRLF.
+* text=auto eol=lf
+*.png binary
+*.ppm binary

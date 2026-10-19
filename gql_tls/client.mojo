@@ -11,6 +11,10 @@
 HTTP client. Its context offers ALPN `http/1.1` only, because it speaks no
 HTTP/2: `gql_http3.fallback` chooses HTTP/3, HTTP/2 or HTTP/1.1.
 
+`open_tls` connects and runs the handshake for another client, such as the
+HTTP/2 client of `gql_https2`. `HttpsClient.adopt` takes a connection on
+which ALPN did not choose `h2` into the pool.
+
 The client verifies the certificate and the host name of the server
 against the system CA store, unless its context says otherwise.
 
@@ -91,6 +95,78 @@ struct _IdleTls(Movable):
 def _now_ns() -> Int:
     """Return a monotonic time in nanoseconds."""
     return Int(perf_counter_ns())
+
+
+def _remaining_ms(deadline: Int) raises TlsError -> Int:
+    """Return the time to the deadline, or raise `TIMEOUT`."""
+    var remaining = (deadline - _now_ns() + 999_999) // 1_000_000
+    if remaining <= 0:
+        raise TlsError(TlsErrorKind.TIMEOUT, "the request timed out", 0)
+    return remaining
+
+
+def open_tls(
+    mut sys: Sys,
+    context: TlsContext,
+    endpoint: HttpsEndpoint,
+    deadline: Int,
+    connect_timeout_ms: Int,
+) raises TlsError -> TlsStream:
+    """Connect a non-blocking socket to an endpoint and run the handshake.
+
+    Args:
+        sys: The system calls.
+        context: A client context; its ALPN protocols go in the handshake.
+        endpoint: Where to connect, and the name for SNI and verification.
+        deadline: The deadline of the request, from `perf_counter_ns`.
+        connect_timeout_ms: The longest connect and handshake.
+
+    Returns:
+        The stream after its handshake. `protocol` is the protocol that
+        ALPN chose. The caller closes its socket.
+
+    Raises:
+        TlsError: `OS` when no socket opens; `CONNECT` when the connect
+            fails; `TIMEOUT` at the deadline; `HANDSHAKE`, `VERIFY` or
+            `CLOSED` when the handshake fails. The socket is closed.
+    """
+    var fd = sys.socket()
+    if fd < 0:
+        raise TlsError.os("socket", -fd)
+    _ = sys.set_no_delay(fd)
+    var limit = min(deadline, _now_ns() + connect_timeout_ms * 1_000_000)
+    var rc = sys.connect(fd, endpoint.address, endpoint.port)
+    if rc == -EINPROGRESS:
+        try:
+            wait_for(sys, fd, IoWant.WRITE, _remaining_ms(limit))
+        except e:
+            sys.close(fd)
+            raise e^
+        rc = -sys.socket_error(fd)
+    if rc != 0:
+        sys.close(fd)
+        raise TlsError(
+            TlsErrorKind.CONNECT,
+            "cannot connect to " + String(endpoint) + ": errno " + String(-rc),
+            -rc,
+        )
+    var stream: TlsStream
+    try:
+        stream = TlsStream.connect(context, fd, endpoint.host)
+    except e:
+        sys.close(fd)
+        raise e^
+    try:
+        while True:
+            var want = stream.handshake()
+            if want == IoWant.NOTHING:
+                break
+            wait_for(sys, fd, want, _remaining_ms(limit))
+    except e:
+        # The stream is freed after its last use, before the close.
+        sys.close(fd)
+        raise e^
+    return stream^
 
 
 def _to_http(error: TlsError) -> HttpError:
@@ -369,12 +445,24 @@ struct HttpsClient(Movable, ResponseSource):
             index -= 1
         return False
 
+    def adopt(mut self, endpoint: HttpsEndpoint, var stream: TlsStream):
+        """Put a TLS connection that is open already into the pool.
+
+        The next request to the endpoint uses it. `gql_https2` gives the
+        client a connection on which ALPN did not choose `h2`.
+
+        Args:
+            endpoint: The endpoint of the connection.
+            stream: The stream, after its handshake; the client closes its
+                socket.
+        """
+        self._idle.append(
+            _IdleTls(endpoint.address.value, endpoint.port, stream^)
+        )
+
     def _remaining_ms(self, deadline: Int) raises TlsError -> Int:
         """Return the time to the deadline, or raise `TIMEOUT`."""
-        var remaining = (deadline - _now_ns() + 999_999) // 1_000_000
-        if remaining <= 0:
-            raise TlsError(TlsErrorKind.TIMEOUT, "the request timed out", 0)
-        return remaining
+        return _remaining_ms(deadline)
 
     def _drop(mut self):
         """Close the current connection; it is always an open one."""
@@ -386,45 +474,13 @@ struct HttpsClient(Movable, ResponseSource):
         mut self, endpoint: HttpsEndpoint, deadline: Int
     ) raises TlsError:
         """Open a new connection, run the handshake, and make it current."""
-        var fd = self.sys.socket()
-        if fd < 0:
-            raise TlsError.os("socket", -fd)
-        _ = self.sys.set_no_delay(fd)
-        var limit = min(
-            deadline, _now_ns() + self.config.connect_timeout_ms * 1_000_000
+        self._stream = open_tls(
+            self.sys,
+            self.context,
+            endpoint,
+            deadline,
+            self.config.connect_timeout_ms,
         )
-        var rc = self.sys.connect(fd, endpoint.address, endpoint.port)
-        if rc == -EINPROGRESS:
-            try:
-                wait_for(self.sys, fd, IoWant.WRITE, self._remaining_ms(limit))
-            except e:
-                self.sys.close(fd)
-                raise e^
-            rc = -self.sys.socket_error(fd)
-        if rc != 0:
-            self.sys.close(fd)
-            raise TlsError(
-                TlsErrorKind.CONNECT,
-                "cannot connect to "
-                + String(endpoint)
-                + ": errno "
-                + String(-rc),
-                -rc,
-            )
-        try:
-            self._stream = TlsStream.connect(self.context, fd, endpoint.host)
-        except e:
-            self.sys.close(fd)
-            raise e^
-        try:
-            while True:
-                var want = self._stream.handshake()
-                if want == IoWant.NOTHING:
-                    break
-                wait_for(self.sys, fd, want, self._remaining_ms(limit))
-        except e:
-            self._drop()
-            raise e^
 
     def _exchange(
         mut self,

@@ -32,6 +32,7 @@ from std.time import perf_counter_ns
 from gql_json.value import NO_NODE, JsonDocument
 from gql_language.ast import Document
 from gql_language.parser import parse
+from gql_router.ast import NONE
 from gql_router.cache import CacheLimits, OperationCache, default_cache_limits
 from gql_router.consumer_schema import ConsumerSchema
 from gql_router.entity_keys import EntityKeys
@@ -204,10 +205,13 @@ struct RouterSchema(Movable):
         self.keys = EntityKeys.new(self.planner.store, self.planner.state)
         self.subgraph_names = List[String]()
         self.subgraph_urls = List[String]()
-        for name in self.planner.state.subgraph_names:
+        var index = 0
+        while index < len(self.planner.state.subgraph_names):
+            var name = self.planner.state.subgraph_names[index]
             self.subgraph_names.append(String(self.planner.store.name(name)))
             var url = self.planner.state.subgraph_endpoints.get(name)
             self.subgraph_urls.append(url.value() if url else String())
+            index += 1
 
 
 struct CachedOperation(Movable):
@@ -479,6 +483,11 @@ struct Router[T: SubgraphTransport](Movable):
             )
         except error:
             raise client_error_prefer_ok(String(error), "BAD_USER_INPUT")
+        var downstream_set = self.slots[slot].downstream.selection_set
+        var empty = self.schema.planner.store.items[downstream_set].first == NONE
+        if not self.slots[slot].planned and empty:
+            # Nothing to plan, as upstream `EMPTY_QUERY_PLAN`.
+            self.slots[slot].planned = True
         if not self.slots[slot].planned:
             var downstream = self.slots[slot].downstream.copy()
             try:

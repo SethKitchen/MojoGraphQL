@@ -390,11 +390,15 @@ def _root_name(
     for definition in document.definitions():
         var node_kind = document.kind(definition)
         if node_kind == Kind.SCHEMA_DEFINITION:
-            for operation in document.children(definition, Role.OPERATION_TYPE):
+            var operations = document.children(definition, Role.OPERATION_TYPE)
+            var index = 0
+            while index < len(operations):
+                var operation = operations[index]
                 if document.operation(operation) == kind:
                     return _named_type(
                         document, document.child(operation, Role.TYPE)
                     )
+                index += 1
         elif (
             node_kind == Kind.OBJECT_TYPE_DEFINITION
             and fallback.byte_length() == 0
@@ -415,8 +419,11 @@ def schema_metadata(document: Document) -> SchemaMetadata:
         The metadata.
     """
     var out = SchemaMetadata()
-    for builtin in ["Boolean", "Float", "Int", "ID", "String"]:
-        out.scalar_types.add(builtin)
+    var builtins: List[String] = ["Boolean", "Float", "Int", "ID", "String"]
+    var builtin = 0
+    while builtin < len(builtins):
+        out.scalar_types.add(builtins[builtin])
+        builtin += 1
     var first = _FirstPossible()
     for definition in document.definitions():
         var kind = document.kind(definition)

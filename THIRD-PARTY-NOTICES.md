@@ -42,7 +42,8 @@ public C API of OpenSSL: TLS, ALPN, and the QUIC API of OpenSSL 3.5.
 OpenSSL is Apache-2.0 licensed. MojoGraphQL ports no OpenSSL code, copies
 none of its headers, and does not ship OpenSSL; the constants it uses are
 the values of the public OpenSSL headers. A program that does not import
-`gql_tls` or `gql_http3` never loads OpenSSL.
+`gql_tls`, or a package that depends on it, such as `gql_https2` or
+`gql_http3`, never loads OpenSSL.
 
 ## Exclusions
 
@@ -100,7 +101,17 @@ the values of the public OpenSSL headers. A program that does not import
   `planner/`, `state/` and `utils/`), and its tests in `tests/` with the
   supergraph fixtures of `bin/router/fixture/` and `bench/`; `cache_state.rs`
   and `config/cache.rs`; `http_utils/headers.rs`; `pipeline/authorization/`;
-  and `executor/operation_filter.rs`. `query_planner/consumer_schema/` is
+  and `executor/operation_filter.rs`. It also ports the executor of
+  `bin/router/src/executor/` (`execution/`, `projection/`, `variables/`,
+  `response/`, `utils/traverse.rs`, `introspection/` and
+  `executors/http.rs`) with the tests of `variables/tests/`,
+  `projection/`, `response/`, `utils/traverse.rs` and `execution/plan.rs`,
+  `query_planner/consumer_schema/`, and these files of
+  `bin/router/src/pipeline/`: `mod.rs`, `parser.rs`, `normalize.rs`,
+  `coerce_variables.rs`, `query_plan.rs`, `execution.rs`, `error.rs`,
+  `execution_request.rs` and `header.rs`. The executor plugins,
+  extensions, header propagation, error masking, operation name
+  forwarding, subscriptions, SSE, WebSocket and multipart transports are
   not ported. Of the planner tests, `generated.rs`
   is excluded, because it needs the generator of `bin/differential`, and
   `preparing_a_plan_preserves_its_wire_form` of `tests/mod.rs` is excluded,
@@ -191,8 +202,9 @@ the values of the public OpenSSL headers. A program that does not import
   Apache-2.0 files listed in [Exclusions](#exclusions).
 - `bench/baselines/rust-tls/` runs hyper `1` (MIT) with tokio-rustls `0.26`
   and rustls `0.23` (the MIT arm of MIT OR Apache-2.0) over TLS, with the
-  test certificate of `bench/fixtures/tls/`. It runs only as the benchmark
-  baseline of `gql_tls`.
+  test certificate of `bench/fixtures/tls/`. Its `hyper-rustls-h2` program
+  also runs h2 `0.4.20` (MIT) after ALPN `h2`. It runs only as the benchmark
+  baseline of `gql_tls` and `gql_https2`.
 - `bench/baselines/rust-http3/` runs the QPACK coder of hyperium/h3
   `h3-v0.0.8` (MIT), which `build.sh` fetches at the pinned revision, and an
   HTTP/3 round trip with the published crates h3 `0.0.8` and h3-quinn

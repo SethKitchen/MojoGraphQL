@@ -217,7 +217,7 @@ def kind(
 
 def test_errors_and_kinds() raises:
     assert_true(Protocol.HTTP3.is_valid())
-    assert_false(Protocol(4).is_valid())
+    assert_false(Protocol(6).is_valid())
     assert_equal(String(Protocol.HTTPS1), "https/1.1")
     var client = FallbackClient(fallback_config())
     assert_equal(kind(client, "nonsense"), TlsErrorKind.PROTOCOL)

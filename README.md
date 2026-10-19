@@ -12,7 +12,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project is new. Today it has sixteen finished packages, and more are in progress.
+The project is new. Today it has seventeen finished packages, and more are in progress.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
@@ -115,7 +115,8 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_http`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http): an HTTP/1.1 server, client and parser, for GraphQL over HTTP.
 - [x] [`gql_http2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http2): HTTP/2 and HPACK in Mojo. The server detects the HTTP/2 preface and falls back to HTTP/1.1.
 - [x] [`gql_tls`](https://github.com/SethKitchen/MojoGraphQL/wiki/Tls): TLS 1.3 and ALPN through the system OpenSSL, loaded at run time. Only users who pick it need OpenSSL.
-- [x] [`gql_http3`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3): HTTP/3 and QPACK over QUIC, with `Alt-Svc` and a client that falls back to HTTPS and HTTP/1.1.
+- [x] [`gql_https2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Https2): HTTP/2 over TLS. ALPN picks `h2`, and the same connection falls back to HTTPS/1.1.
+- [x] [`gql_http3`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3): HTTP/3 and QPACK over QUIC, with `Alt-Svc`. Its client falls back in this order: h3, h2 over TLS, HTTPS/1.1, h2c, HTTP/1.1.
 - [x] [`gql_server`](https://github.com/SethKitchen/MojoGraphQL/wiki/Server): a port of Apollo Server, with the request pipeline, plugins, batching, persisted queries and a standalone server.
 - [x] [`gql_subgraph`](https://github.com/SethKitchen/MojoGraphQL/wiki/Subgraph): a port of `@apollo/subgraph` and the Apollo Federation subgraph specification.
 - [x] [`gql_composition`](https://github.com/SethKitchen/MojoGraphQL/wiki/Composition): a port of Hive Federation Composition: subgraph validation, supergraph composition, satisfiability and contracts, for federation v1 and v2.0 to v2.15.
@@ -150,7 +151,8 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_http` | Done | nothing | RFC 9110, RFC 9112; GraphQL over HTTP |
 | `gql_http2` | Done | `gql_http` | hyperium/h2 0.4.20; RFC 9113, RFC 7541 |
 | `gql_tls` | Done | `gql_http`; system OpenSSL 3 at run time | RFC 8446, RFC 7301 |
-| `gql_http3` | Done; own QUIC transport in progress | `gql_tls`; OpenSSL 3.5 QUIC at run time | hyperium/h3; RFC 9114, RFC 9204 |
+| `gql_https2` | Done | `gql_tls`, `gql_http2` | RFC 9113 over TLS; RFC 7301 |
+| `gql_http3` | Done; own QUIC transport in progress | `gql_https2`; OpenSSL 3.5 QUIC at run time | hyperium/h3; RFC 9114, RFC 9204 |
 | `gql_server` | Done | `gql_validation`, `gql_execution`, `gql_http` | Apollo Server 5.5.1 |
 | `gql_subgraph` | Done | `gql_execution` | `@apollo/subgraph` 2.14.4 |
 | `gql_composition` | Done | `gql_language` | Hive Federation Composition v0.27.0 |
@@ -180,6 +182,7 @@ Mojo is faster than every baseline on every workload except one: building a sche
 | `gql_http2` | HPACK decode the same block | 1.02 µs | h2, 2.03 µs | 1.98x |
 | `gql_http2` | h2c round trip with a small JSON body | 69.4 µs | hyper and h2, 78.7 µs | 1.13x |
 | `gql_tls` | TLS keep-alive request round trip | 82.5 µs | hyper and rustls, 91.5 µs | 1.11x |
+| `gql_https2` | h2 over TLS round trip with a small JSON body | 92.0 µs | hyper, h2 and rustls, 113 µs | 1.23x |
 | `gql_http3` | QPACK encode and decode of request header blocks | [Http3](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3) | h3 | 2.6x to 3.1x |
 | `gql_http3` | **HTTP/3 round trip (OpenSSL QUIC)** | **138 µs** | **h3 and quinn, 119 µs** | **0.86x (slower)** |
 | `gql_schema` | Parse and build the GitHub schema | 1.07 ms | apollo-compiler, 7.95 ms | 7.4x |

@@ -8,6 +8,7 @@ pool, and when a failed request goes again on a new connection. There is
 no upstream suite; the cases follow RFC 9112 and RFC 9110 section 9.2.2."""
 
 from std.testing import TestSuite, assert_equal, assert_true
+from std.time import perf_counter_ns
 
 from _serve import BIG, start_server
 from _tls import client_context
@@ -15,7 +16,7 @@ from gql_http.client import ClientConfig
 from gql_http.headers import Headers
 from gql_http.socket import Faults, SysCall
 from gql_http.status import Method
-from gql_tls.client import HttpsClient
+from gql_tls.client import HttpsClient, open_tls
 from gql_tls.error import TlsErrorKind
 from gql_tls.openssl import (
     SSL_ERROR_SYSCALL,
@@ -174,6 +175,22 @@ def test_retries() raises:
         TlsCall.READ, 2, 1, SSL_ERROR_SYSCALL
     )
     assert_equal(get_kind(c, base + "/big"), TlsErrorKind.CLOSED)
+    child.stop()
+
+
+def test_open_tls_and_adopt() raises:
+    var child = start_server()
+    var c = client()
+    var endpoint = c.endpoint("https://localhost:" + String(child.port) + "/o")
+    var deadline = Int(perf_counter_ns()) + 3_000_000_000
+    var stream = open_tls(c.sys, c.context, endpoint, deadline, 3000)
+    assert_equal(stream.protocol, "http/1.1")
+    # The pool takes the connection, and the next request uses it.
+    c.adopt(endpoint, stream^)
+    assert_equal(c.idle_connections(), 1)
+    var r = c.send(endpoint, Method.GET, "/o", Headers(), List[UInt8]())
+    assert_equal(r.text(), "/o:")
+    assert_equal(c.idle_connections(), 1)
     child.stop()
 
 

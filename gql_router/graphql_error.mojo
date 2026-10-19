@@ -127,36 +127,6 @@ def error_with_code(message: String, code: String) -> GraphQLError:
     return error^
 
 
-def error_with_extensions(
-    message: String,
-    code: String,
-    service: String,
-    affected_path: String,
-    var extra_names: List[String],
-    var extra_values: List[String],
-) -> GraphQLError:
-    """Return an error with extensions.
-
-    Args:
-        message: The error message.
-        code: The `code` extension. Empty when it is absent.
-        service: The `service` extension. Empty when it is absent.
-        affected_path: The `affectedPath` extension. Empty when it is absent.
-        extra_names: Other extension names.
-        extra_values: Other extension values, as JSON text.
-
-    Returns:
-        The error.
-    """
-    var error = graphql_error(message)
-    error.code = code
-    error.service = service
-    error.affected_path = affected_path
-    error.extra_names = extra_names^
-    error.extra_values = extra_values^
-    return error^
-
-
 def http_status_error(status: Int, service: String) -> GraphQLError:
     """Return the error for a subgraph HTTP status that is not successful.
 
@@ -230,8 +200,7 @@ def set_extension(mut error: GraphQLError, name: String, value: String):
     """
     for index in range(len(error.extra_names)):
         if error.extra_names[index] == name:
-            if index < len(error.extra_values):
-                error.extra_values[index] = value
+            error.extra_values[index] = value
             return
     error.extra_names.append(name)
     error.extra_values.append(value)
@@ -247,31 +216,11 @@ def extension_value(error: GraphQLError, name: String) -> String:
     Returns:
         The JSON text. Empty when the name is absent.
     """
-    var limit = len(error.extra_names)
-    if len(error.extra_values) < limit:
-        limit = len(error.extra_values)
-    for index in range(limit):
+    # The names and the values are added together.
+    for index in range(len(error.extra_names)):
         if error.extra_names[index] == name:
             return String(error.extra_values[index])
     return String("")
-
-
-def extensions_empty(error: GraphQLError) -> Bool:
-    """Return True when the error has no extensions.
-
-    Args:
-        error: The error.
-
-    Returns:
-        Whether `code`, `service`, `affectedPath`, and the extra keys are
-        all absent.
-    """
-    return (
-        error.code.byte_length() == 0
-        and error.service.byte_length() == 0
-        and error.affected_path.byte_length() == 0
-        and len(error.extra_names) == 0
-    )
 
 
 def field_segment(name: String) -> ErrorSegment:
@@ -341,10 +290,8 @@ def normalize_entity_error(
         return matched^
     var rest = _rest(error.path)
     var any = False
-    var limit = len(indexes)
-    if len(paths) < limit:
-        limit = len(paths)
-    for index in range(limit):
+    # `indexes` and `paths` are parallel.
+    for index in range(len(indexes)):
         if indexes[index] != found:
             continue
         any = True
@@ -404,8 +351,6 @@ def error_json(error: GraphQLError) -> String:
     var out = String('{"message":')
     out += _json_string(error.message)
     var locations = len(error.lines)
-    if len(error.columns) < locations:
-        locations = len(error.columns)
     if locations > 0:
         out += ',"locations":['
         for index in range(locations):
@@ -420,7 +365,7 @@ def error_json(error: GraphQLError) -> String:
     if error.has_path:
         out += ',"path":'
         out += _path_json(error.path)
-    if not extensions_empty(error):
+    if not _extensions_empty(error):
         out += ',"extensions":'
         out += _extensions_json(error)
     out += "}"
@@ -458,8 +403,6 @@ def _extensions_json(error: GraphQLError) -> String:
     for place in range(len(order)):
         var index = order[place]
         if _reserved(error.extra_names[index]):
-            continue
-        if index >= len(error.extra_values):
             continue
         if wrote:
             out += ","
@@ -598,3 +541,13 @@ def _reason(status: Int) -> String:
     if status == 504:
         return String("Gateway Timeout")
     return String("")
+
+
+def _extensions_empty(error: GraphQLError) -> Bool:
+    """Return True when the error has no extensions."""
+    return (
+        error.code.byte_length() == 0
+        and error.service.byte_length() == 0
+        and error.affected_path.byte_length() == 0
+        and len(error.extra_names) == 0
+    )

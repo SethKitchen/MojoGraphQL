@@ -27,17 +27,9 @@ The other modules port other parts of Hive Router:
 - `gql_router.cache` is the operation cache of `cache_state.rs` and
   `config/cache.rs`.
 - `gql_router.headers` appends `Vary` tokens, as `http_utils/headers.rs`.
-- `gql_router.header_rules` copies, inserts, and removes subgraph request
-  headers, as `executor/headers/request.rs`.
-- `gql_router.response_headers` propagates subgraph response headers, as
-  `executor/headers/response.rs`.
 - `gql_router.authorization`, `gql_router.policies`,
   `gql_router.auth_filter` and `gql_router.null_bubble` port
   `pipeline/authorization/` and `executor/operation_filter.rs`.
-- `gql_router.error_mask` masks a subgraph error, as
-  `executor/execution/error_masking.rs`.
-- `gql_router.operation_name` builds the operation name sent to a
-  subgraph, as `executor/execution/operation_name.rs`.
 - `gql_router.graphql_error` is a subgraph GraphQL error, as
   `executor/response/graphql_error.rs`. `handle_subgraph_errors` attaches
   those errors, as `ExecutionContext::handle_errors`.

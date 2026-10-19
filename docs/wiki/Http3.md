@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Http3
 
-`gql_http3` is HTTP/3 (RFC 9114) and QPACK (RFC 9204) in Mojo, over the QUIC API of the system OpenSSL 3.5. It serves the `Handler` of `gql_http` on UDP. It has a client, `Alt-Svc` support (RFC 7838), and a client that falls back to TCP. It depends on `gql_http` and `gql_tls`, and it runs on Linux only.
+`gql_http3` is HTTP/3 (RFC 9114) and QPACK (RFC 9204) in Mojo, over the QUIC API of the system OpenSSL 3.5. It serves the `Handler` of `gql_http` on UDP. It has a client, `Alt-Svc` support (RFC 7838), and a client that falls back to TCP. It depends on `gql_http`, `gql_tls`, `gql_quic`, `gql_http2` and `gql_https2`, and it runs on Linux only. The fallback chain needs the HTTP/2 packages.
 
 | Module | Contents |
 | --- | --- |
@@ -84,11 +84,15 @@ Each request has the deadline `ClientConfig.timeout_ms`. The handshake also has 
 
 ## Fallback chain
 
-`FallbackClient` sends each request with the first protocol that works:
+`FallbackClient` sends each request with the first protocol that works. The chain is h3, then h2 over TLS, then HTTPS/1.1, then h2c, then HTTP/1.1:
 
-1. HTTP/3 over QUIC, for an `https` URL. The client tries it when `enable_h3` is set, or when the origin announced `h3` in an `Alt-Svc` field. The QUIC handshake has the short limit `h3_timeout_ms`.
-2. HTTPS over TCP, with TLS and the ALPN protocol `http/1.1`, for an `https` URL.
-3. HTTP/1.1 over TCP, for an `http` URL.
+1. **h3:** HTTP/3 over QUIC, for an `https` URL. The client tries it when `enable_h3` is set, or when the origin announced `h3` in an `Alt-Svc` field. The QUIC handshake has the short limit `h3_timeout_ms`.
+2. **h2:** HTTP/2 over TLS, for an `https` URL. The TLS handshake offers the ALPN protocols `h2` and `http/1.1` when `enable_h2` is set. The server chooses one.
+3. **https/1.1:** HTTPS/1.1 on the same TLS connection, when the server does not choose `h2`. The client remembers the endpoint, and its later requests use HTTPS/1.1 at once.
+4. **h2c:** HTTP/2 over TCP with prior knowledge, for an `http` URL, when `enable_h2c` is set.
+5. **http/1.1:** HTTP/1.1 over TCP, for an `http` URL. With `enable_h2c`, this step is for a server that does not answer the h2c preface.
+
+Steps 2 and 3 are one TLS connection, through the `Https2Client` of [Https2](Https2). Step 4 uses the `Client` of [Http2](Http2#client), which does step 5 for a server without HTTP/2.
 
 When HTTP/3 fails before a response, the client forgets the `Alt-Svc` entry of the origin. It uses TCP for that origin during `h3_retry_after_s`, and it sends the request again over TCP. An `Alt-Svc` field in a TCP response adds the origin to the cache, so that later requests use HTTP/3. `protocol` tells how the last response came.
 
@@ -100,10 +104,21 @@ When HTTP/3 fails before a response, the client forgets the `Alt-Svc` entry of t
 | `h3_retry_after_s` | `300` | How long the client uses TCP after HTTP/3 failed for an origin |
 | `ca_file` | empty | A PEM file of trusted CA certificates; empty for the system store |
 | `verify` | `True` | Whether to verify servers; turn it off only in tests |
+| `enable_h2` | `True` | Whether the TLS handshake offers `h2` before `http/1.1` |
+| `enable_h2c` | `False` | Whether an `http` URL gets h2c with prior knowledge first |
 
 A network that blocks UDP drops the QUIC packets, so the handshake times out after `h3_timeout_ms`. A closed UDP port gives an ICMP error, and the client falls back at once. The client loads OpenSSL only for the first `https` request.
 
-HTTP/2 over TLS is not in the chain yet. It needs the client of `gql_http2`, and the package that joins TLS and HTTP/2.
+| `Protocol` | Meaning |
+| --- | --- |
+| `NONE` | No request yet |
+| `HTTP3` | HTTP/3 over QUIC |
+| `HTTPS2` | HTTP/2 over TLS, after ALPN chose `h2` |
+| `HTTPS1` | HTTP/1.1 over TLS |
+| `H2C` | HTTP/2 over TCP with prior knowledge |
+| `HTTP1` | HTTP/1.1 over TCP |
+
+h2c is off by default, because a server without HTTP/2 must first refuse the preface. That costs one more connection on the first request.
 
 ## Alt-Svc
 

@@ -161,5 +161,91 @@ def test_subgraph_errors_gain_a_service_and_can_expand() raises:
     assert_equal(len(quiet), 0)
 
 
+def test_status_texts() raises:
+    var expected: List[String] = [
+        "400 Bad Request",
+        "401 Unauthorized",
+        "403 Forbidden",
+        "404 Not Found",
+        "500 Internal Server Error",
+        "502 Bad Gateway",
+        "503 Service Unavailable",
+        "504 Gateway Timeout",
+        "418",
+    ]
+    var codes: List[Int] = [400, 401, 403, 404, 500, 502, 503, 504, 418]
+    for index in range(len(codes)):
+        assert_equal(status_text(codes[index]), expected[index])
+
+
+def test_each_extension_alone_and_reserved_extras() raises:
+    var service = graphql_error("m")
+    service.service = "a"
+    assert_equal(
+        error_json(service), '{"message":"m","extensions":{"service":"a"}}'
+    )
+    var affected = graphql_error("m")
+    add_affected_path(affected, "x.y")
+    assert_equal(
+        error_json(affected),
+        '{"message":"m","extensions":{"affectedPath":"x.y"}}',
+    )
+    var extra = graphql_error("m")
+    set_extension(extra, "b", "1")
+    set_extension(extra, "code", '"X"')
+    set_extension(extra, "b", "2")
+    assert_equal(extension_value(extra, "b"), "2")
+    assert_equal(extension_value(extra, "missing"), "")
+    assert_equal(error_json(extra), '{"message":"m","extensions":{"b":2}}')
+
+
+def test_locations_and_paths() raises:
+    var error = graphql_error("m")
+    error.lines = [1, 3]
+    error.columns = [2, 4]
+    error.has_path = True
+    error.path = _path([field_segment("a"), index_segment(0)])
+    assert_equal(
+        error_json(error),
+        '{"message":"m","locations":[{"line":1,"column":2},'
+        + '{"line":3,"column":4}],"path":["a",0]}',
+    )
+
+
+def test_entity_indexes() raises:
+    assert_equal(entity_index(_path([field_segment("_entities")])), -1)
+    assert_equal(entity_index(_path([index_segment(0), index_segment(1)])), -1)
+    assert_equal(entity_index(_path([field_segment("x"), index_segment(1)])), -1)
+    assert_equal(
+        entity_index(_path([field_segment("_entities"), field_segment("x")])),
+        -1,
+    )
+    assert_equal(
+        entity_index(_path([field_segment("_entities"), index_segment(2)])), 2
+    )
+
+
+def test_an_entity_error_expands_onto_its_paths() raises:
+    var error = graphql_error("m")
+    error.has_path = True
+    error.path = _path(
+        [field_segment("_entities"), index_segment(1), field_segment("name")]
+    )
+    var indexes: List[Int] = [0, 1, 1]
+    var paths = List[ErrorPath]()
+    paths.append(_path([field_segment("a"), index_segment(0)]))
+    paths.append(_path([field_segment("a"), index_segment(1)]))
+    paths.append(_path([field_segment("b")]))
+    var expanded = normalize_entity_error(error, indexes, paths)
+    assert_equal(len(expanded), 2)
+    assert_equal(
+        error_json(expanded[1]), '{"message":"m","path":["b","name"]}'
+    )
+    var none = normalize_entity_error(error, [0], paths)
+    assert_equal(len(none), 1)
+    var plain = graphql_error("p")
+    assert_equal(len(normalize_entity_error(plain, indexes, paths)), 1)
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

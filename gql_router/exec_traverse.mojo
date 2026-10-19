@@ -84,9 +84,14 @@ def satisfies_any(
     Returns:
         Whether one condition holds.
     """
-    for name in store.type_sets[types]:
-        if type_satisfies(possible_types, document, type_node, store.name(name)):
+    ref names = store.type_sets[types]
+    var index = 0
+    while index < len(names):
+        if type_satisfies(
+            possible_types, document, type_node, store.name(names[index])
+        ):
             return True
+        index += 1
     return False
 
 

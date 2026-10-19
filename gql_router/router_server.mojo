@@ -66,6 +66,14 @@ struct GraphQLParams(Movable):
         self.variables = JsonDocument()
         self.variables_root = NO_NODE
 
+    def take_variables(deinit self) -> JsonDocument:
+        """Return the document that holds the variables.
+
+        Returns:
+            The document; `variables_root` is a node of it.
+        """
+        return self.variables^
+
 
 def _bad_body() -> PipelineError:
     """Return upstream `FailedToParseBody`."""
@@ -281,11 +289,14 @@ def serve_graphql[
             raise client_error(
                 "Missing query parameter: query", "MISSING_QUERY_PARAM"
             )
+        var query = params.query.value()
+        var operation_name = params.operation_name
+        var root = params.variables_root
         response = router.execute(
-            params.query.value(),
-            params.operation_name,
-            params.variables^,
-            params.variables_root,
+            query,
+            operation_name,
+            params^.take_variables(),
+            root,
             method == Method.GET,
             not graphql,
         )

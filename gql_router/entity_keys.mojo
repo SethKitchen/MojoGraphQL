@@ -131,17 +131,19 @@ struct EntityKeys(Copyable, Movable):
             The keys.
 
         Raises:
-            Error: When a key field set does not normalize.
+            Error: When a key field set does not normalize, or a type
+                names a graph that the supergraph does not have.
         """
         var out = EntityKeys()
-        for definition in state.definitions:
+        var position = 0
+        while position < len(state.definitions):
+            ref definition = state.definitions[position]
+            position += 1
             var type_name = String(store.name(definition.name))
             for join_type in definition.join_types:
                 if not join_type.resolvable or not join_type.key:
                     continue
-                var subgraph = state.known_subgraphs.get(join_type.graph_id)
-                if not subgraph:
-                    continue
+                var subgraph = state.resolve_graph_id(join_type.graph_id)
                 var set = normalize_field_set(
                     store,
                     state,
@@ -149,17 +151,8 @@ struct EntityKeys(Copyable, Movable):
                     join_type.graph_id,
                     join_type.key.value(),
                 )
-                var fields = List[String]()
-                var child = store.items[set].first
-                while child != NONE:
-                    var item = store.items[child]
-                    if (
-                        item.kind == ItemKind.FIELD
-                        and store.name(item.name) != "__typename"
-                    ):
-                        fields.append(String(store.name(item.name)))
-                    child = item.next
-                var name = String(store.name(subgraph.value()))
+                var fields = key_fields_of(store, set)
+                var name = String(store.name(subgraph))
                 var index = out.index_of(name)
                 if index == 0:
                     out.names.append(name)
@@ -181,3 +174,25 @@ struct EntityKeys(Copyable, Movable):
         if index == 0:
             return None
         return self.subgraphs[index].copy()
+
+
+def key_fields_of(store: Store, set: Int) -> List[String]:
+    """Return the top-level field names of a key field set.
+
+    `__typename` and inline fragments are not key fields.
+
+    Args:
+        store: The store with the selection set.
+        set: The normalized key field set.
+
+    Returns:
+        The field names, in order.
+    """
+    var fields = List[String]()
+    var child = store.items[set].first
+    while child != NONE:
+        ref item = store.items[child]
+        if item.kind == ItemKind.FIELD and store.name(item.name) != "__typename":
+            fields.append(String(store.name(item.name)))
+        child = item.next
+    return fields^

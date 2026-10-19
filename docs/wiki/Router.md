@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Router
 
-`gql_router` ports the query planner of Hive Router commit `1a29df9` (MIT), and some other parts of the router. It depends on `gql_language` and `gql_json`. `apollo-router-workspace/` is excluded.
+`gql_router` ports the query planner of Hive Router commit `1a29df9` (MIT), its executor, its request pipeline, and some other parts of the router. It depends on `gql_language`, `gql_json` and `gql_http`. `apollo-router-workspace/` is excluded.
 
 ## Modules
 
@@ -30,19 +30,24 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_router.policies` | `collect_required_policies` |
 | `gql_router.auth_filter` | `authorize_fields` |
 | `gql_router.null_bubble` | `bubble_null_removals` |
-| `gql_router.error_mask` | `mask_error`, `MaskedError`, `MaskPlanKind` |
-| `gql_router.operation_name` | `subgraph_operation_name`, `operation_forward`, `ForwardKind` |
-| `gql_router.rewrite` | `apply_fetch_rewrite`, `entity_satisfies`, `PossibleTypes` |
-| `gql_router.response_merge` | `deep_merge` |
 | `gql_router.graphql_error` | `GraphQLError`, `error_json`, `http_status_error`, `normalize_entity_error` |
-| `gql_router.response_storage` | `ResponseStorage` |
-| `gql_router.subgraph_response` | `read_subgraph_response`, `CustomScalarPaths`, `SubgraphResponse` |
-| `gql_router.fetch_variables` | `select_fetch_variables`, `condition_target`, `batch_variable_payloads` |
-| `gql_router.plan_execute` | `execution_order` |
-| `gql_router.response_path` | `visit_response_path`, `merge_fetch_data` |
-| `gql_router.batch_alias` | `partition_batch_errors`, `collect_batch_entities`, `merge_alias_entities` |
-| `gql_router.header_rules` | `apply_request_headers`, `HeaderRule`, `HeaderRuleKind` |
-| `gql_router.response_headers` | `apply_response_headers`, `ResponseAggregator`, `HeaderAggregateKind` |
+| `gql_router.pipeline` | `RouterSchema`, `Router`, `RouterResponse`, `PipelineError`, `PipelineErrorKind` |
+| `gql_router.router_server` | `RouterHandler`, `serve_graphql`, `HttpAnswer`, `GraphQLParams`, `read_get_params`, `read_post_params` |
+| `gql_router.exec_plan` | `Executor`, `PlanExecutionOutput`, `select_fetch_variables`, `condition_target` |
+| `gql_router.exec_http` | `SubgraphTransport`, `HttpTransport`, `CannedTransport`, `build_request_body` |
+| `gql_router.exec_projection_plan` | `ProjectionPlan` |
+| `gql_router.exec_projection` | `project_by_operation` |
+| `gql_router.exec_variables` | `CoerceVariablesPayload`, `collect_variables` |
+| `gql_router.exec_value` | `deep_merge`, `copy_value`, `object_get`, `write_value` and the other arena helpers |
+| `gql_router.exec_traverse` | `traverse`, `TraverseTargets` |
+| `gql_router.exec_rewrites` | `apply_rewrite` |
+| `gql_router.exec_requires` | `project_requires`, `requires_hash` |
+| `gql_router.exec_subgraph_response` | `read_subgraph_response`, `SubgraphResponse` |
+| `gql_router.consumer_schema` | `ConsumerSchema` |
+| `gql_router.schema_metadata` | `SchemaMetadata`, `PossibleTypes`, `schema_metadata` |
+| `gql_router.entity_keys` | `EntityKeys`, `KeysByType` |
+| `gql_router.exec_partition` | `partition_operation` |
+| `gql_router.exec_introspection` | `resolve_introspection` |
 
 The other modules are internal steps of the planner: `ast`, `federation_spec`, `operation`, `selection_set`, `selection_tools`, `merge_path`, `response_keys`, `query_tree`, `mismatch_finder`, `fetch_operation`, `minification`, `query_plan_optimize`, and the `fetch_optimize_*` passes.
 
@@ -132,6 +137,10 @@ The tests in `tests/gql_router/test_plan_*.mojo` port the snapshot tests of upst
 
 `requires_alias_scopes.rs` reads the JSON form of a plan. Its port walks the plan arena for the same fields. Upstream checks one operation with the `graphql_tools` rule `OverlappingFieldsCanBeMerged`. The port checks the same rule for the types of the upstream test schema.
 
+The executor tests port the unit tests of upstream `bin/router/src/executor/`: `test_exec_variables_*.mojo` port `variables/tests/`, and `test_exec_projection.mojo`, `test_exec_projection_plan.mojo`, `test_exec_requires.mojo`, `test_exec_value.mojo`, `test_exec_traverse.mojo`, `test_exec_subgraph_response.mojo` and `test_exec_plan.mojo` port the tests of `projection/`, `response/`, `utils/traverse.rs` and `execution/plan.rs`.
+
+`test_pipeline.mojo` runs the upstream benchmark operation through `Router.execute` with the canned responses of the `hive-router/execute` benchmark. The response must equal the upstream `expected_response.json` byte for byte. `test_router_server.mojo` serves the router and two subgraphs over HTTP on the loopback interface.
+
 ## Operation cache
 
 `OperationCache` stores string values with an entry limit and two expiry times. The default limit is 1000 entries. A limit of zero stores nothing. A time to live of zero is unset. A time to idle of zero is unset. An entry expires on the earlier of the two times.
@@ -160,82 +169,87 @@ An element with no rule is allowed. `collect_required_policies` returns policy n
 
 A non-null field at the operation root is removed. It does not reject the whole operation.
 
-## Error masking
 
-`mask_error` hides a subgraph error. It runs only when the error names a service. A subgraph can turn message masking on or off. The default applies when the subgraph is not listed.
+## Serve the router over HTTP
 
-An allow list keeps `code`, `service`, `affectedPath`, and the named extension keys. A deny list removes those names. Other extension keys stay in their original order.
+1. Read the supergraph once: `var schema = RouterSchema(sdl)`.
+2. Make a transport to the subgraphs: `HttpTransport(schema.subgraph_names, schema.subgraph_urls)`.
+3. Make the router: `var router = Router(schema^, transport^)`.
+4. Serve it: `start_workers(RouterHandler(router^), config)`, with a `gql_http.server.ServerConfig`.
 
-## Operation name
+The handler answers `/graphql`. Give a second argument to `RouterHandler` to use another path. Each other path answers `404`.
 
-`subgraph_operation_name` sends the client operation name to a subgraph. The name is the client name, two underscores, and the fetch step id. The subgraph name is not part of that text. A subgraph can be left out.
+## Pipeline
 
-`All` sends the name to every subgraph. An empty exclusion list means `All`. `Only` sends it to the listed subgraphs. An empty list sends nothing.
+`Router.execute(query, operation_name, variables, variables_root, is_get, prefer_ok)` runs one request, as upstream `execute_pipeline`. It returns a `RouterResponse` with the status and the JSON body.
 
-## Fetch rewrites
+The steps are these:
 
-`apply_fetch_rewrite` changes one JSON value. A key renamer changes a field name at the end of a path. A value setter replaces the value there with a string. An array uses the same path for each item.
+1. `prepare` parses and normalizes the operation, and builds its projection plan. It also splits off the introspection part.
+2. A subscription answers `415`. A mutation over `GET` answers `405`.
+3. `collect_variables` coerces the variables. A bad value answers `BAD_USER_INPUT`.
+4. The planner plans the downstream part. This occurs once for each cached operation.
+5. `resolve_introspection` answers the introspection part.
+6. `Executor.execute` runs the plan and projects the response.
 
-A type condition passes when `__typename` is absent or that type is in the set. A concrete type also passes when it is a member of the abstract type. A missing field stays in place.
+The operation cache keeps the normalized operation, its projection plan and its query plan. The key is the operation name and the document. `CacheLimits` sets the size and the lifetimes.
 
-## Response merge
+A `PipelineError` gives the status and the body of a failed request, as upstream `PipelineError`. A client error keeps its message. An internal error shows `Internal server error`. When `prefer_ok` is set, a parse error and a coercion error answer `200`, because the response type is `application/json`.
 
-`deep_merge` copies fields from one JSON value into another. A null source leaves the target as it is. Two objects share keys and append new keys in source order. Two arrays merge item by item.
+## HTTP requests
 
-A source value of another kind replaces the target. A shorter array keeps the target's extra items. An empty source object keeps the target.
+`serve_graphql` decodes a request, as upstream `execution_request.rs`. A `GET` reads `query`, `operationName` and `variables` from the query string. A `POST` reads them from a JSON body. The `Content-Type` of a `POST` must contain `application/json`.
 
-## Subgraph errors
+| Problem | Status | Code |
+| --- | --- | --- |
+| Another method | 405 | `METHOD_NOT_ALLOWED` |
+| No `Content-Type` on a `POST` | 406 | `MISSING_CONTENT_TYPE_HEADER` |
+| A `Content-Type` that is not JSON | 415 | `UNSUPPORTED_CONTENT_TYPE` |
+| A bad percent escape | 400 | `UNPROCESSABLE_QUERY_PARAMS` |
+| A body that is not one JSON object, a repeated member, or a member of the wrong type | 400 | `BAD_REQUEST` |
+| `variables` that is not an object or `null` | 400 | `BAD_REQUEST` |
+| No `query` | 400 | `MISSING_QUERY_PARAM` |
 
-`error_json` writes a GraphQL error. Empty locations and empty extensions are left out. `service` is the subgraph name. Extra extension keys are written in alphabetical order.
+The response type is `application/graphql-response+json` when the `Accept` header names it before `application/json` and `*/*`. Otherwise it is `application/json`.
 
-`http_status_error` reports a failed subgraph response. The code is `SUBREQUEST_HTTP_ERROR`. A path that starts with `_entities` and an index expands onto each path of that entity.
+## Executor
 
-`ResponseStorage.estimate_size` is the total number of response bytes plus 20 percent.
+`Executor[T].execute` runs a query plan through a `SubgraphTransport`, as upstream `execute_query_plan`. A sequence runs its children in order. A parallel node prepares each child, then sends each one. A condition node runs the branch that its variable selects. A subscription node and a defer node raise `Error`.
 
-`handle_subgraph_errors` adds the subgraph name and the affected path. An `_entities` error expands when entity paths are given. Errors that were already recorded stay in front.
+A fetch sends the variables that it uses, and merges its data at the root. A flatten fetch walks its path, writes one representation for each different entity, and merges each returned entity back into each value that sent it. A batch fetch does the same for each alias. The merge uses the values that the prepare step found, so the path is walked once. When the subgraph returns errors, the merge walks the path again to get the error paths.
 
-## Subgraph response
+`HttpTransport` sends each request with `gql_http.client`, over keep-alive connections. `CannedTransport` answers in the same process with fixed responses, for tests and benchmarks.
 
-`read_subgraph_response` reads `data`, `errors`, and `extensions`. Any other field is ignored. Missing `data` is null. Null `data` with no `errors` is malformed.
+A failed request, an empty body, a bad content type and a malformed body each add an error with the subgraph name, as upstream. A status that is not 2xx adds `SUBREQUEST_HTTP_ERROR`.
 
-A custom-scalar path keeps the original JSON text of that value. An array uses the same path for each item. `append_error` adds an error after the body is read.
+## Subgraph responses
 
-## Fetch variables
+`read_subgraph_response` reads `data`, `errors` and `extensions`, as upstream `SubgraphResponse`. Any other member is ignored. A repeated member, a member of the wrong type, or `null` data without `errors` is malformed. The data goes into the response arena.
 
-`select_fetch_variables` keeps the variables a fetch uses. A variable that is not in the request is left out. No usage list means the fetch gets no variables.
+`error_json` writes a GraphQL error. `handle_subgraph_errors` adds the subgraph name and the affected path. An `_entities` error moves to the path of each value that sent that entity.
 
-`condition_target` runs the `if` branch when the variable is boolean `true`. Any other value runs the `else` branch. A missing variable runs neither branch.
+## Projection
 
-`batch_variable_payloads` keeps the first representations payload of each variable name. A later alias with that name does not replace it. An empty payload is `[]`.
+`ProjectionPlan.from_operation` merges the fields of the operation once, as upstream `ProjectionPlan`. `project_by_operation` writes the client response from it, as upstream `project_by_operation`.
 
-## Plan execution
+A field is written under its response key, in query order. A `null` in a non-null position makes the parent `null`. At the root, `data` becomes `null`. An unknown enum value becomes `null` with the error `Value is not a valid enum value`.
 
-`execution_order` lists the subgraphs a plan fetches. A sequence runs its children in order. A parallel node lists its children in source order. A condition runs one branch.
+## Performance
 
-A flatten node runs its child fetch. A missing variable runs neither condition branch. A defer node adds no fetch.
+The executor works on one JSON arena, `gql_json.value.JsonDocument`. Strings and numbers keep the text that the subgraph sent, so they are copied and not decoded.
 
-## Response path
+The recursive walks take a small handle of pointers, not the inputs themselves. LLVM gives a recursive function the fields of a read-only struct argument as separate arguments, so a large argument costs many stores on each call.
 
-`visit_response_path` finds every value at a path. A field steps into that object field. `@` steps into each list item. A type condition stays on the object when the type matches.
+The projection builds a table for the plan once per request: the `"key":` bytes and the flags of each field. Each field remembers the position where it was found last. The next object of the same field tries that position first.
 
-`merge_fetch_data` deep-merges a fetch into each visited value. An empty path merges at the root. A missing field leaves the response unchanged.
+`bench/gql_router/execute.mojo` measures `hive-router/execute` against upstream `execute_query_plan` in `bench/baselines/rust-router`.
 
-## Batch aliases
+## Differences from upstream in the executor
 
-`partition_batch_errors` sends an error to the alias named by its first path step. That step is rewritten to `_entities`. An error with no alias stays unmatched.
-
-`collect_batch_entities` takes each alias array off the response. A field that is not an array is removed and not returned.
-
-`merge_alias_entities` puts each entity back on the visited value. A negative index skips that value. When the alias has errors, the visit path is kept for that entity index.
-
-## Request headers
-
-`apply_request_headers` builds the headers for one subgraph. Global rules run first. Rules for that subgraph run after them. A hop-by-hop header is skipped.
-
-A propagate rule copies the named client headers. It uses the default only when none of those names are present. `set-cookie` is appended as a separate field.
-
-## Response headers
-
-`apply_response_headers` adds subgraph headers to the client response. Global rules run first. Rules for that subgraph run after them. `content-type` and hop-by-hop headers are skipped.
-
-The first rule to set a header chooses `first`, `last`, or `append`. Appended values are joined with a comma and a space. `set-cookie` stays a separate field.
+- One operation cache keeps the parse, normalization and plan results. Upstream keeps three caches.
+- Operations are not validated against the schema.
+- There are no plugins, coprocessors, persisted documents, demand control, CSRF prevention, CORS, request decompression, subscriptions, SSE, WebSocket or multipart responses.
+- Header propagation, error masking and operation name forwarding are not ported.
+- The representation hash folds eight bytes per multiply. Upstream uses XXH3. Equal representations still have equal hashes.
+- The projection keeps one position hint for each plan field during the whole walk. Upstream keeps the hints for each list.
+- `extensions` are not written to the client response.

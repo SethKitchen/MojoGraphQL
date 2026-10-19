@@ -28,7 +28,9 @@ data by the client operation.
 **Differences from upstream.** Upstream runs the children of a `Parallel`
 node at the same time and merges each one as it arrives. This port sends
 them one at a time, in plan order, so the errors are in plan order.
-Subscriptions are not supported: a plan with a `Subscription` node raises
+Upstream walks the path of a flatten fetch again to merge; this port keeps
+the values that the prepare step found, and walks again only to get the
+error paths. Subscriptions are not supported: a plan with a `Subscription` node raises
 `Error`. There are no plugins, header rules, coprocessors, demand control,
 extensions or error masking. The operation name is never forwarded.
 """

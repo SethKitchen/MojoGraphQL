@@ -242,8 +242,7 @@ struct _Output(Movable):
             self.bits.append(bits)
         self.key_starts.append(len(self.keys))
         # Padding, so that a key copy can load 16 bytes at once.
-        for _ in range(16):
-            self.keys.append(0)
+        self.keys.resize(len(self.keys) + 16, 0)
 
     def take_buffer(deinit self) -> List[UInt8]:
         """Return the response bytes.
@@ -457,9 +456,9 @@ struct _Projector[
         Returns:
             The type name, or empty after a failure.
         """
+        # The field is an object field or a field of an abstract type, so
+        # it is never `__typename`.
         ref record = self.plan[].fields[field]
-        if record.is_typename:
-            return String("String")
         if value != NO_NODE:
             var found = typename_node(self.document[], value)
             if found != NO_NODE:
@@ -709,7 +708,8 @@ struct _Projector[
             ref levels = record.nullability.shape
             var item_shape = shape
             var item_non_null = False
-            if shape >= 0 and levels[shape] & SHAPE_LIST != 0:
+            # An array is projected at a level of its field type: shape >= 0.
+            if levels[shape] & SHAPE_LIST != 0:
                 item_shape = shape + 1
                 item_non_null = levels[item_shape] & SHAPE_NON_NULL != 0
             var checkpoint = len(self.out[].buffer)

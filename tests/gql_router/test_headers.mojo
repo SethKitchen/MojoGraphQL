@@ -55,5 +55,29 @@ def test_append_vary_finds_an_empty_token_in_an_empty_value() raises:
     assert_equal(headers.get("Vary").value(), "")
 
 
+def test_header_map_operations() raises:
+    var headers = HeaderMap()
+    headers.append_value("Set-Cookie", "a=1")
+    headers.append_value("set-cookie", "b=2")
+    headers.insert("X-Id", "1")
+    headers.insert("x-id", "2")
+    var cookies = headers.values_of("SET-COOKIE")
+    assert_equal(len(cookies), 2)
+    assert_equal(cookies[1], "b=2")
+    assert_equal(headers.get("X-ID").value(), "2")
+    assert_equal(
+        headers.joined(), "Set-Cookie: a=1 | set-cookie: b=2 | X-Id: 2"
+    )
+    headers.remove("set-cookie")
+    assert_equal(headers.joined(), "X-Id: 2")
+
+
+def test_an_empty_map() raises:
+    var headers = HeaderMap()
+    headers.remove("Vary")
+    assert_equal(len(headers.values_of("Vary")), 0)
+    assert_equal(headers.joined(), "")
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

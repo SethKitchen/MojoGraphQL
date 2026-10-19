@@ -217,13 +217,14 @@ def baselines() -> List[Baseline]:
             + " ./target/release/hyper-server && ./target/release/httparse",
         )
     )
-    # The TLS baseline runs its own client and server, as the Mojo one does.
+    # The TLS baseline runs its own client and server, as the Mojo one does:
+    # HTTPS/1.1 for gql_tls, and HTTP/2 after ALPN h2 for gql_https2.
     out.append(
         Baseline(
-            "hyper 1.12.0 and rustls 0.23.45 (Rust)",
+            "hyper 1.12.0, h2 0.4.20 and rustls 0.23.45 (Rust)",
             "bench/baselines/rust-tls",
             "cargo build --release --locked --quiet",
-            "./target/release/hyper-rustls",
+            "./target/release/hyper-rustls && ./target/release/hyper-rustls-h2",
         )
     )
     # The HTTP/2 servers run under the Mojo h2c load generator of
@@ -247,6 +248,16 @@ def baselines() -> List[Baseline]:
             "bench/baselines/rust-http3",
             "sh build.sh",
             "./target/release/h3-qpack && ./target/release/h3-roundtrip",
+        )
+    )
+    # quic-stream drives the public quinn-proto API in memory, with no
+    # sockets. quic-echo runs quinn over localhost UDP.
+    out.append(
+        Baseline(
+            "quinn 0.11 (Rust)",
+            "bench/baselines/rust-quic",
+            "cargo build --release --locked --quiet",
+            "./target/release/quic-stream && ./target/release/quic-echo",
         )
     )
     # The HTTP workload of Apollo Server runs under the same Mojo load
@@ -338,12 +349,18 @@ directories without a dash run graphql-js, apollo-rs and graphql-go-tools,
 which hold all four."""
 
 
+comptime ALSO_SERVES: Array[StaticString, 2] = ["rust-tls", "gql_https2"]
+"""Baseline directories that also measure another package, as pairs of the
+directory name and the package. `rust-tls` runs HTTP/2 over TLS too."""
+
+
 def serves(baseline: Baseline, packages: List[String]) -> Bool:
     """Return True when a baseline measures one of some packages.
 
     A baseline directory `bench/baselines/<language>-<name>` measures the
-    package `gql_<name>`. A directory without a dash runs a GraphQL library,
-    and measures each of `CORE_PACKAGES`.
+    package `gql_<name>`, and the package that `ALSO_SERVES` names for it.
+    A directory without a dash runs a GraphQL library, and measures each of
+    `CORE_PACKAGES`.
 
     Args:
         baseline: The baseline.
@@ -353,6 +370,10 @@ def serves(baseline: Baseline, packages: List[String]) -> Bool:
         Whether the baseline has workloads of the packages.
     """
     var name = baseline.directory.removeprefix("bench/baselines/")
+    var also = materialize[ALSO_SERVES]()
+    for index in range(0, len(also), 2):
+        if name == also[index] and String(also[index + 1]) in packages:
+            return True
     var dash = name.find("-")
     if dash >= 0:
         return "gql_" + String(name[byte = dash + 1 :]) in packages

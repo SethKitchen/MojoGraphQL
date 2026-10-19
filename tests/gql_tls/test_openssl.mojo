@@ -7,6 +7,7 @@
 ALPN choice, the function table and the error kinds. There is no upstream
 suite; the ALPN cases follow RFC 7301 section 3.2."""
 
+from std.ffi import external_call
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
 from _certs import test_certs
@@ -20,6 +21,14 @@ from gql_tls.openssl import (
     c_string,
     select_protocol,
 )
+
+
+def test_broken_pipe_is_ignored() raises:
+    # A write to a closed socket must fail with EPIPE, not end the process.
+    _ = external_call["signal", Int](Int32(13), Int(0))
+    _ = OpenSsl()
+    var previous = external_call["signal", Int](Int32(13), Int(1))
+    assert_equal(previous, 1)
 
 
 def test_call_kinds() raises:

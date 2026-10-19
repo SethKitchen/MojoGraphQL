@@ -13,7 +13,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_tls.context` | `TlsContext`, `TlsVersion`, `alpn_wire`, `default_protocols` |
 | `gql_tls.stream` | `TlsStream`, `IoWant`, `wait_for` |
 | `gql_tls.server` | `TlsServer`, `TlsProtocol`, `NoProtocol`, `ConnectionMode`, `listen_tls`, `listen_https` |
-| `gql_tls.client` | `HttpsClient`, `HttpsEndpoint` |
+| `gql_tls.client` | `HttpsClient`, `HttpsEndpoint`, `open_tls` |
 | `gql_tls.error` | `TlsError`, `TlsErrorKind` |
 
 ```mojo
@@ -46,6 +46,7 @@ def main() raises:
 - **Missing library:** when a library does not load, `OpenSsl()` raises a `LIBRARY` error. The message names the file and tells what to install.
 - **Old library:** a library that is older than `min_version`, or that lacks a function, also gives a `LIBRARY` error.
 - **Other functions:** `function[R](name)` looks up another function of libssl, such as the QUIC API of `gql_http3`. `has_function(name)` tells if libssl has it.
+- **SIGPIPE:** `OpenSsl()` makes the process ignore `SIGPIPE`. OpenSSL writes to its socket without `MSG_NOSIGNAL`, so a write to a socket that the peer closed would end the process. Now the write fails with `EPIPE`, and only that connection closes.
 - **Faults:** `faults` is a `TlsFaults` plan. It makes one kind of call fail, so that tests reach the error paths.
 
 ## Contexts
@@ -92,7 +93,7 @@ After the handshake, ALPN decides what runs on a connection:
 - `http/1.1`, or no ALPN: the server serves HTTP/1.1.
 - The protocol that `other.protocol()` names, such as `h2`: the server gives the decrypted bytes to `other`.
 
-`TlsProtocol` is a protocol without I/O. The server calls `open(conn, out)` after the handshake, `receive(conn, data, out)` for the bytes that arrive, and `close(conn)` at the end. The server encrypts and sends what the protocol appends to `out`. `gql_tls` does not import HTTP/2, so the package that joins TLS and HTTP/2 implements `TlsProtocol`.
+`TlsProtocol` is a protocol without I/O. The server calls `open(conn, out)` after the handshake, `receive(conn, data, out)` for the bytes that arrive, and `close(conn)` at the end. The server encrypts and sends what the protocol appends to `out`. `gql_tls` does not import HTTP/2. The `H2Protocol` of [Https2](Https2) implements `TlsProtocol` for `h2`.
 
 The server uses the fields of `gql_http.server.ServerConfig`, except `workers`: `TlsServer` is one event loop. A closing connection sends `close_notify` before the socket closes. The writer has no plain socket, so `ResponseWriter.flush` keeps the bytes. Streamed content goes out after the handler returns.
 
@@ -107,6 +108,9 @@ The server uses the fields of `gql_http.server.ServerConfig`, except `workers`: 
 | `get(url)`, `post(url, content_type, body)` | Send a request to an `https` URL |
 | `endpoint(url)`, `send(endpoint, method, target, headers, body)` | Resolve a URL once, for many requests |
 | `idle_connections()`, `close_idle()` | The pool |
+| `adopt(endpoint, stream)` | Puts a connection that is open already into the pool, for the next request to the endpoint |
+
+`open_tls(sys, context, endpoint, deadline, connect_timeout_ms)` connects a socket and runs the handshake. It returns the `TlsStream`, and its `protocol` is the protocol that ALPN chose. The HTTP/2 client of [Https2](Https2) uses it, and gives a connection without `h2` to `adopt`.
 
 - **Deadline:** each request has the deadline `ClientConfig.timeout_ms`, for the connect, the handshake, the send and the whole response.
 - **Stale connections:** a TLS 1.3 server sends session tickets after the handshake. Thus the client checks a pooled connection with a TLS read that does not wait, and not with a plain `peek`.

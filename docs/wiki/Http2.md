@@ -79,7 +79,7 @@ The `ResponseWriter` becomes `HEADERS` and `DATA`. The names are in lowercase. T
 
 ## Transport
 
-A `Transport` is the byte stream that an HTTP/2 connection runs over. `SocketTransport` is a plain socket. A TLS layer, such as `gql_tls`, implements the trait for a TLS connection after ALPN chose `h2`.
+A `Transport` is the byte stream that an HTTP/2 connection runs over. `SocketTransport` is a plain socket. The `TlsTransport` of [Https2](Https2) implements the trait for a TLS connection after ALPN chose `h2`.
 
 ```mojo
 trait Transport(Deinitable, Movable):
@@ -103,7 +103,7 @@ There are two ways to serve a transport:
 - **`serve_transport(handler, transport, config, limits, idle_timeout_ms, read_already)`** serves one connection until it ends, and then closes the transport. It waits with `poll` on `fd()`. `read_already` holds bytes that were read already, such as the bytes after the TLS handshake.
 - **`ServerSession`** is the same server without I/O, for an event loop. Call `start()` once, and `receive(handler, data)` with each read. Send the bytes of `session.conn.out`, and clear them. Close the transport when `is_done()` is True and `conn.out` is empty.
 
-A client over TLS uses `ClientConnection[T: Transport](transport, config)` in the same way.
+A client over TLS uses `ClientConnection[T: Transport](transport, config)` in the same way. [Https2](Https2) serves `h2` with `ServerSession` in the event loop of `gql_tls`, and its `Https2Client` uses `ClientConnection[TlsTransport]`.
 
 ## Client
 
