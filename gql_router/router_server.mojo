@@ -77,7 +77,9 @@ struct GraphQLParams(Movable):
 
 def _bad_body() -> PipelineError:
     """Return upstream `FailedToParseBody`."""
-    return client_error("Failed to parse GraphQL request payload", "BAD_REQUEST")
+    return client_error(
+        "Failed to parse GraphQL request payload", "BAD_REQUEST"
+    )
 
 
 def _bad_variables() -> PipelineError:
@@ -85,7 +87,9 @@ def _bad_variables() -> PipelineError:
     return client_error("Failed to parse GraphQL variables JSON", "BAD_REQUEST")
 
 
-def read_get_params(query_string: StringSlice) raises PipelineError -> GraphQLParams:
+def read_get_params(
+    query_string: StringSlice,
+) raises PipelineError -> GraphQLParams:
     """Read the GraphQL members of a `GET` query string, as upstream
     `decode_get`.
 
@@ -159,7 +163,9 @@ def read_post_params(
         )
     if not (JSON_TYPE in content_type.value()):
         raise client_error(
-            "Content-Type header is not supported", "UNSUPPORTED_CONTENT_TYPE", 415
+            "Content-Type header is not supported",
+            "UNSUPPORTED_CONTENT_TYPE",
+            415,
         )
     var out = GraphQLParams()
     try:
@@ -231,7 +237,9 @@ struct HttpAnswer(Movable):
     var body: List[UInt8]
     """The JSON body."""
 
-    def __init__(out self, status: Int, var content_type: String, var body: List[UInt8]):
+    def __init__(
+        out self, status: Int, var content_type: String, var body: List[UInt8]
+    ):
         """Hold an answer.
 
         Args:
@@ -318,7 +326,9 @@ struct RouterHandler[T: SubgraphTransport](Handler):
     var path: String
     """The GraphQL path; other paths answer `404`."""
 
-    def __init__(out self, var router: Router[Self.T], path: String = "/graphql"):
+    def __init__(
+        out self, var router: Router[Self.T], path: String = "/graphql"
+    ):
         """Make a handler.
 
         Args:

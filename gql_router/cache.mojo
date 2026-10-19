@@ -576,5 +576,3 @@ struct OperationCache(Movable):
         """Remove the entry at a position."""
         _ = self._keys.pop(index)
         _ = self._entries.pop(index)
-
-

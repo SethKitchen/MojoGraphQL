@@ -113,12 +113,16 @@ An HTTP/1.0 client gets a stream without chunks, and the connection closes at it
 
 `Client` sends one request and returns the whole `Response`. It keeps a pool of keep-alive connections, by address and port.
 
+`start` and `finish` put several requests in flight at once. Each request in flight has its own connection. The caller must finish each request that it starts.
+
 | Method | Result |
 | --- | --- |
 | `get(url)` | Sends a `GET` request |
 | `post(url, content_type, body)` | Sends a `POST` request with content |
 | `endpoint(url)` | Parses and resolves a URL once, for many requests to one service |
 | `send(endpoint, method, target, headers, body)` | Sends a request; the client writes `Host` and `Content-Length` |
+| `start(endpoint, method, target, headers, body)` | Sends a request and returns a `PendingRequest` before the response |
+| `finish(pending)` | Reads the whole response of a `PendingRequest` |
 | `idle_connections()` | The count of connections in the pool |
 | `close_idle()` | Closes the connections in the pool |
 

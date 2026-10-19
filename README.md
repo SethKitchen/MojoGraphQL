@@ -12,11 +12,11 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project is new. Today it has seventeen finished packages, and more are in progress.
+The project is new. Today it has eighteen finished packages, and more are in progress.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
-`gql_server` is Apollo Server, and `gql_subgraph` builds Apollo Federation subgraphs. `gql_mcp` is the Apollo MCP Server. `gql_codegen` writes Mojo models for operations, as Apollo Kotlin does. `gql_composition` composes a supergraph, and `seamstress` (`gql_seamstress`) runs the offline Rover commands. `gql_router` has the query planner, and its executor is in progress. `gql_http2`, `gql_tls` and `gql_http3` serve HTTP/2, HTTPS and HTTP/3, and fall back to what the network supports.
+`gql_server` is Apollo Server, and `gql_subgraph` builds Apollo Federation subgraphs. `gql_mcp` is the Apollo MCP Server. `gql_codegen` writes Mojo models for operations, as Apollo Kotlin does. `gql_composition` composes a supergraph, and `seamstress` (`gql_seamstress`) runs the offline Rover commands. `gql_router` plans and runs federated operations over a supergraph. `gql_http2`, `gql_tls` and `gql_http3` serve HTTP/2, HTTPS and HTTP/3, and fall back to what the network supports.
 
 The [feature checklist](#features) shows what is done and what is planned.
 
@@ -120,7 +120,7 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_server`](https://github.com/SethKitchen/MojoGraphQL/wiki/Server): a port of Apollo Server, with the request pipeline, plugins, batching, persisted queries and a standalone server.
 - [x] [`gql_subgraph`](https://github.com/SethKitchen/MojoGraphQL/wiki/Subgraph): a port of `@apollo/subgraph` and the Apollo Federation subgraph specification.
 - [x] [`gql_composition`](https://github.com/SethKitchen/MojoGraphQL/wiki/Composition): a port of Hive Federation Composition: subgraph validation, supergraph composition, satisfiability and contracts, for federation v1 and v2.0 to v2.15.
-- [ ] [`gql_router`](https://github.com/SethKitchen/MojoGraphQL/wiki/Router): a port of Hive Router. The [query planner](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#planner) is done, with the operation cache, [authorization](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#authorization) and [null bubbling](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#null-bubbling). The executor reads subgraph responses, sets request headers, runs plan nodes, and merges each fetch.
+- [x] [`gql_router`](https://github.com/SethKitchen/MojoGraphQL/wiki/Router): a port of Hive Router. It plans a federated operation with the [query planner](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#planner), runs the plan against the subgraphs, and serves the supergraph over HTTP. It has the operation cache, [authorization](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#authorization) and [null bubbling](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#null-bubbling).
 - [x] [`gql_client`](https://github.com/SethKitchen/MojoGraphQL/wiki/Client): a port of the Apollo Client normalized cache, `InMemoryCache` with type and field policies.
 - [x] [`gql_codegen`](https://github.com/SethKitchen/MojoGraphQL/wiki/Codegen): code generation in the style of Apollo Kotlin. It writes Mojo models for operations.
 - [x] [`gql_mcp`](https://github.com/SethKitchen/MojoGraphQL/wiki/Mcp): a port of Apollo MCP Server.
@@ -156,7 +156,7 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_server` | Done | `gql_validation`, `gql_execution`, `gql_http` | Apollo Server 5.5.1 |
 | `gql_subgraph` | Done | `gql_execution` | `@apollo/subgraph` 2.14.4 |
 | `gql_composition` | Done | `gql_language` | Hive Federation Composition v0.27.0 |
-| `gql_router` | Query planner done; executor planned | `gql_language`, `gql_json` | Hive Router `1a29df9` `query_planner`, cache, authorization |
+| `gql_router` | Done | `gql_language`, `gql_json`, `gql_http` | Hive Router `1a29df9` query planner, executor and pipeline |
 | `gql_client` | Done, except optimistic layers | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache` |
 | `gql_codegen` | Done, `operationBased` models only | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
 | `gql_mcp` | Done | `gql_validation`, `gql_http` | Apollo MCP Server 2.0.0 |
@@ -214,7 +214,8 @@ Mojo is faster than every baseline on every workload except one: building a sche
 | `gql_composition` | Validate the subgraphs of the Netflix DGS example | 8.45 ms | Hive, 34.1 ms | 4.0x |
 | `gql_composition` | Validate a huge subgraph schema | 45.1 ms | Hive, 184 ms | 4.1x |
 | `gql_composition` | Compose the stars-stuff supergraph | 1.23 ms | Hive, 5.96 ms | 4.8x |
-| `gql_router` | Plan the Hive Router benchmark query (`qp_benches.rs`) | 667 µs | Hive Router, 912 µs | 1.37x |
+| `gql_router` | Plan the Hive Router benchmark query (`qp_benches.rs`) | 653 µs | Hive Router, 894 µs | 1.37x |
+| `gql_router` | Execute the plan of that query against canned subgraph responses | 186 µs | Hive Router, 282 µs | 1.51x |
 | `gql_seamstress` | `supergraph compose` of three subgraphs | 1.22 ms | Hive `composeServices`, 6.82 ms | 5.6x |
 | `gql_seamstress` | `graph introspect` of the GitHub schema | 31.7 ms | Rover, 119 ms | 3.75x |
 | `gql_seamstress` | `subgraph introspect` of the catalog subgraph | 23.5 ms | Rover, 109 ms | 4.6x |

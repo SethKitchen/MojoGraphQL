@@ -17,11 +17,9 @@ appear once; other members are ignored. Missing `data` is `null`. A `null`
 `import_document`, so the data is never copied again. The text of a JSON
 syntax error is the `gql_json` text, not the `sonic_rs` text.
 `extensions` and custom scalar paths are not read: every value keeps its
-source text anyway. In an error object, a `locations`, `path` or
-`extensions` member of the wrong type is ignored, and a negative path index
-is kept; upstream rejects the body. In error extensions, a repeated or
-non-string `code`, `service` or `affectedPath` is not rejected: a
-non-string one is kept as an extra extension.
+source text anyway. The texts of the errors for a bad error object are not
+the `serde` texts. A location must be an object; upstream also reads a
+`[line, column]` array.
 """
 
 from gql_json.parser import parse_bytes
@@ -134,41 +132,83 @@ def read_subgraph_response(
     return response^
 
 
+def _once(
+    parsed: JsonDocument, found: Int, member: Int, name: String
+) raises -> Int:
+    """Return `member`, or raise when the member `name` was found before."""
+    if found != NO_NODE:
+        raise _fail("duplicate field `" + name + "`")
+    return member
+
+
 def _read_error(parsed: JsonDocument, node: Int) raises -> GraphQLError:
     """Read one error object, as upstream `Deserialize for GraphQLError`."""
     if parsed.kind(node) != JsonKind.OBJECT:
         raise _fail("invalid type: an error must be an object")
     var message = NO_NODE
-    var error = graphql_error("")
+    var locations = NO_NODE
+    var path = NO_NODE
+    var extensions = NO_NODE
     var member = parsed.first(node)
     while member != NO_NODE:
-        var kind = parsed.kind(member)
         if key_is(parsed, member, "message"):
-            message = member
-        elif key_is(parsed, member, "locations") and kind == JsonKind.ARRAY:
-            var location = parsed.first(member)
-            while location != NO_NODE:
-                error.lines.append(_number(parsed, location, "line"))
-                error.columns.append(_number(parsed, location, "column"))
-                location = parsed.next(location)
-        elif key_is(parsed, member, "path") and kind == JsonKind.ARRAY:
-            error.has_path = True
-            error.path = _read_path(parsed, member)
-        elif key_is(parsed, member, "extensions") and kind == JsonKind.OBJECT:
-            _read_extensions(parsed, member, error)
+            message = _once(parsed, message, member, "message")
+        elif key_is(parsed, member, "locations"):
+            locations = _once(parsed, locations, member, "locations")
+        elif key_is(parsed, member, "path"):
+            path = _once(parsed, path, member, "path")
+        elif key_is(parsed, member, "extensions"):
+            extensions = _once(parsed, extensions, member, "extensions")
         member = parsed.next(member)
     if message == NO_NODE or parsed.kind(message) != JsonKind.STRING:
         raise _fail("missing field `message`")
-    error.message = string_text(parsed, message)
+    var error = graphql_error(string_text(parsed, message))
+    if locations != NO_NODE and parsed.kind(locations) != JsonKind.NULL:
+        if parsed.kind(locations) != JsonKind.ARRAY:
+            raise _fail("invalid type: `locations` must be an array")
+        var location = parsed.first(locations)
+        while location != NO_NODE:
+            _read_location(parsed, location, error)
+            location = parsed.next(location)
+    if path != NO_NODE and parsed.kind(path) != JsonKind.NULL:
+        if parsed.kind(path) != JsonKind.ARRAY:
+            raise _fail("invalid type: `path` must be an array")
+        error.has_path = True
+        error.path = _read_path(parsed, path)
+    if extensions != NO_NODE:
+        if parsed.kind(extensions) != JsonKind.OBJECT:
+            raise _fail("invalid type: `extensions` must be an object")
+        _read_extensions(parsed, extensions, error)
     return error^
 
 
-def _number(parsed: JsonDocument, location: Int, name: StringSlice) raises -> Int:
-    """Read the line or column of a location."""
-    var found = parsed.find(location, name)
-    if found == NO_NODE or not parsed.is_integer(found):
+def _is_index(parsed: JsonDocument, node: Int) raises -> Bool:
+    """Return whether a value is an integer that is not negative."""
+    return parsed.is_integer(node) and parsed.as_int64(node) >= 0
+
+
+def _read_location(
+    parsed: JsonDocument, node: Int, mut error: GraphQLError
+) raises:
+    """Read one location: an object with a `line` and a `column`, as
+    upstream `GraphQLErrorLocation`."""
+    if parsed.kind(node) != JsonKind.OBJECT:
         raise _fail("invalid location")
-    return Int(parsed.as_int64(found))
+    var line = NO_NODE
+    var column = NO_NODE
+    var member = parsed.first(node)
+    while member != NO_NODE:
+        if key_is(parsed, member, "line"):
+            line = _once(parsed, line, member, "line")
+        elif key_is(parsed, member, "column"):
+            column = _once(parsed, column, member, "column")
+        member = parsed.next(member)
+    if line == NO_NODE or column == NO_NODE:
+        raise _fail("invalid location")
+    if not _is_index(parsed, line) or not _is_index(parsed, column):
+        raise _fail("invalid location")
+    error.lines.append(Int(parsed.as_int64(line)))
+    error.columns.append(Int(parsed.as_int64(column)))
 
 
 def _read_path(parsed: JsonDocument, node: Int) raises -> ErrorPath:
@@ -178,7 +218,7 @@ def _read_path(parsed: JsonDocument, node: Int) raises -> ErrorPath:
     while item != NO_NODE:
         if parsed.kind(item) == JsonKind.STRING:
             segments.append(field_segment(string_text(parsed, item)))
-        elif parsed.is_integer(item):
+        elif _is_index(parsed, item):
             segments.append(index_segment(Int(parsed.as_int64(item))))
         else:
             raise _fail("invalid path segment")
@@ -186,18 +226,43 @@ def _read_path(parsed: JsonDocument, node: Int) raises -> ErrorPath:
     return ErrorPath(segments^)
 
 
-def _read_extensions(parsed: JsonDocument, node: Int, mut error: GraphQLError):
+def _extension_text(
+    parsed: JsonDocument, member: Int, name: String
+) raises -> String:
+    """Return the text of a `code` or `service` extension, which must be a
+    string."""
+    if parsed.kind(member) != JsonKind.STRING:
+        raise _fail("invalid type: `" + name + "` must be a string")
+    return string_text(parsed, member)
+
+
+def _read_extensions(
+    parsed: JsonDocument, node: Int, mut error: GraphQLError
+) raises:
     """Read the extensions of an error: `code`, `service`, `affectedPath`,
-    and the other members as JSON text."""
+    and the other members as JSON text, as upstream
+    `GraphQLErrorExtensionsVisitor`."""
+    var code = NO_NODE
+    var service = NO_NODE
+    var affected = False
     var member = parsed.first(node)
     while member != NO_NODE:
-        var is_string = parsed.kind(member) == JsonKind.STRING
-        if key_is(parsed, member, "code") and is_string:
-            error.code = string_text(parsed, member)
-        elif key_is(parsed, member, "service") and is_string:
-            error.service = string_text(parsed, member)
-        elif key_is(parsed, member, "affectedPath") and is_string:
-            error.affected_path = string_text(parsed, member)
+        if key_is(parsed, member, "code"):
+            code = _once(parsed, code, member, "code")
+            error.code = _extension_text(parsed, member, "code")
+        elif key_is(parsed, member, "service"):
+            service = _once(parsed, service, member, "service")
+            error.service = _extension_text(parsed, member, "service")
+        elif key_is(parsed, member, "affectedPath"):
+            # Upstream reads an optional string: `null` is no path, and
+            # its duplicate check sees only a path that it kept.
+            if affected:
+                raise _fail("duplicate field `affectedPath`")
+            if parsed.kind(member) != JsonKind.NULL:
+                error.affected_path = _extension_text(
+                    parsed, member, "affectedPath"
+                )
+                affected = True
         else:
             error.extra_names.append(parsed.key(member))
             error.extra_values.append(stringify(parsed, member))

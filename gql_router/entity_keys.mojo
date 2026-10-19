@@ -192,7 +192,10 @@ def key_fields_of(store: Store, set: Int) -> List[String]:
     var child = store.items[set].first
     while child != NONE:
         ref item = store.items[child]
-        if item.kind == ItemKind.FIELD and store.name(item.name) != "__typename":
+        if (
+            item.kind == ItemKind.FIELD
+            and store.name(item.name) != "__typename"
+        ):
             fields.append(String(store.name(item.name)))
         child = item.next
     return fields^

@@ -454,25 +454,108 @@ def test_an_error_reads_locations_path_and_extensions() raises:
     assert_equal(extension_value(error, "detail"), '{"n":[1]}')
 
 
-def test_an_error_ignores_members_of_other_types() raises:
+def test_an_error_reads_null_members_as_missing() raises:
     var arena = JsonDocument()
     var response = _read(
         arena,
         '{"errors":[{"message":"m","locations":null,"path":null,'
-        + '"extensions":null,"other":1},{"message":"n","extensions":'
-        + '{"code":1,"service":2,"affectedPath":3}}]}',
+        + '"other":1},{"message":"n","locations":[{"line":1,"x":0,'
+        + '"column":2}],"extensions":'
+        + '{"affectedPath":null,"affectedPath":"a"}}]}',
     )
     assert_equal(len(response.errors), 2)
     ref first = response.errors[0]
     assert_equal(len(first.lines), 0)
     assert_false(first.has_path)
     assert_equal(error_json(first), '{"message":"m"}')
-    # A `code` that is not a string is kept as another extension.
+    # A `null` `affectedPath` is no path, so a second one is not a duplicate.
     ref second = response.errors[1]
     assert_equal(second.code, "")
-    assert_equal(extension_value(second, "code"), "1")
-    assert_equal(second.service, "")
-    assert_equal(second.affected_path, "")
+    assert_equal(second.affected_path, "a")
+    # Another member of a location is ignored.
+    assert_equal(second.columns[0], 2)
+
+
+def test_an_error_rejects_members_of_other_types() raises:
+    _fails(
+        '{"errors":[{"message":"m","extensions":null}]}',
+        "invalid type: `extensions` must be an object",
+    )
+    _fails(
+        '{"errors":[{"message":"m","locations":{}}]}',
+        "invalid type: `locations` must be an array",
+    )
+    _fails(
+        '{"errors":[{"message":"m","path":"a"}]}',
+        "invalid type: `path` must be an array",
+    )
+    _fails('{"errors":[{"message":"m","locations":[1]}]}', "invalid location")
+    _fails(
+        '{"errors":[{"message":"m","locations":[{"column":1}]}]}',
+        "invalid location",
+    )
+    _fails(
+        '{"errors":[{"message":"m","locations":[{"line":-1,"column":1}]}]}',
+        "invalid location",
+    )
+    _fails(
+        '{"errors":[{"message":"m","path":["a",-1]}]}', "invalid path segment"
+    )
+    _fails(
+        '{"errors":[{"message":"m","extensions":{"code":1}}]}',
+        "invalid type: `code` must be a string",
+    )
+    _fails(
+        '{"errors":[{"message":"m","extensions":{"service":null}}]}',
+        "invalid type: `service` must be a string",
+    )
+    _fails(
+        '{"errors":[{"message":"m","extensions":{"affectedPath":3}}]}',
+        "invalid type: `affectedPath` must be a string",
+    )
+
+
+def test_an_error_rejects_duplicate_members() raises:
+    _fails(
+        '{"errors":[{"message":"m","message":"n"}]}',
+        "duplicate field `message`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","locations":[],"locations":[]}]}',
+        "duplicate field `locations`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","path":[],"path":[]}]}',
+        "duplicate field `path`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","extensions":{},"extensions":{}}]}',
+        "duplicate field `extensions`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","locations":[{"line":1,"line":1,'
+        + '"column":1}]}]}',
+        "duplicate field `line`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","locations":[{"line":1,"column":1,'
+        + '"column":1}]}]}',
+        "duplicate field `column`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","extensions":{"code":"a","code":"b"}}]}',
+        "duplicate field `code`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","extensions":{"service":"a",'
+        + '"service":"b"}}]}',
+        "duplicate field `service`",
+    )
+    _fails(
+        '{"errors":[{"message":"m","extensions":{"affectedPath":"a",'
+        + '"affectedPath":"b"}}]}',
+        "duplicate field `affectedPath`",
+    )
 
 
 def test_append_error() raises:

@@ -215,7 +215,9 @@ def test_locations_and_paths() raises:
 def test_entity_indexes() raises:
     assert_equal(entity_index(_path([field_segment("_entities")])), -1)
     assert_equal(entity_index(_path([index_segment(0), index_segment(1)])), -1)
-    assert_equal(entity_index(_path([field_segment("x"), index_segment(1)])), -1)
+    assert_equal(
+        entity_index(_path([field_segment("x"), index_segment(1)])), -1
+    )
     assert_equal(
         entity_index(_path([field_segment("_entities"), field_segment("x")])),
         -1,
@@ -238,9 +240,7 @@ def test_an_entity_error_expands_onto_its_paths() raises:
     paths.append(_path([field_segment("b")]))
     var expanded = normalize_entity_error(error, indexes, paths)
     assert_equal(len(expanded), 2)
-    assert_equal(
-        error_json(expanded[1]), '{"message":"m","path":["b","name"]}'
-    )
+    assert_equal(error_json(expanded[1]), '{"message":"m","path":["b","name"]}')
     var none = normalize_entity_error(error, [0], paths)
     assert_equal(len(none), 1)
     var plain = graphql_error("p")

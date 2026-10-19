@@ -28,7 +28,10 @@ type Item { id: ID! }
     )
     var rendered = projection_plan_text(
         sdl,
-        "query Example { node { ... on A { item { id } } ... on B { item { id } } } }",
+        (
+            "query Example { node { ... on A { item { id } } ... on B { item {"
+            " id } } } }"
+        ),
     )
     assert_equal(rendered.count("type guard"), 2)
     assert_equal("id" in rendered, True)
@@ -187,7 +190,10 @@ def test_field_order_when_grouping_with_fragments() raises:
     assert_equal(
         projection_plan_text(
             schema_2(),
-            "query FieldOrder { animal { name id ... on Dog { id nickname } } }",
+            (
+                "query FieldOrder { animal { name id ... on Dog { id nickname"
+                " } } }"
+            ),
         ),
         """animal: {
   conditions: FieldType(OneOf(Animal, Cat, Dog, Pet))

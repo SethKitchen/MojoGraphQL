@@ -217,9 +217,11 @@ def extension_value(error: GraphQLError, name: String) -> String:
         The JSON text. Empty when the name is absent.
     """
     # The names and the values are added together.
-    for index in range(len(error.extra_names)):
+    var index = 0
+    while index < len(error.extra_names):
         if error.extra_names[index] == name:
             return String(error.extra_values[index])
+        index += 1
     return String("")
 
 
@@ -291,14 +293,15 @@ def normalize_entity_error(
     var rest = _rest(error.path)
     var any = False
     # `indexes` and `paths` are parallel.
-    for index in range(len(indexes)):
-        if indexes[index] != found:
-            continue
-        any = True
-        var copy = error.copy()
-        copy.has_path = True
-        copy.path = _join(paths[index], rest)
-        matched.append(copy^)
+    var index = 0
+    while index < len(indexes):
+        if indexes[index] == found:
+            any = True
+            var copy = error.copy()
+            copy.has_path = True
+            copy.path = _join(paths[index], rest)
+            matched.append(copy^)
+        index += 1
     if not any:
         matched.append(error.copy())
     return matched^
@@ -335,8 +338,10 @@ def handle_subgraph_errors(
             errors.append(error^)
             continue
         var expanded = normalize_entity_error(error, indexes, paths)
-        for place in range(len(expanded)):
+        var place = 0
+        while place < len(expanded):
             errors.append(expanded[place].copy())
+            place += 1
 
 
 def error_json(error: GraphQLError) -> String:
@@ -353,7 +358,8 @@ def error_json(error: GraphQLError) -> String:
     var locations = len(error.lines)
     if locations > 0:
         out += ',"locations":['
-        for index in range(locations):
+        var index = 0
+        while index < locations:
             if index > 0:
                 out += ","
             out += '{"line":'
@@ -361,6 +367,7 @@ def error_json(error: GraphQLError) -> String:
             out += ',"column":'
             out += String(error.columns[index])
             out += "}"
+            index += 1
         out += "]"
     if error.has_path:
         out += ',"path":'
@@ -424,7 +431,8 @@ def _path_json(path: ErrorPath) -> String:
         The JSON array.
     """
     var out = String("[")
-    for index in range(len(path.segments)):
+    var index = 0
+    while index < len(path.segments):
         if index > 0:
             out += ","
         ref segment = path.segments[index]
@@ -432,6 +440,7 @@ def _path_json(path: ErrorPath) -> String:
             out += String(segment.index)
         else:
             out += _json_string(segment.field)
+        index += 1
     out += "]"
     return out^
 
@@ -478,10 +487,14 @@ def _join(base: ErrorPath, rest: ErrorPath) -> ErrorPath:
         The combined path.
     """
     var segments = List[ErrorSegment]()
-    for index in range(len(base.segments)):
+    var index = 0
+    while index < len(base.segments):
         segments.append(base.segments[index].copy())
-    for index in range(len(rest.segments)):
+        index += 1
+    index = 0
+    while index < len(rest.segments):
         segments.append(rest.segments[index].copy())
+        index += 1
     return ErrorPath(segments^)
 
 

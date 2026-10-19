@@ -11,17 +11,20 @@ part of `HTTPSubgraphExecutor::execute` of Hive Router `1a29df9`
 `SubgraphExecutor` trait of `executors/common.rs`.
 
 `SubgraphTransport` is the trait that the executor sends each request
-through. `HttpTransport` sends it over `gql_http`. A test can give its own
-transport, such as subgraphs that run in the same process.
+through. `HttpTransport` sends it over `gql_http`, on its own connection,
+so the fetches of a `Parallel` node are in flight at the same time. A test
+can give its own transport, such as subgraphs that run in the same process.
 
 **Differences from upstream.** The transport is a type parameter, not a
-boxed trait object in a map. The operation name is not written into the
+boxed trait object in a map. A transport has no tasks: `start` sends a
+request, and `finish` reads the oldest response, so the responses are read
+in the order the requests were sent. The operation name is not written into the
 query, because this port has no operation name factory. A transport
 failure is a `SubgraphFailure` value, not an error type. There is no
 compression, no deduplication of in-flight requests, and no TLS.
 """
 
-from gql_http.client import Client, Endpoint
+from gql_http.client import Client, Endpoint, PendingRequest
 from gql_http.error import ErrorKind, HttpError
 from gql_http.headers import Headers
 from gql_http.status import Method
@@ -118,17 +121,28 @@ struct SubgraphHttpResponse(Movable):
 
 trait SubgraphTransport(Deinitable, Movable):
     """What the executor sends each subgraph request through, as upstream
-    `SubgraphExecutor`."""
+    `SubgraphExecutor`.
 
-    def send(
-        mut self, subgraph: String, query: String, body: List[UInt8]
-    ) -> SubgraphHttpResponse:
+    `start` sends a request, and `finish` returns the response of the
+    oldest request that is not finished. The executor starts every fetch of
+    a `Parallel` node, then finishes each one, so a transport can have
+    several requests in flight at once.
+    """
+
+    def start(mut self, subgraph: String, query: String, body: List[UInt8]):
         """Send one GraphQL request to a subgraph.
 
         Args:
             subgraph: The subgraph name.
             query: The operation text that the body holds.
             body: The JSON request body.
+        """
+        ...
+
+    def finish(mut self) -> SubgraphHttpResponse:
+        """Return the response of the oldest request that is not finished.
+
+        The executor calls it once for each `start`.
 
         Returns:
             The response, or the failure.
@@ -245,6 +259,14 @@ struct HttpTransport(SubgraphTransport):
     """The endpoint of each subgraph, parallel to `names`."""
     var headers: Headers
     """The fields of every request."""
+    var in_flight: List[PendingRequest]
+    """The requests that were sent, oldest first, whose responses are not
+    read."""
+    var failures: List[SubgraphHttpResponse]
+    """The requests that failed before they were sent, oldest first."""
+    var failed: List[Bool]
+    """For each request that is not finished, oldest first: whether it is
+    in `failures` and not in `in_flight`."""
 
     def __init__(out self, names: List[String], urls: List[String]) raises:
         """Resolve the URL of each subgraph once.
@@ -261,6 +283,9 @@ struct HttpTransport(SubgraphTransport):
         self.endpoints = List[Endpoint]()
         self.headers = Headers()
         self.headers.add("content-type", "application/json; charset=utf-8")
+        self.in_flight = List[PendingRequest]()
+        self.failures = List[SubgraphHttpResponse]()
+        self.failed = List[Bool]()
         var index = 0
         while index < len(urls):
             self.endpoints.append(self.client.endpoint(urls[index]))
@@ -269,7 +294,7 @@ struct HttpTransport(SubgraphTransport):
     def send(
         mut self, subgraph: String, query: String, body: List[UInt8]
     ) -> SubgraphHttpResponse:
-        """Send one request, as upstream `HTTPSubgraphExecutor::execute`.
+        """Send one request and read its response.
 
         Args:
             subgraph: The subgraph name.
@@ -279,25 +304,63 @@ struct HttpTransport(SubgraphTransport):
         Returns:
             The response, or the failure.
         """
+        self.start(subgraph, query, body)
+        return self.finish()
+
+    def _fail(mut self, var failure: SubgraphHttpResponse):
+        """Queue the result of a request that failed before it was sent."""
+        self.failures.append(failure^)
+        self.failed.append(True)
+
+    def start(mut self, subgraph: String, query: String, body: List[UInt8]):
+        """Send one request on its own connection, as the first half of
+        upstream `HTTPSubgraphExecutor::execute`.
+
+        Args:
+            subgraph: The subgraph name.
+            query: The operation text that the body holds.
+            body: The JSON request body.
+        """
         var index = 0
         while index < len(self.names) and self.names[index] != subgraph:
             index += 1
         if index == len(self.names):
-            return SubgraphHttpResponse.failed(
-                SubgraphFailure.UNKNOWN_SUBGRAPH,
-                "Static endpoint not found for subgraph. This is an internal"
-                + " error and should not happen.",
+            self._fail(
+                SubgraphHttpResponse.failed(
+                    SubgraphFailure.UNKNOWN_SUBGRAPH,
+                    "Static endpoint not found for subgraph. This is an"
+                    + " internal error and should not happen.",
+                )
             )
+            return
         try:
             var endpoint = self.endpoints[index].copy()
             var target = endpoint.target
-            var response = self.client.send(
-                endpoint,
-                Method.POST,
-                target,
-                self.headers,
-                Span(body),
+            self.in_flight.append(
+                self.client.start(
+                    endpoint,
+                    Method.POST,
+                    target,
+                    self.headers,
+                    Span(body),
+                )
             )
+            self.failed.append(False)
+        except error:
+            self._fail(
+                SubgraphHttpResponse.failed(failure_of(error), error.message)
+            )
+
+    def finish(mut self) -> SubgraphHttpResponse:
+        """Read the response of the oldest request that is not finished.
+
+        Returns:
+            The response, or the failure.
+        """
+        if self.failed.pop(0):
+            return self.failures.pop(0)
+        try:
+            var response = self.client.finish(self.in_flight.pop(0))
             var content_type = response.header("content-type")
             var out = SubgraphHttpResponse(
                 response.status.code,
@@ -334,6 +397,9 @@ struct CannedTransport(SubgraphTransport):
     """Every request body, in the order they came, when `record` is set."""
     var record: Bool
     """Whether to keep the request bodies."""
+    var answers: List[SubgraphHttpResponse]
+    """The answers that `start` made and `finish` did not return, oldest
+    first."""
 
     def __init__(out self, record: Bool = False):
         """Start with no responses.
@@ -341,6 +407,7 @@ struct CannedTransport(SubgraphTransport):
         Args:
             record: Whether to keep each request body.
         """
+        self.answers = List[SubgraphHttpResponse]()
         self.subgraphs = List[String]()
         self.queries = List[String]()
         self.statuses = List[Int]()
@@ -400,7 +467,10 @@ struct CannedTransport(SubgraphTransport):
         var first = -1
         var index = 0
         while index < len(self.subgraphs):
-            if self.subgraphs[index] == subgraph and self.queries[index] == query:
+            if (
+                self.subgraphs[index] == subgraph
+                and self.queries[index] == query
+            ):
                 if not self.used[index]:
                     first = index
                     break
@@ -414,7 +484,27 @@ struct CannedTransport(SubgraphTransport):
             )
         self.used[first] = True
         var out = SubgraphHttpResponse(
-            self.statuses[first], self.content_types[first], self.bodies[first].copy()
+            self.statuses[first],
+            self.content_types[first],
+            self.bodies[first].copy(),
         )
         out.has_content_type = self.content_types[first].byte_length() > 0
         return out^
+
+    def start(mut self, subgraph: String, query: String, body: List[UInt8]):
+        """Answer one request now, and keep the answer for `finish`.
+
+        Args:
+            subgraph: The subgraph name.
+            query: The operation text that the body holds.
+            body: The JSON request body.
+        """
+        self.answers.append(self.send(subgraph, query, body))
+
+    def finish(mut self) -> SubgraphHttpResponse:
+        """Return the answer of the oldest request that is not finished.
+
+        Returns:
+            The response, or a `REQUEST_FAILURE` when none matched.
+        """
+        return self.answers.pop(0)

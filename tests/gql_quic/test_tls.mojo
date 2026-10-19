@@ -16,7 +16,14 @@ from gql_tls.context import TlsContext, TlsVersion
 from gql_tls.error import TlsErrorKind
 from gql_tls.openssl import OpenSsl, TlsCall, TlsFaults
 from gql_quic.crypto import CipherSuite
-from gql_quic.tls import Level, QuicTls, Secret, TlsSession
+from gql_quic.tls import (
+    Level,
+    QuicTls,
+    Secret,
+    TlsSession,
+    _crypto_recv_rcd,
+    _crypto_release_rcd,
+)
 
 
 def h3() -> List[String]:
@@ -217,6 +224,67 @@ def test_failures() raises:
         QuicTls(faulty^), cctx.ctx, False, "x", False, params(1)
     )
     assert_false(session.advance())
+    _ = cctx.ctx
+
+
+def test_lend_and_release_in_parts() raises:
+    """The bridge lends a record, takes bytes while it is lent, and keeps
+    the bytes that libssl releases only in part. libssl 3.5 releases each
+    record whole, so the test calls the callbacks as a libssl that reads
+    in parts would."""
+    var cctx = client_context(False)
+    var session = TlsSession(
+        QuicTls(OpenSsl()), cctx.ctx, False, "x", False, params(1)
+    )
+    var arg = Int(Pointer(to=session._bridge[]))
+    var first: List[UInt8] = [1, 2, 3, 4]
+    session.feed(Level.INITIAL, first)
+    var lent = List[Int](length=2, fill=0)
+    var at = Int(lent.unsafe_ptr())
+    assert_equal(_crypto_recv_rcd(0, at, at + 8, arg), 1)
+    assert_equal(lent[1], 4)
+    assert_equal(session._bridge[].lent, 4)
+    # Bytes that arrive while the record is lent wait in `pending`.
+    var second: List[UInt8] = [5, 6]
+    session.feed(Level.INITIAL, second)
+    assert_equal(len(session._bridge[].pending[0]), 2)
+    # Bytes of another level do not wait.
+    var other: List[UInt8] = [7]
+    session.feed(Level.HANDSHAKE, other)
+    assert_equal(len(session._bridge[].recv[2]), 1)
+    # libssl reads two bytes; the other four stay, in order.
+    assert_equal(_crypto_release_rcd(0, 2, arg), 1)
+    assert_equal(session._bridge[].lent, -1)
+    assert_equal(_crypto_recv_rcd(0, at, at + 8, arg), 1)
+    assert_equal(lent[1], 4)
+    var p = Pointer[UInt8, MutUntrackedOrigin](unsafe_from_address=lent[0])
+    assert_equal(p[unsafe_offset=0], 3)
+    assert_equal(p[unsafe_offset=3], 6)
+    assert_equal(_crypto_release_rcd(0, 4, arg), 1)
+    assert_equal(len(session._bridge[].recv[0]), 0)
+    assert_equal(session._bridge[].recv_at[0], 0)
+    _ = cctx.ctx
+
+
+def test_read_after_handshake() raises:
+    """After the handshake, `advance` reads the later messages. A read that
+    returns a byte is a success; libssl gives QUIC no application data, so
+    a libssl call that returns 1 stands in for that read."""
+    var sctx = server_context()
+    var cctx = client_context(False)
+    var client = TlsSession(
+        QuicTls(OpenSsl()), cctx.ctx, False, "localhost", False, params(1)
+    )
+    var server = TlsSession(
+        QuicTls(OpenSsl()), sctx.ctx, True, "", False, params(2)
+    )
+    assert_true(run(client, server))
+    assert_true(client.advance())
+    client.tls._read_ex = client.tls.openssl.function[Int32](
+        "SSL_is_init_finished"
+    )
+    assert_true(client.advance())
+    _ = sctx.ctx
     _ = cctx.ctx
 
 

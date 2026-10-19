@@ -256,6 +256,32 @@ def test_pool_matching() raises:
     assert_equal(c.finish(), 0)
 
 
+def test_requests_in_flight_at_once() raises:
+    var pool = start_workers(Echo(0), config())
+    var limited = ClientConfig()
+    limited.max_idle_per_host = 1
+    var client = Client(limited)
+    var endpoint = client.endpoint(
+        "http://127.0.0.1:" + String(pool.port) + "/a"
+    )
+    var first = client.start(
+        endpoint, Method.POST, "/a", Headers(), "1".as_bytes()
+    )
+    var second = client.start(
+        endpoint, Method.POST, "/b", Headers(), "2".as_bytes()
+    )
+    # Each request in flight has its own connection.
+    assert_true(first.fd != second.fd)
+    assert_equal(client.finish(second^).text(), "POST /b 2")
+    assert_equal(client.idle_connections(), 1)
+    assert_equal(client.finish(first^).text(), "POST /a 1")
+    # The pool keeps one idle connection to the endpoint, and closes the
+    # other one.
+    assert_equal(client.idle_connections(), 1)
+    client.close_idle()
+    assert_equal(pool.stop(), 0)
+
+
 def test_stale_idle_connection() raises:
     var peer = _peer([Step(OK, CLOSE), Step(OK, KEEP)])
     var client = Client()

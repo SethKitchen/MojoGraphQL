@@ -134,7 +134,9 @@ struct PipelineError(Copyable, Movable, Writable):
         writer.write(self.code, ": ", self.message)
 
 
-def client_error(message: String, code: String, status: Int = 400) -> PipelineError:
+def client_error(
+    message: String, code: String, status: Int = 400
+) -> PipelineError:
     """Make a client error with a fixed status.
 
     Args:
@@ -362,7 +364,11 @@ struct Router[T: SubgraphTransport](Movable):
         Raises:
             PipelineError: When the document does not parse or normalize.
         """
-        var key = (operation_name.value() if operation_name else String()) + "\n" + query
+        var key = (
+            (operation_name.value() if operation_name else String())
+            + "\n"
+            + query
+        )
         var now = _now_ms()
         if self.cache.get(key, now):
             var found = 0
@@ -484,7 +490,9 @@ struct Router[T: SubgraphTransport](Movable):
         except error:
             raise client_error_prefer_ok(String(error), "BAD_USER_INPUT")
         var downstream_set = self.slots[slot].downstream.selection_set
-        var empty = self.schema.planner.store.items[downstream_set].first == NONE
+        var empty = (
+            self.schema.planner.store.items[downstream_set].first == NONE
+        )
         if not self.slots[slot].planned and empty:
             # Nothing to plan, as upstream `EMPTY_QUERY_PLAN`.
             self.slots[slot].planned = True

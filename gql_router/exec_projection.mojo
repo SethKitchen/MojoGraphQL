@@ -22,7 +22,9 @@ size of the subgraph responses.
 **Differences from upstream.** `extensions` are not written. Numbers and
 strings keep their source text, see `gql_router.exec_value`. A missing type
 or field in the schema raises `Error` with the upstream `ProjectionError`
-text.
+text. `evaluate` has no case for the upstream `Condition::ParentType`: the
+plan never keeps one in a field condition, because the parent scope of the
+field already holds each parent type check. The output is the same.
 """
 
 from std.memory import unsafe_memcpy
@@ -50,7 +52,11 @@ from gql_router.exec_value import (
 )
 from gql_router.exec_variables import CoerceVariablesPayload
 from gql_router.graphql_error import GraphQLError, error_json, graphql_error
-from gql_router.schema_metadata import SHAPE_LIST, SHAPE_NON_NULL, SchemaMetadata
+from gql_router.schema_metadata import (
+    SHAPE_LIST,
+    SHAPE_NON_NULL,
+    SchemaMetadata,
+)
 
 
 @fieldwise_init
@@ -65,7 +71,8 @@ struct Outcome(Equatable, ImplicitlyCopyable, Movable):
     comptime SKIP = Outcome(1)
     """A variable check fails: leave the field out."""
     comptime INVALID_PARENT_TYPE = Outcome(2)
-    """The parent is of another type: leave the field out."""
+    """The parent is of another type: leave the field out. `evaluate`
+    never returns it; the parent scope of the field does this check."""
     comptime INVALID_FIELD_TYPE = Outcome(3)
     """The value is of another type: write `null`."""
     comptime INVALID_ENUM_VALUE = Outcome(4)
@@ -342,18 +349,20 @@ struct _Projector[
         var length = out.key_starts.unsafe_get(field + 1) - start
         var size = len(out.buffer)
         if size + length + 17 > out.buffer.capacity():
-            out.buffer.reserve(max(out.buffer.capacity() * 2, size + length + 17))
+            out.buffer.reserve(
+                max(out.buffer.capacity() * 2, size + length + 17)
+            )
         var target = out.buffer.unsafe_ptr().unsafe_offset(size)
         target[] = UInt8(ord("{")) if first else UInt8(ord(","))
         first = False
         var source = out.keys.unsafe_ptr().unsafe_offset(start)
         if length > 16:
-            unsafe_memcpy(dest=target.unsafe_offset(1), src=source, count=length)
+            unsafe_memcpy(
+                dest=target.unsafe_offset(1), src=source, count=length
+            )
         else:
             # `keys` is padded and the buffer has room: copy 16 bytes.
-            target.unsafe_offset(1).unsafe_store(
-                source.unsafe_load[width=16]()
-            )
+            target.unsafe_offset(1).unsafe_store(source.unsafe_load[width=16]())
         out.buffer._len = size + length + 1
 
     @always_inline
@@ -439,7 +448,9 @@ struct _Projector[
         if self.out[].cells[cell].resolved:
             return self.out[].cells[cell].name
         var name = self.resolve_type_name(
-            self.out[].cells[cell].field, self.out[].cells[cell].data, self.out[].cells[cell].parent
+            self.out[].cells[cell].field,
+            self.out[].cells[cell].data,
+            self.out[].cells[cell].parent,
         )
         self.out[].cells[cell].name = name
         self.out[].cells[cell].resolved = True
@@ -502,18 +513,20 @@ struct _Projector[
             if self.variables[].bool_value(node.variable) == 1:
                 return Outcome.SKIP
             return Outcome.OK
-        if kind == CondKind.PARENT_TYPE:
-            var parent_name = self.type_name(parent)
-            if self.plan[].tables.matches(node.set, parent_name):
-                return Outcome.OK
-            return Outcome.INVALID_PARENT_TYPE
+        # There is no `PARENT_TYPE` case. Collection removes each parent type
+        # check that the parent scope of the field implies, and the scope is
+        # the intersection of every check, so no check stays. Merging joins
+        # only fields of the same scope, and adds no check.
         if kind == CondKind.FIELD_TYPE:
             var field_type = self.resolve_type_name(field, value, parent)
             if self.plan[].tables.matches(node.set, field_type):
                 return Outcome.OK
             return Outcome.INVALID_FIELD_TYPE
         if kind == CondKind.ENUM_VALUES:
-            if value == NO_NODE or self.document[].kind(value) != JsonKind.STRING:
+            if (
+                value == NO_NODE
+                or self.document[].kind(value) != JsonKind.STRING
+            ):
                 return Outcome.OK
             if self.plan[].tables.matches(
                 node.set, string_text(self.document[], value)
@@ -550,12 +563,14 @@ struct _Projector[
         var base = len(self.out[].members)
         var count = self.document[].length(object)
         if base + count > self.out[].members.capacity():
-            self.out[].members.reserve(max(self.out[].members.capacity() * 2, base + count))
+            self.out[].members.reserve(
+                max(self.out[].members.capacity() * 2, base + count)
+            )
         var slots = self.out[].members.unsafe_ptr()
         var member = self.document[].first(object)
         var rank = 0
         while member != NO_NODE:
-            slots[unsafe_offset = base + rank] = member
+            slots[unsafe_offset=base + rank] = member
             rank += 1
             member = self.document[].next(member)
         self.out[].members._len = base + rank
@@ -646,10 +661,7 @@ struct _Projector[
                     outcome = self.evaluate(
                         field.condition, index, value, parent
                     )
-                if (
-                    outcome == Outcome.SKIP
-                    or outcome == Outcome.INVALID_PARENT_TYPE
-                ):
+                if outcome == Outcome.SKIP:
                     continue
             self.write_key(first, index)
             if outcome != Outcome.OK:
@@ -680,9 +692,7 @@ struct _Projector[
                     var shape = -1
                     if kind == JsonKind.ARRAY:
                         shape = 0
-                    propagate = self.project_value(
-                        value, index, parent, shape
-                    )
+                    propagate = self.project_value(value, index, parent, shape)
             if propagate and bits & _NON_NULL != 0:
                 return True
         return False
@@ -736,7 +746,9 @@ struct _Projector[
             return False
         if kind == JsonKind.OBJECT and record.has_children:
             var checkpoint = len(self.out[].buffer)
-            self.out[].cells.append(_TypeCell(False, String(), field, data, parent))
+            self.out[].cells.append(
+                _TypeCell(False, String(), field, data, parent)
+            )
             var cell = len(self.out[].cells) - 1
             var first = True
             var propagate = self.object_fields(

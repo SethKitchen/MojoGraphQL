@@ -129,7 +129,7 @@ struct _Bridge(Movable):
         self.recv = List[List[UInt8]]()
         self.pending = List[List[UInt8]]()
         self.recv_at = List[Int](length=4, fill=0)
-        for _ in range(4):
+        while len(self.send) < 4:
             self.send.append(List[UInt8]())
             self.recv.append(List[UInt8]())
             self.pending.append(List[UInt8]())
@@ -172,9 +172,9 @@ def _crypto_send(
     return 1
 
 
-def _crypto_recv_rcd(ssl: Int, buf: Int, bytes_read: Int, arg: Int) abi(
-    "C"
-) -> Int32:
+def _crypto_recv_rcd(
+    ssl: Int, buf: Int, bytes_read: Int, arg: Int
+) abi("C") -> Int32:
     """Lend libssl every byte that waits at the current read level."""
     var b = _bridge(arg)
     var level = b[].read_level
@@ -221,9 +221,9 @@ def _yield_secret(
     return 1
 
 
-def _got_transport_params(ssl: Int, params: Int, size: Int, arg: Int) abi(
-    "C"
-) -> Int32:
+def _got_transport_params(
+    ssl: Int, params: Int, size: Int, arg: Int
+) abi("C") -> Int32:
     """Keep the transport parameters of the peer."""
     var b = _bridge(arg)
     b[].peer_params = List[UInt8](_bytes(params, size))
@@ -432,9 +432,11 @@ struct TlsSession(Movable):
             Whether `take_send` has bytes for a level.
         """
         ref b = self._bridge[]
-        for index in range(4):
+        var index = 0
+        while index < 4:
             if len(b.send[index]) > 0:
                 return True
+            index += 1
         return False
 
     def take_secrets(mut self) -> List[Secret]:

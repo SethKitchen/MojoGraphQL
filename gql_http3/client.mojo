@@ -37,7 +37,7 @@ from gql_http.status import Method
 from gql_http.url import Url
 from gql_tls.client import HttpsEndpoint
 from gql_tls.error import TlsError, TlsErrorKind
-from gql_tls.openssl import OpenSsl, X509_V_OK
+from gql_tls.openssl import OpenSsl
 from gql_http3.error import H3Error
 from gql_http3.message import MessageReader, request_fields
 from gql_http3.message import to_http1_response, write_message
@@ -331,8 +331,7 @@ struct H3Client(Movable):
                 var result = self.quic.connect(ssl)
                 if result == 1:
                     break
-                var code = self.quic.openssl.get_error(ssl, result)
-                if not Quic.wants_io(code):
+                if result < 0:
                     raise self._handshake_error(ssl)
                 # Send the handshake packets, then wait for the answer.
                 self.quic.handle_events(ssl)
@@ -355,16 +354,14 @@ struct H3Client(Movable):
     def _handshake_error(mut self, ssl: Int) -> TlsError:
         """Make the error of a failed handshake."""
         if self.context.verify:
-            var verdict = self.quic.openssl.verify_result(ssl)
-            if verdict != X509_V_OK:
-                var text = self.quic.openssl.verify_text(verdict)
-                self.quic.openssl.clear_errors()
+            var text = self.quic.verify_failure(ssl)
+            if text.byte_length() > 0:
                 return TlsError(
                     TlsErrorKind.VERIFY,
                     "the certificate of the server did not verify: " + text,
-                    verdict,
+                    0,
                 )
-        var detail = self.quic.openssl.last_error()
+        var detail = self.quic.failure(ssl)
         return TlsError(
             TlsErrorKind.HANDSHAKE, "the QUIC handshake failed: " + detail, 0
         )

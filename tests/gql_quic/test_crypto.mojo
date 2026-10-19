@@ -138,8 +138,12 @@ def test_suites() raises:
     assert_equal(CipherSuite.CHACHA20_POLY1305_SHA256.key_size(), 32)
     assert_equal(CipherSuite.AES_256_GCM_SHA384.hash_size(), 48)
     assert_equal(CipherSuite.AES_128_GCM_SHA256.hash_size(), 32)
-    assert_equal(String(CipherSuite.AES_128_GCM_SHA256), "TLS_AES_128_GCM_SHA256")
-    assert_equal(String(CipherSuite.AES_256_GCM_SHA384), "TLS_AES_256_GCM_SHA384")
+    assert_equal(
+        String(CipherSuite.AES_128_GCM_SHA256), "TLS_AES_128_GCM_SHA256"
+    )
+    assert_equal(
+        String(CipherSuite.AES_256_GCM_SHA384), "TLS_AES_256_GCM_SHA384"
+    )
     assert_equal(
         String(CipherSuite.CHACHA20_POLY1305_SHA256),
         "TLS_CHACHA20_POLY1305_SHA256",
@@ -215,7 +219,9 @@ def test_a2_client_initial() raises:
         packet.append(0)
     var plain = List[UInt8](packet[header_end:])
     packet.resize(len(packet) + 16, 0)
-    keys.local.packet.seal(packet.unsafe_ptr(), 0, header_end, header_end + 1162, 2)
+    keys.local.packet.seal(
+        packet.unsafe_ptr(), 0, header_end, header_end + 1162, 2
+    )
     keys.local.header.protect(packet.unsafe_ptr(), 0, 18, 4)
     assert_equal(tohex(packet), tohex(unhex(CLIENT_PROTECTED)))
     var server = initial_keys(crypto, unhex(DCID), True)
@@ -251,9 +257,7 @@ def test_a3_server_initial() raises:
     assert_true(
         client.remote.packet.open(packet.unsafe_ptr(), 0, 20, len(packet), 1)
     )
-    assert_equal(
-        tohex(packet[20:payload_end]), tohex(unhex(SERVER_PAYLOAD))
-    )
+    assert_equal(tohex(packet[20:payload_end]), tohex(unhex(SERVER_PAYLOAD)))
 
 
 def test_a5_chacha20_short_header() raises:
@@ -288,9 +292,13 @@ def test_a5_chacha20_short_header() raises:
     keys.header.protect(packet.unsafe_ptr(), 0, 1, 3)
     assert_equal(tohex(packet), "4cfe4189655e5cd55c41f69080575d7999c25a5bfb")
     var peer = DirectionalKeys(crypto, suite, secret, False)
-    assert_equal(peer.header.unprotect(packet.unsafe_ptr(), 0, 1, len(packet)), 3)
+    assert_equal(
+        peer.header.unprotect(packet.unsafe_ptr(), 0, 1, len(packet)), 3
+    )
     assert_equal(tohex(packet[0:4]), "4200bff4")
-    assert_true(peer.packet.open(packet.unsafe_ptr(), 0, 4, len(packet), 654360564))
+    assert_true(
+        peer.packet.open(packet.unsafe_ptr(), 0, 4, len(packet), 654360564)
+    )
     assert_equal(packet[4], 1)
 
 
@@ -307,7 +315,9 @@ def test_open_failures() raises:
     assert_false(peer.remote.packet.open(packet.unsafe_ptr(), 0, 4, 40, 9))
     # Too few bytes for the sample leave the packet unchanged.
     var before = packet[0]
-    assert_equal(peer.remote.header.unprotect(packet.unsafe_ptr(), 0, 30, 40), 0)
+    assert_equal(
+        peer.remote.header.unprotect(packet.unsafe_ptr(), 0, 30, 40), 0
+    )
     assert_equal(packet[0], before)
 
 

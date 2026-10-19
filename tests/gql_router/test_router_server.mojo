@@ -7,12 +7,15 @@
 
 The request decoding cases follow the tests of Hive Router `1a29df9`
 `bin/router/src/pipeline/execution_request.rs` and the errors of
-`bin/router/src/pipeline/error.rs`. The last case serves the router and
+`bin/router/src/pipeline/error.rs`. Two cases serve the router and
 two subgraphs over HTTP on the loopback interface, so that a request goes
-through `RouterHandler` and `HttpTransport`.
+through `RouterHandler` and `HttpTransport`. The parallel case follows
+`runs_parallel_jobs_in_parallel` of `bin/router/src/executor/execution/plan.rs`.
 """
 
-from _fixtures import simple_requires
+from std.time import perf_counter_ns, sleep
+
+from _fixtures import abstract_types, simple_requires
 from gql_http.client import Client
 from gql_http.parser import Request
 from gql_http.server import (
@@ -21,11 +24,15 @@ from gql_http.server import (
     ServerConfig,
     start_workers,
 )
-from gql_http.socket import IPv4Address
+from gql_http.socket import ECONNRESET, Faults, IPv4Address, SysCall
 from gql_http.status import Method, Status
 from gql_json.parser import parse_bytes
-from gql_json.value import NO_NODE
-from gql_router.exec_http import CannedTransport, HttpTransport
+from gql_json.value import NO_NODE, JsonDocument
+from gql_router.exec_http import (
+    CannedTransport,
+    HttpTransport,
+    SubgraphFailure,
+)
 from gql_router.exec_value import string_text
 from gql_router.pipeline import Router, RouterSchema
 from gql_router.router_server import (
@@ -63,7 +70,11 @@ def _bytes(text: StringSlice) -> List[UInt8]:
     return List[UInt8](text.as_bytes())
 
 
-def _error_of(get: Bool, text: String, content_type: Optional[String] = String("application/json")) -> String:
+def _error_of(
+    get: Bool,
+    text: String,
+    content_type: Optional[String] = String("application/json"),
+) -> String:
     try:
         if get:
             _ = read_get_params(text)
@@ -108,11 +119,14 @@ def test_post_reads_the_body() raises:
     assert_equal(params.query.value(), "{ a }")
     assert_false(params.operation_name)
     assert_equal(
-        string_text(params.variables, params.variables.first(params.variables_root)),
+        string_text(
+            params.variables, params.variables.first(params.variables_root)
+        ),
         "1",
     )
     var empty = read_post_params(
-        String("application/json"), _bytes('{"variables":null,"operationName":"A"}')
+        String("application/json"),
+        _bytes('{"variables":null,"operationName":"A"}'),
     )
     assert_false(empty.query)
     assert_equal(empty.operation_name.value(), "A")
@@ -132,7 +146,9 @@ def test_post_errors() raises:
     assert_equal(_error_of(False, "{"), bad)
     assert_equal(_error_of(False, "[]"), bad)
     assert_equal(_error_of(False, '{"query":"a","query":"b"}'), bad)
-    assert_equal(_error_of(False, '{"operationName":"a","operationName":"b"}'), bad)
+    assert_equal(
+        _error_of(False, '{"operationName":"a","operationName":"b"}'), bad
+    )
     assert_equal(_error_of(False, '{"variables":{},"variables":{}}'), bad)
     assert_equal(_error_of(False, '{"query":1}'), bad)
     assert_equal(_error_of(False, '{"variables":[]}'), bad)
@@ -281,6 +297,76 @@ def test_the_router_serves_http_with_http_subgraphs() raises:
     client.close_idle()
     assert_equal(front.stop(), 0)
     assert_equal(subgraphs.stop(), 0)
+
+
+struct _Slow(Handler):
+    """Answers as the `books` or `magazines` subgraph after one second."""
+
+    var field: String
+
+    def __init__(out self, field: String):
+        self.field = field
+
+    def handle(mut self, request: Request, mut response: ResponseWriter) raises:
+        sleep(1.0)
+        response.add_header("Content-Type", "application/json")
+        response.write_text(
+            '{"data":{"'
+            + self.field
+            + '":[{"__typename":"'
+            + ("Book" if self.field == "books" else "Magazine")
+            + '","id":"'
+            + self.field
+            + '"}]}}'
+        )
+
+
+def test_a_response_that_fails_to_arrive_is_a_failure() raises:
+    var subgraphs = start_workers(_Subgraphs(), _loopback())
+    var names: List[String] = ["products"]
+    var urls: List[String] = [
+        "http://127.0.0.1:" + String(subgraphs.port) + "/products"
+    ]
+    var transport = HttpTransport(names, urls)
+    transport.client.sys.faults = Faults(SysCall.RECV, ECONNRESET, 0, 1)
+    var failed = transport.send(
+        "products", PRODUCTS, _bytes('{"query":"' + PRODUCTS + '"}')
+    )
+    assert_true(failed.failure == SubgraphFailure.REQUEST_FAILURE)
+    # The client closed the connection, so the worker can fail to write its
+    # response; its exit status does not matter here.
+    _ = subgraphs.stop()
+
+
+def test_the_fetches_of_a_parallel_node_are_in_flight_at_once() raises:
+    var books = start_workers(_Slow("books"), _loopback())
+    var magazines = start_workers(_Slow("magazines"), _loopback())
+    var names: List[String] = ["books", "magazines"]
+    var urls: List[String] = [
+        "http://127.0.0.1:" + String(books.port) + "/",
+        "http://127.0.0.1:" + String(magazines.port) + "/",
+    ]
+    var router = Router(
+        RouterSchema(abstract_types.sdl()), HttpTransport(names, urls)
+    )
+    var started = perf_counter_ns()
+    var response = router.execute(
+        "{ books { id } magazines { id } }",
+        None,
+        JsonDocument(),
+        NO_NODE,
+        False,
+        True,
+    )
+    var elapsed = perf_counter_ns() - started
+    assert_equal(
+        String(unsafe_from_utf8=response.body^),
+        '{"data":{"books":[{"id":"books"}],"magazines":[{"id":"magazines"}]}}',
+    )
+    # Each subgraph takes one second. One after the other takes two.
+    assert_true(elapsed < 1_800_000_000)
+    assert_equal(books.stop(), 0)
+    assert_equal(magazines.stop(), 0)
 
 
 def main() raises:

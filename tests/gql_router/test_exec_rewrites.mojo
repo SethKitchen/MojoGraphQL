@@ -56,7 +56,10 @@ def test_a_key_renamer_renames_the_last_field() raises:
 
 def test_type_conditions_select_the_objects() raises:
     var store = Store()
-    var path: List[FetchNodePathSegment] = [_types(store, "Media"), _key(store, "title")]
+    var path: List[FetchNodePathSegment] = [
+        _types(store, "Media"),
+        _key(store, "title"),
+    ]
     var rewrite = FetchRewrite(False, path^, store.sym("name"))
     assert_equal(
         _run(
@@ -72,7 +75,10 @@ def test_type_conditions_select_the_objects() raises:
 
 def test_a_value_setter_replaces_the_value() raises:
     var store = Store()
-    var path: List[FetchNodePathSegment] = [_types(store, "Book"), _key(store, "__typename")]
+    var path: List[FetchNodePathSegment] = [
+        _types(store, "Book"),
+        _key(store, "__typename"),
+    ]
     var rewrite = FetchRewrite(True, path^, store.sym("Media"))
     assert_equal(
         _run(store, rewrite, '[{"__typename":"Book"},{"__typename":"Movie"}]'),
@@ -88,7 +94,9 @@ def test_a_missing_field_or_a_short_value_changes_nothing() raises:
     var rewrite = FetchRewrite(False, a^, store.sym("b"))
     assert_equal(_run(store, rewrite, '{"x":1}'), '{"x":1}')
     assert_equal(_run(store, rewrite, '"text"'), '"text"')
-    var empty = FetchRewrite(False, List[FetchNodePathSegment](), store.sym("b"))
+    var empty = FetchRewrite(
+        False, List[FetchNodePathSegment](), store.sym("b")
+    )
     assert_equal(_run(store, empty, '{"a":1}'), '{"a":1}')
 
 

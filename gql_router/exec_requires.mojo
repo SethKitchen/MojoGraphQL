@@ -91,7 +91,6 @@ struct _Applied(ImplicitlyCopyable, Movable):
     """One of the fields is not in the object."""
 
 
-
 def _has_complete_key(
     document: JsonDocument, entity: Int, type_keys: List[List[String]]
 ) -> Bool:
@@ -122,7 +121,6 @@ def _type_matches(
     return possible_types.entity_satisfies_type_condition(
         condition, string_text(document, type_node)
     )
-
 
 
 def project_requires(
@@ -200,7 +198,9 @@ def requires_hash(
         keys,
         Pointer(to=buffer).unsafe_origin_cast[MutUntrackedOrigin](),
     )
-    return finish_hash(hasher.hash_with_requires(selections, entity, FNV_OFFSET))
+    return finish_hash(
+        hasher.hash_with_requires(selections, entity, FNV_OFFSET)
+    )
 
 
 @fieldwise_init
@@ -309,9 +309,13 @@ struct _Requires[
         var key_index = -1
         if has_keys and type_node != NO_NODE:
             if is_plain_string(document, type_node):
-                key_index = self.keys[].index_of(raw_string(document, type_node))
+                key_index = self.keys[].index_of(
+                    raw_string(document, type_node)
+                )
             else:
-                key_index = self.keys[].index_of(string_text(document, type_node))
+                key_index = self.keys[].index_of(
+                    string_text(document, type_node)
+                )
         var keys_known = key_index >= 0
         var object_start = len(buffer)
         var applied = self.project_map(

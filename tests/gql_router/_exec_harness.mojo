@@ -59,8 +59,8 @@ def run_router(
     var response = router.execute(
         query, operation_name, document^, root, is_get, prefer_ok
     )
-    return String(response.status) + " " + String(
-        unsafe_from_utf8=response.body^
+    return (
+        String(response.status) + " " + String(unsafe_from_utf8=response.body^)
     )
 
 
@@ -143,7 +143,9 @@ def project(
     var planner = Planner(sdl)
     var operation = planner.normalize(query)
     var metadata = metadata_of(sdl)
-    var built = ProjectionPlan.from_operation(planner.store, operation, metadata)
+    var built = ProjectionPlan.from_operation(
+        planner.store, operation, metadata
+    )
     var document = parse_json(data)
     var out = project_by_operation(
         document,

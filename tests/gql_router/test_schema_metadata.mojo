@@ -23,6 +23,8 @@ def test_an_empty_document_has_the_default_roots() raises:
     assert_equal(metadata.query_type_name, "")
     assert_equal(len(metadata.type_fields), 0)
     assert_true("String" in metadata.scalar_types)
+    assert_true(metadata.is_scalar_type("ID"))
+    assert_false(metadata.is_scalar_type("Query"))
 
 
 def test_empty_definitions() raises:

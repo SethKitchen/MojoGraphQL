@@ -116,14 +116,14 @@ def key_is(document: JsonDocument, node: Int, key: StringSlice) -> Bool:
     if length != key.byte_length():
         return False
     return bytes_equal(
-        document.bytes.unsafe_ptr().unsafe_offset(start), key.unsafe_ptr(), length
+        document.bytes.unsafe_ptr().unsafe_offset(start),
+        key.unsafe_ptr(),
+        length,
     )
 
 
 @always_inline
-def append_bytes(
-    mut out: List[UInt8], source: Pointer[UInt8, _], count: Int
-):
+def append_bytes(mut out: List[UInt8], source: Pointer[UInt8, _], count: Int):
     """Copy bytes to the end of a buffer.
 
     `List.extend` copies one byte at a time; this copies a short run with a
@@ -186,12 +186,16 @@ def bytes_equal(
     """
     var index = 0
     while index + 8 <= length:
-        var left = a.unsafe_offset(index).unsafe_bitcast[UInt64]().unsafe_load[
-            alignment=1
-        ]()
-        var right = b.unsafe_offset(index).unsafe_bitcast[
-            UInt64
-        ]().unsafe_load[alignment=1]()
+        var left = (
+            a.unsafe_offset(index)
+            .unsafe_bitcast[UInt64]()
+            .unsafe_load[alignment=1]()
+        )
+        var right = (
+            b.unsafe_offset(index)
+            .unsafe_bitcast[UInt64]()
+            .unsafe_load[alignment=1]()
+        )
         if left != right:
             return False
         index += 8
@@ -441,7 +445,7 @@ def append_child(mut document: JsonDocument, parent: Int, child: Int):
     if container[].count == 0:
         container[].start = Int32(child)
     else:
-        nodes[unsafe_offset = Int(container[].end)].next = Int32(child)
+        nodes[unsafe_offset=Int(container[].end)].next = Int32(child)
     container[].end = Int32(child)
     container[].count += 1
 
@@ -731,9 +735,11 @@ def hash_bytes(state: UInt64, bytes: Span[UInt8, _]) -> UInt64:
     var index = 0
     var length = len(bytes)
     while index + 8 <= length:
-        var word = data.unsafe_offset(index).unsafe_bitcast[UInt64]().unsafe_load[
-            alignment=1
-        ]()
+        var word = (
+            data.unsafe_offset(index)
+            .unsafe_bitcast[UInt64]()
+            .unsafe_load[alignment=1]()
+        )
         hash = _mix(hash ^ word)
         index += 8
     if index < length:

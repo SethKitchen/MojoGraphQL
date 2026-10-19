@@ -221,9 +221,7 @@ struct _Table(Movable):
         self.sha256 = crypto_function[Int](openssl, "EVP_sha256")()
         self.sha384 = crypto_function[Int](openssl, "EVP_sha384")()
         self.pkey_new = crypto_function[Int](openssl, "EVP_PKEY_CTX_new_id")
-        self.pkey_free = crypto_function[NoneType](
-            openssl, "EVP_PKEY_CTX_free"
-        )
+        self.pkey_free = crypto_function[NoneType](openssl, "EVP_PKEY_CTX_free")
         self.derive_init = crypto_function[Int32](
             openssl, "EVP_PKEY_derive_init"
         )
@@ -373,8 +371,10 @@ struct PacketKey(Movable):
         self.suite = suite
         self.encrypt = encrypt
         self.iv = Array[UInt8, IV_SIZE](fill=0)
-        for index in range(IV_SIZE):
+        var index = 0
+        while index < IV_SIZE:
             self.iv[index] = iv[index]
+            index += 1
         ref t = self.crypto.table[]
         var cipher = t.chacha20_poly1305
         if suite == CipherSuite.AES_128_GCM_SHA256:
@@ -394,12 +394,16 @@ struct PacketKey(Movable):
     def _start(self, pn: UInt64):
         """Set the nonce of a packet number (RFC 9001 section 5.3)."""
         var nonce = stack_allocation[IV_SIZE, UInt8]()
-        for index in range(IV_SIZE):
+        var index = 0
+        while index < IV_SIZE:
             nonce[unsafe_offset=index] = self.iv[index]
-        for index in range(8):
+            index += 1
+        index = 0
+        while index < 8:
             nonce[unsafe_offset=IV_SIZE - 1 - index] ^= UInt8(
                 (pn >> UInt64(8 * index)) & 0xFF
             )
+            index += 1
         _ = self.crypto.table[].init(self.ctx, 0, 0, 0, Int(nonce), Int32(-1))
 
     def seal(
@@ -425,7 +429,9 @@ struct PacketKey(Movable):
         var base = Int(data)
         var size = stack_allocation[1, Int32]()
         self._start(pn)
-        _ = t.update(self.ctx, 0, Int(size), base + start, Int32(header_end - start))
+        _ = t.update(
+            self.ctx, 0, Int(size), base + start, Int32(header_end - start)
+        )
         _ = t.update(
             self.ctx,
             base + header_end,
@@ -435,7 +441,10 @@ struct PacketKey(Movable):
         )
         _ = t.final(self.ctx, base + payload_end, Int(size))
         _ = t.ctrl(
-            self.ctx, _EVP_CTRL_AEAD_GET_TAG, Int32(TAG_SIZE), base + payload_end
+            self.ctx,
+            _EVP_CTRL_AEAD_GET_TAG,
+            Int32(TAG_SIZE),
+            base + payload_end,
         )
 
     def open(
@@ -467,9 +476,14 @@ struct PacketKey(Movable):
         var payload_end = end - TAG_SIZE
         self._start(pn)
         _ = t.ctrl(
-            self.ctx, _EVP_CTRL_AEAD_SET_TAG, Int32(TAG_SIZE), base + payload_end
+            self.ctx,
+            _EVP_CTRL_AEAD_SET_TAG,
+            Int32(TAG_SIZE),
+            base + payload_end,
         )
-        _ = t.update(self.ctx, 0, Int(size), base + start, Int32(header_end - start))
+        _ = t.update(
+            self.ctx, 0, Int(size), base + start, Int32(header_end - start)
+        )
         _ = t.update(
             self.ctx,
             base + header_end,
@@ -490,7 +504,9 @@ struct HeaderKey(Movable):
     var ctx: Int
     """The `EVP_CIPHER_CTX *`, keyed once."""
 
-    def __init__(out self, crypto: Crypto, suite: CipherSuite, key: Span[UInt8, _]):
+    def __init__(
+        out self, crypto: Crypto, suite: CipherSuite, key: Span[UInt8, _]
+    ):
         """Make a key.
 
         Args:
@@ -523,14 +539,14 @@ struct HeaderKey(Movable):
             # The sample is the counter and the nonce of ChaCha20; the mask
             # is the key stream over five zero bytes.
             var zeros = stack_allocation[8, UInt8]()
-            for index in range(8):
+            var index = 0
+            while index < 8:
                 zeros[unsafe_offset=index] = 0
+                index += 1
             _ = t.init(self.ctx, 0, 0, 0, sample, Int32(1))
             _ = t.update(self.ctx, dest, Int(size), Int(zeros), Int32(5))
         else:
-            _ = t.update(
-                self.ctx, dest, Int(size), sample, Int32(SAMPLE_SIZE)
-            )
+            _ = t.update(self.ctx, dest, Int(size), sample, Int32(SAMPLE_SIZE))
 
     def mask(self, sample: Span[UInt8, _]) -> Array[UInt8, 5]:
         """Return the mask of a 16-byte sample.
@@ -544,8 +560,10 @@ struct HeaderKey(Movable):
         var out = stack_allocation[SAMPLE_SIZE, UInt8]()
         self._mask(Int(sample.unsafe_ptr()), Int(out))
         var mask = Array[UInt8, 5](fill=0)
-        for index in range(5):
+        var index = 0
+        while index < 5:
             mask[index] = out[unsafe_offset=index]
+            index += 1
         return mask^
 
     def protect(
@@ -560,13 +578,17 @@ struct HeaderKey(Movable):
                 4 bytes after it.
             pn_len: The size of the packet number, 1 to 4.
         """
-        var p = Pointer[UInt8, MutUntrackedOrigin](unsafe_from_address=Int(data))
+        var p = Pointer[UInt8, MutUntrackedOrigin](
+            unsafe_from_address=Int(data)
+        )
         var out = stack_allocation[SAMPLE_SIZE, UInt8]()
         self._mask(Int(data) + pn_offset + 4, Int(out))
         var bits = UInt8(0x0F) if p[unsafe_offset=start] & 0x80 != 0 else 0x1F
         p[unsafe_offset=start] ^= out[unsafe_offset=0] & bits
-        for index in range(pn_len):
+        var index = 0
+        while index < pn_len:
             p[unsafe_offset=pn_offset + index] ^= out[unsafe_offset=1 + index]
+            index += 1
 
     def unprotect(
         self, data: Pointer[UInt8, _], start: Int, pn_offset: Int, end: Int
@@ -585,14 +607,18 @@ struct HeaderKey(Movable):
         """
         if pn_offset + 4 + SAMPLE_SIZE > end:
             return 0
-        var p = Pointer[UInt8, MutUntrackedOrigin](unsafe_from_address=Int(data))
+        var p = Pointer[UInt8, MutUntrackedOrigin](
+            unsafe_from_address=Int(data)
+        )
         var out = stack_allocation[SAMPLE_SIZE, UInt8]()
         self._mask(Int(data) + pn_offset + 4, Int(out))
         var bits = UInt8(0x0F) if p[unsafe_offset=start] & 0x80 != 0 else 0x1F
         p[unsafe_offset=start] ^= out[unsafe_offset=0] & bits
         var pn_len = Int(p[unsafe_offset=start] & 0x03) + 1
-        for index in range(pn_len):
+        var index = 0
+        while index < pn_len:
             p[unsafe_offset=pn_offset + index] ^= out[unsafe_offset=1 + index]
+            index += 1
         return pn_len
 
 
@@ -658,7 +684,9 @@ struct DirectionalKeys(Movable):
         var key = crypto.hkdf_expand_label(
             self.suite, secret, "quic key", self.suite.key_size()
         )
-        var iv = crypto.hkdf_expand_label(self.suite, secret, "quic iv", IV_SIZE)
+        var iv = crypto.hkdf_expand_label(
+            self.suite, secret, "quic iv", IV_SIZE
+        )
         return PacketKey(crypto, self.suite, key, iv, self.packet.encrypt)
 
     def update(mut self) -> PacketKey:
@@ -682,7 +710,9 @@ struct KeyPair(Movable):
     var remote: DirectionalKeys
     """The keys that open what the peer sends."""
 
-    def __init__(out self, var local: DirectionalKeys, var remote: DirectionalKeys):
+    def __init__(
+        out self, var local: DirectionalKeys, var remote: DirectionalKeys
+    ):
         """Pair two sets of keys.
 
         Args:
@@ -716,7 +746,9 @@ def initial_secrets(
     return (client^, server^)
 
 
-def initial_keys(crypto: Crypto, dcid: Span[UInt8, _], is_server: Bool) -> KeyPair:
+def initial_keys(
+    crypto: Crypto, dcid: Span[UInt8, _], is_server: Bool
+) -> KeyPair:
     """Derive the Initial keys of one end of a connection.
 
     Args:

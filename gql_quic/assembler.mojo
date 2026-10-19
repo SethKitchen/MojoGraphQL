@@ -51,7 +51,9 @@ struct Assembler(Movable):
         var end = offset + UInt64(len(data))
         if end <= self.bytes_read:
             return
-        var skip = Int(self.bytes_read - offset) if offset < self.bytes_read else 0
+        var skip = (
+            Int(self.bytes_read - offset) if offset < self.bytes_read else 0
+        )
         var start = offset + UInt64(skip)
         var at = self.head + Int(start - self.bytes_read)
         var need = at + len(data) - skip

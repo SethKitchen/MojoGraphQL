@@ -147,6 +147,19 @@ def test_reset_and_large_body() raises:
     _ = big^
 
 
+def test_post_larger_than_the_stream_window() raises:
+    """A body of 2 MB passes the 1.25 MB receive window of a stream, so
+    the client writes it in parts as the server gives credit."""
+    var server = start_server()
+    var url = "https://localhost:" + String(server[1]) + "/"
+    var c = client()
+    var body = String("x") * (2 << 20)
+    var answer = c.post(url, "text/plain", body)
+    assert_equal(answer.status.code, 200)
+    assert_equal(answer.text().byte_length(), (2 << 20) + 2)
+    stop(server[0])
+
+
 def raw_kind(var reply: List[UInt8]) raises -> TlsErrorKind:
     var server = start_raw_server(reply)
     var c = client()

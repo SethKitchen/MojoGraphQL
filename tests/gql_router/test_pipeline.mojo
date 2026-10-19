@@ -59,7 +59,9 @@ def _body(var bytes: List[UInt8]) -> String:
 
 
 def test_bench_operation_matches_the_upstream_response() raises:
-    var router = Router(RouterSchema(bench_supergraph.sdl()), _bench_transport())
+    var router = Router(
+        RouterSchema(bench_supergraph.sdl()), _bench_transport()
+    )
     var query = bench_supergraph.operation()
     for _ in range(2):
         router.executor.transport.reset()
@@ -67,13 +69,13 @@ def test_bench_operation_matches_the_upstream_response() raises:
             query, String("TestQuery"), JsonDocument(), NO_NODE, False, True
         )
         assert_equal(response.status, 200)
-        assert_equal(_body(response^.take_body()), bench_exec.expected_response())
+        assert_equal(
+            _body(response^.take_body()), bench_exec.expected_response()
+        )
 
 
 def test_a_parse_error_is_a_client_error() raises:
-    var expected = (
-        '{"errors":[{"message":"Failed to parse GraphQL operation: '
-    )
+    var expected = '{"errors":[{"message":"Failed to parse GraphQL operation: '
     var ok = run_router(simple_requires.sdl(), CannedTransport(), "{ products")
     assert_true(ok.startswith("200 " + expected))
     assert_true("GRAPHQL_PARSE_FAILED" in ok)
@@ -111,7 +113,10 @@ def test_a_subscription_is_not_supported() raises:
 def test_a_mutation_over_get_is_not_allowed() raises:
     assert_equal(
         run_router(
-            mutations.sdl(), CannedTransport(), "mutation { delete }", is_get=True
+            mutations.sdl(),
+            CannedTransport(),
+            "mutation { delete }",
+            is_get=True,
         ),
         '405 {"errors":[{"message":"Cannot perform mutations over GET",'
         + '"extensions":{"code":"MUTATION_NOT_ALLOWED_OVER_HTTP_GET"}}]}',
@@ -202,7 +207,9 @@ def test_an_introspection_only_operation_sends_nothing() raises:
 def test_a_plan_that_cannot_be_built_is_an_internal_error() raises:
     var query = 'query { node(id: "a1") { id } }'
     assert_equal(
-        run_router(corrupted_supergraph_node_id.sdl(), CannedTransport(), query),
+        run_router(
+            corrupted_supergraph_node_id.sdl(), CannedTransport(), query
+        ),
         '200 {"errors":[{"message":"Internal server error",'
         + '"extensions":{"code":"QUERY_PLAN_BUILD_FAILED"}}]}',
     )

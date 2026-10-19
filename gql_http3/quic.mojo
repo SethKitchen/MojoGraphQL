@@ -3,24 +3,34 @@
 # Noncommercial use is free; commercial use requires a paid license.
 # See LICENSE, LICENSE-COMMERCIAL.md and THIRD-PARTY-NOTICES.md.
 
-"""QUIC (RFC 9000) through the QUIC API of the system OpenSSL 3.5.
+"""QUIC (RFC 9000) for HTTP/3: `gql_quic`, or the QUIC stack of OpenSSL.
 
-`Quic` is the table of the QUIC functions of OpenSSL: listeners,
-connections and streams. It shares the library of a `gql_tls.OpenSsl`,
-so a program that does not use HTTP/3 never needs OpenSSL. An OpenSSL
-older than 3.5 has no server API, and `Quic` raises a `LIBRARY` error.
+`Quic` is one API over two QUIC stacks, chosen by `QuicTransport`:
 
-Every object is non-blocking. A listener owns one UDP socket. One call of
+- `NATIVE`, the default: the QUIC transport of `gql_quic`, in Mojo. libssl
+  runs only the TLS handshake, through its third-party QUIC API, and
+  libcrypto protects the packets.
+- `OPENSSL`: the QUIC stack of OpenSSL 3.5 itself: listeners, connections
+  and streams are `SSL` objects.
+
+Both share the library of a `gql_tls.OpenSsl`, so a program that does not
+use HTTP/3 never needs OpenSSL. An OpenSSL older than 3.5 has neither API,
+and `Quic` raises a `LIBRARY` error.
+
+Listeners, connections and streams are non-zero `Int` handles. Every
+object is non-blocking. A listener owns one UDP socket. One call of
 `handle_events` on the listener runs the timers and the network I/O of
 every connection that it accepted. The caller waits on the socket with
-`poll`, at most until `event_timeout_ms`.
+`poll`, at most until `event_timeout_ms`. Copies of a `Quic` share the
+state of the native stack.
 
-`QuicContext` is an `SSL_CTX` for QUIC: a server context has a
-certificate, a key and the ALPN protocol `h3`; a client context verifies
-the server and offers `h3`.
+`QuicContext` is an `SSL_CTX`: a server context has a certificate, a key
+and the ALPN protocol `h3`; a client context verifies the server and
+offers `h3`. The native stack uses a TLS context, and the OpenSSL stack a
+QUIC one.
 
-`Quic.faults` can make one kind of call fail, so that tests reach the
-error paths.
+`Quic.faults` can make one kind of call fail on either stack, so that
+tests reach the error paths.
 
 This module ports no code. It calls the public API of OpenSSL 3.5, which
 is Apache-2.0 licensed; no OpenSSL code is copied. The constants are those
@@ -39,7 +49,11 @@ from gql_tls.openssl import (
     OpenSsl,
     SSL_VERIFY_NONE,
     SSL_VERIFY_PEER,
+    X509_V_OK,
 )
+from gql_quic.crypto import Crypto
+from gql_quic.driver import QuicDriver
+from gql_quic.tls import QuicTls
 
 comptime SSL_ACCEPT_CONNECTION_NO_BLOCK: UInt64 = 1
 """`SSL_accept_connection`: do not wait for a connection."""
@@ -63,6 +77,40 @@ comptime _AF_INET: Int32 = 2
 comptime _SOCK_DGRAM: Int32 = 2
 comptime _SOCK_NONBLOCK: Int32 = 0o4000
 comptime _SOCK_CLOEXEC: Int32 = 0o2000000
+
+
+@fieldwise_init
+struct QuicTransport(Equatable, ImplicitlyCopyable, Writable):
+    """The QUIC stack under HTTP/3, as a type."""
+
+    var value: UInt8
+    """The stack's index; see `is_valid`."""
+
+    comptime NATIVE = QuicTransport(0)
+    """`gql_quic`, with the TLS handshake and the AEAD of OpenSSL."""
+    comptime OPENSSL = QuicTransport(1)
+    """The QUIC stack of OpenSSL 3.5."""
+
+    def is_valid(self) -> Bool:
+        """Return True if the value names one of the stacks.
+
+        Returns:
+            Whether the value is in range.
+        """
+        return self.value <= 1
+
+    def write_to(self, mut writer: Some[Writer]):
+        """Write the name of the stack.
+
+        Args:
+            writer: The destination.
+        """
+        if self.value == 0:
+            writer.write("native")
+        elif self.value == 1:
+            writer.write("openssl")
+        else:
+            writer.write("invalid")
 
 
 @fieldwise_init
@@ -206,12 +254,15 @@ struct ReadState(Equatable, ImplicitlyCopyable, Writable):
 
 
 struct Quic(Copyable, Movable):
-    """The QUIC functions of OpenSSL 3.5, and a fault plan."""
+    """One QUIC stack for HTTP/3, and a fault plan."""
 
     var openssl: OpenSsl
     """The library, shared with `gql_tls`."""
+    var transport: QuicTransport
+    """The stack."""
     var faults: QuicFaults
     """The plan of calls that fail; empty by default."""
+    var _native: Optional[ArcPointer[QuicDriver]]
     var _server_method: CFunction[Int]
     var _client_method: CFunction[Int]
     var _ctx_new: CFunction[Int]
@@ -239,23 +290,31 @@ struct Quic(Copyable, Movable):
     def __init__(
         out self,
         var openssl: OpenSsl,
-        marker: StaticString = "SSL_new_listener",
+        marker: StaticString = "",
+        transport: QuicTransport = QuicTransport.NATIVE,
     ) raises TlsError:
-        """Look up the QUIC functions of a loaded OpenSSL.
+        """Look up the functions of a stack in a loaded OpenSSL.
 
         Args:
             openssl: The library.
-            marker: The function that marks the QUIC server API; tests
-                name one that is missing.
+            marker: The function that marks the API of the stack; empty
+                for the one of `transport`. Tests name one that is missing.
+            transport: The stack: `NATIVE` (gql_quic) or `OPENSSL`.
 
         Raises:
-            TlsError: `LIBRARY` when OpenSSL has no QUIC server API, which
-                came in OpenSSL 3.5.
+            TlsError: `LIBRARY` when OpenSSL has no QUIC API, which came in
+                OpenSSL 3.5.
         """
-        if not openssl.has_function(marker):
+        var name = marker
+        if name.byte_length() == 0:
+            name = (
+                "SSL_set_quic_tls_cbs" if transport
+                == QuicTransport.NATIVE else "SSL_new_listener"
+            )
+        if not openssl.has_function(name):
             raise TlsError(
                 TlsErrorKind.LIBRARY,
-                "HTTP/3 needs the QUIC server API of OpenSSL 3.5 or newer;"
+                "HTTP/3 needs the QUIC API of OpenSSL 3.5 or newer;"
                 " this OpenSSL is version "
                 + hex(openssl.version),
                 0,
@@ -285,7 +344,13 @@ struct Quic(Copyable, Movable):
         self._stream_reset = openssl.function[Int32]("SSL_stream_reset")
         self._init_finished = openssl.function[Int32]("SSL_is_init_finished")
         self._set_value = openssl.function[Int32]("SSL_set_value_uint")
+        self._native = None
+        if transport == QuicTransport.NATIVE:
+            self._native = ArcPointer(
+                QuicDriver(Crypto(openssl.copy()), QuicTls(openssl.copy()))
+            )
         self.openssl = openssl^
+        self.transport = transport
         self.faults = QuicFaults()
 
     @always_inline
@@ -294,6 +359,11 @@ struct Quic(Copyable, Movable):
         if self.faults.call.value == 0:
             return False
         return self.faults.take(call)
+
+    @always_inline
+    def _is_native(self) -> Bool:
+        """Return True for the stack of gql_quic."""
+        return Bool(self._native)
 
     def _explicit(mut self, ssl: Int):
         """Make network I/O happen only in `handle_events`.
@@ -321,7 +391,10 @@ struct Quic(Copyable, Movable):
         )
 
     def ctx_new(mut self, server: Bool) -> Int:
-        """Make an `SSL_CTX` for QUIC servers or QUIC clients.
+        """Make an `SSL_CTX` for servers or clients of the stack.
+
+        The native stack takes a TLS context, and the stack of OpenSSL a
+        QUIC one.
 
         Args:
             server: True for a server context.
@@ -331,6 +404,8 @@ struct Quic(Copyable, Movable):
         """
         if self._fail(QuicCall.CTX_NEW):
             return 0
+        if self._is_native():
+            return self.openssl.ctx_new(server)
         var method = self._server_method() if server else self._client_method()
         return self._ctx_new(method)
 
@@ -346,6 +421,8 @@ struct Quic(Copyable, Movable):
         """
         if self._fail(QuicCall.LISTENER):
             return 0
+        if self._is_native():
+            return self._native.value()[].listener(ctx, fd)
         var listener = self._new_listener(ctx, UInt64(0))
         _ = self.openssl.set_fd(listener, fd)
         _ = self._blocking(listener, 0)
@@ -364,6 +441,8 @@ struct Quic(Copyable, Movable):
         Returns:
             The connection, or 0 when none waits.
         """
+        if self._is_native():
+            return self._native.value()[].accept_connection(listener)
         var conn = self._accept_connection(
             listener, SSL_ACCEPT_CONNECTION_NO_BLOCK
         )
@@ -382,6 +461,8 @@ struct Quic(Copyable, Movable):
         Returns:
             The stream, or 0 when none waits.
         """
+        if self._is_native():
+            return self._native.value()[].accept_stream(conn)
         return self._accept_stream(conn, SSL_ACCEPT_STREAM_NO_BLOCK)
 
     def new_stream(mut self, conn: Int, unidirectional: Bool) -> Int:
@@ -396,6 +477,8 @@ struct Quic(Copyable, Movable):
         """
         if self._fail(QuicCall.NEW_STREAM):
             return 0
+        if self._is_native():
+            return self._native.value()[].new_stream(conn, unidirectional)
         var flags = SSL_STREAM_FLAG_NO_BLOCK
         if unidirectional:
             flags |= SSL_STREAM_FLAG_UNI
@@ -417,6 +500,10 @@ struct Quic(Copyable, Movable):
         """
         if self._fail(QuicCall.CONNECTION):
             return 0
+        if self._is_native():
+            return self._native.value()[].client_connection(
+                ctx, fd, host^, verify
+            )
         var conn = self.openssl.ssl_new(ctx)
         _ = self.openssl.set_fd(conn, fd)
         _ = self._blocking(conn, 0)
@@ -440,11 +527,49 @@ struct Quic(Copyable, Movable):
             conn: The connection.
 
         Returns:
-            1 when done, else a value for `OpenSsl.get_error`.
+            1 when done, 0 while it waits for the network, -1 when it
+            failed; `failure` then tells why.
         """
         if self._fail(QuicCall.HANDSHAKE):
-            return 0
-        return self._connect(conn)
+            return -1
+        if self._is_native():
+            return self._native.value()[].connect(conn)
+        var rc = self._connect(conn)
+        if rc == 1:
+            return 1
+        var code = self.openssl.get_error(conn, rc)
+        return 0 if Quic.wants_io(code) else -1
+
+    def verify_failure(mut self, conn: Int) -> String:
+        """Return why the certificate of the server did not verify.
+
+        Args:
+            conn: The connection.
+
+        Returns:
+            The text of the verification result; empty when it verified.
+        """
+        if self._is_native():
+            return self._native.value()[].verify_failure(conn)
+        var verdict = self.openssl.verify_result(conn)
+        if verdict == X509_V_OK:
+            return String()
+        var text = self.openssl.verify_text(verdict)
+        self.openssl.clear_errors()
+        return text
+
+    def failure(mut self, conn: Int) -> String:
+        """Return why a handshake or a connection failed.
+
+        Args:
+            conn: The connection.
+
+        Returns:
+            The text of the error; empty when none is known.
+        """
+        if self._is_native():
+            return self._native.value()[].failure(conn)
+        return self.openssl.last_error()
 
     @staticmethod
     def wants_io(code: Int32) -> Bool:
@@ -464,6 +589,9 @@ struct Quic(Copyable, Movable):
         Args:
             ssl: The listener or the client connection.
         """
+        if self._is_native():
+            self._native.value()[].handle_events(ssl)
+            return
         _ = self._handle_events(ssl)
 
     def event_timeout_ms(mut self, ssl: Int) -> Int:
@@ -475,6 +603,8 @@ struct Quic(Copyable, Movable):
         Returns:
             Milliseconds, rounded up; -1 when no timer runs.
         """
+        if self._is_native():
+            return self._native.value()[].event_timeout_ms(ssl)
         var tv = stack_allocation[2, Int]()
         var infinite = stack_allocation[1, Int32]()
         tv[unsafe_offset=0] = 0
@@ -500,6 +630,12 @@ struct Quic(Copyable, Movable):
         """
         if self._fail(QuicCall.READ):
             return ReadResult(0, ReadState.RESET)
+        if self._is_native():
+            var dest = Pointer[UInt8, MutUntrackedOrigin](
+                unsafe_from_address=Int(data)
+            )
+            var r = self._native.value()[].read(stream, dest, size)
+            return ReadResult(r.count, ReadState(r.status.value))
         var got = stack_allocation[1, Int]()
         got[unsafe_offset=0] = 0
         var rc = self._read_ex(stream, data, size, got)
@@ -534,6 +670,10 @@ struct Quic(Copyable, Movable):
         """
         if self._fail(QuicCall.WRITE):
             return -1
+        if self._is_native():
+            return self._native.value()[].write(
+                stream, Span(unsafe_ptr=data, length=size), conclude
+            )
         if size == 0:
             # SSL_write_ex2 sends no FIN without bytes.
             if conclude:
@@ -560,6 +700,8 @@ struct Quic(Copyable, Movable):
         Returns:
             The id; bit 0 is the initiator and bit 1 the direction.
         """
+        if self._is_native():
+            return self._native.value()[].stream_id(stream)
         return self._stream_id(stream)
 
     def close_connection(mut self, conn: Int, code: UInt64):
@@ -569,6 +711,9 @@ struct Quic(Copyable, Movable):
             conn: The connection.
             code: The application error code, such as `H3_NO_ERROR`.
         """
+        if self._is_native():
+            self._native.value()[].close_connection(conn, code)
+            return
         var args = stack_allocation[2, UInt64]()
         args[unsafe_offset=0] = code
         args[unsafe_offset=1] = 0
@@ -586,6 +731,8 @@ struct Quic(Copyable, Movable):
         Returns:
             Whether streams can be opened.
         """
+        if self._is_native():
+            return self._native.value()[].handshake_done(conn)
         return self._init_finished(conn) == 1
 
     def connection_closed(mut self, conn: Int) -> Bool:
@@ -597,6 +744,8 @@ struct Quic(Copyable, Movable):
         Returns:
             Whether it is closed.
         """
+        if self._is_native():
+            return self._native.value()[].connection_closed(conn)
         var info = stack_allocation[8, UInt64]()
         return self._close_info(conn, info, 40) == 1
 
@@ -607,6 +756,9 @@ struct Quic(Copyable, Movable):
             stream: The stream.
             code: The application error code, such as `H3_MESSAGE_ERROR`.
         """
+        if self._is_native():
+            self._native.value()[].reset_stream(stream, code)
+            return
         var args = stack_allocation[1, UInt64]()
         args[unsafe_offset=0] = code
         _ = self._stream_reset(stream, args, 8)
@@ -618,8 +770,12 @@ struct Quic(Copyable, Movable):
         Args:
             ssl: The object; 0 does nothing.
         """
-        if ssl != 0:
-            self.openssl.ssl_free(ssl)
+        if ssl == 0:
+            return
+        if self._is_native():
+            self._native.value()[].free(ssl)
+            return
+        self.openssl.ssl_free(ssl)
 
 
 struct QuicContext(Movable):
@@ -720,6 +876,14 @@ struct QuicContext(Movable):
             openssl.set_verify(context.ctx, SSL_VERIFY_PEER)
         else:
             openssl.set_verify(context.ctx, SSL_VERIFY_NONE)
+        # The native stack offers h3 from the context; OpenSSL QUIC
+        # connections also set it on each connection.
+        var wire = List[UInt8]()
+        wire.append(2)
+        wire.append(104)
+        wire.append(51)
+        context.alpn = ArcPointer(wire^)
+        _ = openssl.set_alpn_protocols(context.ctx, context.alpn[])
         return context^
 
     def __deinit__(deinit self):

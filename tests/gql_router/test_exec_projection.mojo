@@ -224,7 +224,9 @@ def test_empty_projection_returns_empty_data_object() raises:
         planner.store, static_op, metadata_of(sdl)
     )
     assert_true(static_plan[1].is_empty())
-    var query = String("query Example($skip: Boolean!) { foo @skip(if: $skip) }")
+    var query = String(
+        "query Example($skip: Boolean!) { foo @skip(if: $skip) }"
+    )
     var variable_op = planner.normalize(query)
     var variable_plan = ProjectionPlan.from_operation(
         planner.store, variable_op, metadata_of(sdl)
@@ -235,7 +237,9 @@ def test_empty_projection_returns_empty_data_object() raises:
         '{"data":{}}',
     )
     assert_equal(
-        project(sdl, query, '{"__typename":"Query","foo":"x"}', '{"skip":true}'),
+        project(
+            sdl, query, '{"__typename":"Query","foo":"x"}', '{"skip":true}'
+        ),
         '{"data":{}}',
     )
 
@@ -257,7 +261,9 @@ type Query { node: Node }"""
     assert_equal(
         plan._child_parent_type(schema, "Node", node_types, "item"), "Item"
     )
-    assert_equal(plan._child_parent_type(schema, "Node", node_types, "id"), "ID")
+    assert_equal(
+        plan._child_parent_type(schema, "Node", node_types, "id"), "ID"
+    )
 
 
 def test_nested_unguarded_merge_resolves_under_the_field_output_type() raises:
@@ -275,7 +281,9 @@ type Query { node: Node }"""
         "query Example { node { item { sub { name } } ... on A { item { sub {"
         + " ... on X { name } } } } } }"
     )
-    var expected = String('{"data":{"node":{"item":{"sub":{"name":"sub-name"}}}}}')
+    var expected = String(
+        '{"data":{"node":{"item":{"sub":{"name":"sub-name"}}}}}'
+    )
     var pairs: List[String] = ["A", "X", "A", "Y", "B", "X"]
     var index = 0
     while index < len(pairs):

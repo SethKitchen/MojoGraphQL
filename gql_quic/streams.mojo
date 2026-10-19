@@ -160,7 +160,9 @@ struct Stream(Movable):
     var released: Bool
     """Whether the application gave up the stream."""
 
-    def __init__(out self, id: StreamId, side: Side, send_max: UInt64, recv_max: UInt64):
+    def __init__(
+        out self, id: StreamId, side: Side, send_max: UInt64, recv_max: UInt64
+    ):
         """Make a stream.
 
         Args:
@@ -225,7 +227,9 @@ struct Stream(Movable):
         return self.send.has_unsent_data() or self.fin_pending
 
 
-def _stream_error(code: TransportErrorCode, kind: FrameType, reason: StaticString) -> QuicError:
+def _stream_error(
+    code: TransportErrorCode, kind: FrameType, reason: StaticString
+) -> QuicError:
     """Make an error that a frame of some type caused."""
     return QuicError(code, kind.value, String(reason))
 
@@ -409,9 +413,7 @@ struct StreamsState(Movable):
             return -1
         return Int64(self.accept_queue.pop(0))
 
-    def _remote(
-        mut self, raw: UInt64, kind: FrameType
-    ) raises QuicError -> Int:
+    def _remote(mut self, raw: UInt64, kind: FrameType) raises QuicError -> Int:
         """Return the slot of a stream that a frame names, opening the
         streams of the peer up to it; -1 when the stream is closed."""
         var id = StreamId(raw)
@@ -534,9 +536,10 @@ struct StreamsState(Movable):
         """Count bytes as read, and raise the windows when half is used."""
         self.data_read += UInt64(count)
         ref s = self.streams[slot]
+        # A reset of the peer sets the final size, so a stream with an
+        # unknown final size is not reset.
         if (
             s.final_size < 0
-            and not s.peer_reset
             and s.recv_max - s.recv.bytes_read < self.stream_window // 2
         ):
             s.recv_max = s.recv.bytes_read + self.stream_window
@@ -717,7 +720,9 @@ struct StreamsState(Movable):
             )
         self.reset(id, code)
 
-    def on_max_stream_data(mut self, id: UInt64, value: UInt64) raises QuicError:
+    def on_max_stream_data(
+        mut self, id: UInt64, value: UInt64
+    ) raises QuicError:
         """Take a MAX_STREAM_DATA frame.
 
         Args:
@@ -790,10 +795,7 @@ struct StreamsState(Movable):
         Returns:
             Whether `write_control` or `write_frames` has work.
         """
-        return (
-            len(self.send_queue) > 0
-            or self.has_control()
-        )
+        return len(self.send_queue) > 0 or self.has_control()
 
     def has_control(self) -> Bool:
         """Return True when a flow control frame waits.
@@ -823,8 +825,11 @@ struct StreamsState(Movable):
         if self.max_data_pending and len(out) + 9 <= limit:
             self.max_data_pending = False
             write_max_data(out, self.local_max_data)
-            frames.append(SentFrame(FrameType.MAX_DATA.value, 0, 0, 0, False, 0))
-        for d in range(2):
+            frames.append(
+                SentFrame(FrameType.MAX_DATA.value, 0, 0, 0, False, 0)
+            )
+        var d = 0
+        while d < 2:
             if self.max_streams_pending[d] and len(out) + 9 <= limit:
                 self.max_streams_pending[d] = False
                 write_max_streams(out, Dir(UInt8(d)), self.max_remote[d])
@@ -838,12 +843,15 @@ struct StreamsState(Movable):
                         0,
                     )
                 )
+            d += 1
         while len(self.max_stream_data_pending) > 0 and len(out) + 17 <= limit:
             var id = self.max_stream_data_pending.pop()
             var slot = self.find(id)
             if slot < 0 or self.streams[slot].recv_done():
                 continue
-            write_max_stream_data(out, StreamId(id), self.streams[slot].recv_max)
+            write_max_stream_data(
+                out, StreamId(id), self.streams[slot].recv_max
+            )
             frames.append(
                 SentFrame(FrameType.MAX_STREAM_DATA.value, id, 0, 0, False, 0)
             )
@@ -877,8 +885,10 @@ struct StreamsState(Movable):
             limit: The offset in `out` that the frames must not pass.
             frames: The records of the packet.
         """
+        # Each visit takes one stream and gives back at most one, so the
+        # queue holds at least `visits` streams.
         var visits = len(self.send_queue)
-        while visits > 0 and len(self.send_queue) > 0:
+        while visits > 0:
             visits -= 1
             var room = limit - len(out)
             if room < 32:
@@ -890,28 +900,32 @@ struct StreamsState(Movable):
             ref s = self.streams[slot]
             s.queued = False
             if s.reset_code >= 0:
-                if s.reset_pending:
-                    s.reset_pending = False
-                    var size = s.send.offset
-                    write_reset_stream(out, s.id, UInt64(s.reset_code), size)
-                    frames.append(
-                        SentFrame(
-                            FrameType.RESET_STREAM.value,
-                            id,
-                            size,
-                            0,
-                            False,
-                            UInt64(s.reset_code),
-                        )
+                # A reset stream joins the queue only with its
+                # RESET_STREAM pending, and leaves it when the frame goes.
+                s.reset_pending = False
+                var size = s.send.offset
+                write_reset_stream(out, s.id, UInt64(s.reset_code), size)
+                frames.append(
+                    SentFrame(
+                        FrameType.RESET_STREAM.value,
+                        id,
+                        size,
+                        0,
+                        False,
+                        UInt64(s.reset_code),
                     )
+                )
                 continue
             # The header has at most a type byte, 8 bytes of id, 8 of
             # offset and 2 of length.
             var range = s.send.poll_transmit(room - 19)
             var length = range.end - range.start
-            var fin = s.finished and range.end == s.send.offset and (
-                s.fin_pending
-            ) and s.send.retransmits.is_empty()
+            var fin = (
+                s.finished
+                and range.end == s.send.offset
+                and (s.fin_pending)
+                and s.send.retransmits.is_empty()
+            )
             if length == 0 and not fin:
                 continue
             if fin:

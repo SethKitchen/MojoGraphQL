@@ -109,7 +109,9 @@ struct SendBuffer(Movable):
         self.unsent = end
         return result
 
-    def get(self, start: UInt64, end: UInt64) -> Span[UInt8, origin_of(self.data)]:
+    def get(
+        self, start: UInt64, end: UInt64
+    ) -> Span[UInt8, origin_of(self.data)]:
         """Return the bytes of a range that is not acknowledged yet.
 
         Args:

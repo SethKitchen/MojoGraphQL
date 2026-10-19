@@ -17,7 +17,7 @@ from gql_http3.frame import FrameType, write_frame_header
 from gql_http3.message import write_message
 from gql_http3.qpack_encoder import QpackEncoder
 from gql_http3.qpack_field import FieldList
-from gql_http3.quic import Quic, QuicContext, ReadState
+from gql_http3.quic import Quic, QuicContext, QuicTransport, ReadState
 from gql_http3.server import H3Config, H3Server, listen_h3
 from gql_http3.varint import encode_varint
 
@@ -46,8 +46,10 @@ def config() -> H3Config:
     return c^
 
 
-def make_server() raises -> H3Server[Echo]:
-    return make_server_with(Quic(OpenSsl()))
+def make_server(
+    transport: QuicTransport = QuicTransport.NATIVE,
+) raises -> H3Server[Echo]:
+    return make_server_with(Quic(OpenSsl(), transport=transport))
 
 
 def make_server_with(var quic: Quic) raises -> H3Server[Echo]:
@@ -87,15 +89,20 @@ struct RawClient(Movable):
     var ssl: Int
     var buffer: List[UInt8]
 
-    def __init__(out self, mut server: H3Server[Echo]) raises:
-        self.quic = Quic(OpenSsl())
+    def __init__(
+        out self,
+        mut server: H3Server[Echo],
+        transport: QuicTransport = QuicTransport.NATIVE,
+        verify: Bool = True,
+    ) raises:
+        self.quic = Quic(OpenSsl(), transport=transport)
         self.context = QuicContext.client(self.quic.copy(), test_certs().cert)
         self.sys = Sys()
         self.buffer = List[UInt8](length=65536, fill=0)
         self.fd = self.quic.udp_socket()
         _ = self.sys.connect(self.fd, IPv4Address.LOOPBACK, server.port)
         self.ssl = self.quic.client_connection(
-            self.context.ctx, self.fd, "localhost", True
+            self.context.ctx, self.fd, "localhost", verify
         )
         var turns = 0
         while self.quic.connect(self.ssl) != 1:
@@ -159,11 +166,13 @@ struct RawClient(Movable):
         return False
 
 
-def start_raw_server(reply: List[UInt8]) raises -> Tuple[Int, Int]:
+def start_raw_server(
+    reply: List[UInt8], transport: QuicTransport = QuicTransport.NATIVE
+) raises -> Tuple[Int, Int]:
     """Fork a QUIC server that answers each request stream with `reply`
     and FIN, whatever the request is. It returns the pid and the port."""
     var certs = test_certs()
-    var quic = Quic(OpenSsl())
+    var quic = Quic(OpenSsl(), transport=transport)
     var context = QuicContext.server(quic.copy(), certs.cert, certs.key)
     var sys = Sys()
     var fd = quic.udp_socket()
@@ -202,12 +211,16 @@ def start_raw_server(reply: List[UInt8]) raises -> Tuple[Int, Int]:
     return (0, 0)
 
 
-def start_server(max_body: Int = 16 << 20) raises -> Tuple[Int, Int]:
+def start_server(
+    max_body: Int = 16 << 20, transport: QuicTransport = QuicTransport.NATIVE
+) raises -> Tuple[Int, Int]:
     """Fork an `H3Server` with `Echo`; return the pid and the UDP port."""
     var certs = test_certs()
     var c = config()
     c.limits.max_body_bytes = max_body
-    var server = listen_h3(Echo(), certs.cert, certs.key, c, Quic(OpenSsl()))
+    var server = listen_h3(
+        Echo(), certs.cert, certs.key, c, Quic(OpenSsl(), transport=transport)
+    )
     var sys = Sys()
     var pid = sys.fork()
     if pid == 0:

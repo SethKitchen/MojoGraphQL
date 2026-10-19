@@ -85,7 +85,9 @@ def _once(mut router: Router[CannedTransport], slot: Int) raises -> List[UInt8]:
     return output^.take_body()
 
 
-def _run(mut router: Router[CannedTransport], slot: Int, iterations: Int) raises -> Int:
+def _run(
+    mut router: Router[CannedTransport], slot: Int, iterations: Int
+) raises -> Int:
     """Run the plan a number of times; return the elapsed nanoseconds."""
     var sink = 0
     var start = perf_counter_ns()

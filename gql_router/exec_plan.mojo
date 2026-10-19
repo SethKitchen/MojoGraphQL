@@ -10,7 +10,8 @@ Port of `execute_query_plan`, `Executor` and `ExecutionJob` of Hive Router
 `ExecutionContext::handle_errors` of `executor/execution_context.rs`.
 
 A `Sequence` runs its children in order. A `Parallel` node prepares every
-child from the same data first, then sends and merges each one. A
+child from the same data first. Then it starts every request, so they are
+in flight at the same time, and then it reads and merges each response. A
 `Condition` runs its `if` branch when the variable is `true`, and its
 `else` branch otherwise; without the variable it runs nothing. A `Fetch`
 merges its data at the root. A `Flatten` over a fetch with `requires` sends
@@ -25,9 +26,11 @@ errors of a subgraph get its name, the affected path, and the response
 path of each entity. The final response is the projection of the merged
 data by the client operation.
 
-**Differences from upstream.** Upstream runs the children of a `Parallel`
-node at the same time and merges each one as it arrives. This port sends
-them one at a time, in plan order, so the errors are in plan order.
+**Differences from upstream.** Upstream merges each child of a `Parallel`
+node as its response arrives. This port reads and merges the responses in
+plan order, so the errors are in plan order. The requests are still in
+flight at the same time: with `HttpTransport`, the slowest subgraph sets
+the time of the node, as upstream.
 Upstream walks the path of a flatten fetch again to merge; this port keeps
 the values that the prepare step found, and walks again only to get the
 error paths. Subscriptions are not supported: a plan with a `Subscription` node raises
@@ -352,12 +355,14 @@ def select_fetch_variables(
     """
     if not variables.is_some or not has_usages:
         return False
-    for usage in usages:
-        var name = String(store.name(usage))
+    var index = 0
+    while index < len(usages):
+        var name = String(store.name(usages[index]))
         var node = variables.variable(name)
         if node != NO_NODE:
             names.append(name^)
             nodes.append(node)
+        index += 1
     return True
 
 
@@ -442,10 +447,12 @@ def _collect_representations(
         var entity = node
         if len(rewrites) > 0:
             entity = copy_value(arena, node)
-            for rewrite in rewrites:
+            var at = 0
+            while at < len(rewrites):
                 apply_rewrite(
-                    store, metadata.possible_types, rewrite, arena, entity
+                    store, metadata.possible_types, rewrites[at], arena, entity
                 )
+                at += 1
         var projected = project_requires(
             store,
             metadata.possible_types,
@@ -553,20 +560,47 @@ struct Executor[T: SubgraphTransport](Movable):
     ) raises:
         """Run one plan node, as upstream `execute_plan_node`."""
         var kind = plan.nodes[node].kind
+        ref children = plan.nodes[node].nodes
         if kind == PlanNodeKind.SEQUENCE:
-            for child in plan.nodes[node].nodes:
-                self._run(ctx, store, plan, metadata, keys, variables, child)
+            var position = 0
+            while position < len(children):
+                self._run(
+                    ctx,
+                    store,
+                    plan,
+                    metadata,
+                    keys,
+                    variables,
+                    children[position],
+                )
+                position += 1
             return
         if kind == PlanNodeKind.PARALLEL:
             var jobs = List[Job]()
-            for child in plan.nodes[node].nodes:
+            var position = 0
+            while position < len(children):
                 jobs.append(
                     self._prepare(
-                        ctx, store, plan, metadata, keys, variables, child
+                        ctx,
+                        store,
+                        plan,
+                        metadata,
+                        keys,
+                        variables,
+                        children[position],
                     )
                 )
-            for index in range(len(jobs)):
-                self._send(ctx, store, plan, metadata, jobs[index])
+                position += 1
+            # Send every request first, so they are in flight at once; then
+            # read and merge each response.
+            var index = 0
+            while index < len(jobs):
+                self._start(plan, jobs[index])
+                index += 1
+            index = 0
+            while index < len(jobs):
+                self._finish(ctx, store, plan, metadata, jobs[index])
+                index += 1
             return
         if kind == PlanNodeKind.CONDITION:
             var next = condition_target(plan, store, node, variables)
@@ -578,7 +612,8 @@ struct Executor[T: SubgraphTransport](Movable):
         var job = self._prepare(
             ctx, store, plan, metadata, keys, variables, node
         )
-        self._send(ctx, store, plan, metadata, job)
+        self._start(plan, job)
+        self._finish(ctx, store, plan, metadata, job)
 
     def _prepare(
         mut self,
@@ -677,7 +712,24 @@ struct Executor[T: SubgraphTransport](Movable):
         )
         return job^
 
-    def _send(
+    def _start(mut self, plan: QueryPlan, job: Job):
+        """Send the request of a job, as upstream `prepare_execution_job`."""
+        if job.kind == JobKind.NONE:
+            return
+        if job.kind == JobKind.BATCH_FETCH:
+            self.transport.start(
+                job.subgraph,
+                plan.batches[job.fetch].operation.document_str,
+                job.body,
+            )
+        else:
+            self.transport.start(
+                job.subgraph,
+                plan.fetches[job.fetch].operation.document_str,
+                job.body,
+            )
+
+    def _finish(
         mut self,
         mut ctx: ExecutionContext,
         store: Store,
@@ -685,19 +737,14 @@ struct Executor[T: SubgraphTransport](Movable):
         metadata: SchemaMetadata,
         job: Job,
     ):
-        """Send a job and merge its response, as upstream
-        `prepare_execution_job` and `process_job_result`."""
+        """Read the response of a job that `_start` sent and merge it, as
+        upstream `process_job_result`."""
         if job.kind == JobKind.NONE:
             return
         var affected = String()
         if job.kind == JobKind.FLATTEN_FETCH or job.has_merge_path:
             affected = plan.nodes[job.plan_node].path.text(store)
-        var query: String
-        if job.kind == JobKind.BATCH_FETCH:
-            query = plan.batches[job.fetch].operation.document_str
-        else:
-            query = plan.fetches[job.fetch].operation.document_str
-        var result = self.transport.send(job.subgraph, query, job.body)
+        var result = self.transport.finish()
         if result.failure != SubgraphFailure.NONE:
             ctx.errors.append(failure_error(result, job.subgraph, affected))
             return
@@ -745,9 +792,7 @@ struct Executor[T: SubgraphTransport](Movable):
             )
             return
         if status < 200 or status > 299:
-            response.append_error(
-                http_status_error(status, job.subgraph)
-            )
+            response.append_error(http_status_error(status, job.subgraph))
         if job.kind == JobKind.FETCH:
             _merge_fetch(ctx, store, plan, metadata, job, response^, affected)
         elif job.kind == JobKind.FLATTEN_FETCH:
@@ -919,8 +964,9 @@ def _merge_entities(
         )
     else:
         targets.nodes = prepared.copy()
+    var count = min(len(targets.nodes), len(entities))
     var index = 0
-    while index < len(targets.nodes) and index < len(entities):
+    while index < count:
         var entity = entities[index]
         if entity >= 0:
             if collect_paths:
@@ -938,10 +984,16 @@ def _merge_entities(
 def _count_uses(path_entities: List[List[Int]], count: Int) -> List[Int]:
     """Count how many values each entity merges into."""
     var uses = List[Int](length=count, fill=0)
-    for entities in path_entities:
-        for entity in entities:
+    var path = 0
+    while path < len(path_entities):
+        ref entities = path_entities[path]
+        var index = 0
+        while index < len(entities):
+            var entity = entities[index]
             if entity >= 0 and entity < count:
                 uses[entity] += 1
+            index += 1
+        path += 1
     return uses^
 
 
@@ -1054,15 +1106,17 @@ def _merge_batch(
     """Merge each alias of a batch fetch, as upstream does for
     `ExecutionJob::BatchFetch`."""
     ref batch = plan.batches[job.fetch]
+    # A batch has at least one alias, so these loops are `while` loops.
     var alias_names = List[Int]()
-    for alias in batch.aliases:
-        alias_names.append(alias.alias)
-    # Split the errors by alias, as upstream `partition_batch_errors_by_alias`.
     var by_alias = List[List[GraphQLError]]()
     var has_alias_errors = List[Bool]()
-    for _ in alias_names:
+    var at = 0
+    while at < len(batch.aliases):
+        alias_names.append(batch.aliases[at].alias)
         by_alias.append(List[GraphQLError]())
         has_alias_errors.append(False)
+        at += 1
+    # Split the errors by alias, as upstream `partition_batch_errors_by_alias`.
     var unmatched = List[GraphQLError]()
     for error in response.errors:
         var found = _alias_of(store, alias_names, error)
@@ -1075,11 +1129,18 @@ def _merge_batch(
         has_alias_errors[found] = True
     # Take each alias's entities, as `collect_batched_entities_by_alias`.
     var arrays = List[Int]()
-    for name in alias_names:
+    at = 0
+    while at < len(alias_names):
         arrays.append(
-            _take_entities(ctx.arena, response.data, store.name(name))
+            _take_entities(
+                ctx.arena, response.data, store.name(alias_names[at])
+            )
         )
-    for state in job.aliases:
+        at += 1
+    var position = 0
+    while position < len(job.aliases):
+        ref state = job.aliases[position]
+        position += 1
         var a = state.alias
         ref alias = batch.aliases[a]
         var collect = has_alias_errors[a]

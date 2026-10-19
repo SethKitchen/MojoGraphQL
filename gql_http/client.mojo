@@ -6,7 +6,10 @@
 """An HTTP/1.1 client with a pool of keep-alive connections per host.
 
 `Client.send`, `get` and `post` send one request and return the whole
-`Response`. The client keeps each connection that can stay open, by
+`Response`. `Client.start` sends a request and returns a `PendingRequest`,
+and `Client.finish` reads its response later. So a caller can send several
+requests on their own connections, then read each response. The client
+keeps each connection that can stay open, by
 address and port, and uses it again for the next request to the same
 place. `Client.endpoint`
 parses and resolves a URL once, so a caller that sends many requests to one
@@ -66,8 +69,8 @@ struct ClientConfig(Copyable, Movable):
     """The deadline of a whole request; 30000 at first."""
     var max_idle_per_host: Int
     """The most idle connections the pool keeps per address and port; 0
-    turns the pool off. The client keeps at most one, because it sends one
-    request at a time."""
+    turns the pool off. The pool holds more than one only after requests
+    that `Client.start` sent at the same time."""
     var limits: Limits
     """The size limits of a response; 64 MiB of content at first."""
 
@@ -209,6 +212,26 @@ struct Response(Movable):
             return String(StringSlice(from_utf8=self.body()))
         except:
             raise HttpError(ErrorKind.PROTOCOL, "the content is not UTF-8", 0)
+
+
+@fieldwise_init
+struct PendingRequest(Movable):
+    """A request that `Client.start` sent; `Client.finish` reads its
+    response."""
+
+    var endpoint: Endpoint
+    """Where the request went."""
+    var method: Method
+    """The method."""
+    var deadline: Int
+    """The deadline of the whole request, from `perf_counter_ns`."""
+    var fd: Int
+    """The connection."""
+    var reused: Bool
+    """Whether the connection came from the pool."""
+    var request: List[UInt8]
+    """The request bytes, kept only when a new connection can send them
+    again; else empty."""
 
 
 @fieldwise_init
@@ -387,17 +410,90 @@ struct Client(Movable, ResponseSource):
                 a framing field in `headers`; `CONNECT`, `TIMEOUT`, `CLOSED`,
                 `PROTOCOL`, `LIMIT` or `OS` when the exchange fails.
         """
+        var pending = self.start(endpoint, method, target, headers, body)
+        return self.finish(pending^)
+
+    def start(
+        mut self,
+        endpoint: Endpoint,
+        method: Method,
+        target: StringSlice,
+        headers: Headers,
+        body: Span[UInt8, _],
+    ) raises HttpError -> PendingRequest:
+        """Send a request to an endpoint, and return before the response.
+
+        `finish` reads the response. Between the two calls, the client can
+        start other requests, so several requests are in flight at once.
+        Each one has its own connection. The caller must finish every
+        request that it starts.
+
+        Args:
+            endpoint: Where to send it.
+            method: The method; not `OTHER`.
+            target: The request target, such as `/graphql?x=1`.
+            headers: The other header fields.
+            body: The content; empty for none.
+
+        Returns:
+            The request in flight.
+
+        Raises:
+            HttpError: `USAGE` for an `OTHER` method, an invalid target, or
+                a framing field in `headers`; `CONNECT`, `TIMEOUT`, `CLOSED`
+                or `OS` when the connect or the send fails.
+        """
         self._build(endpoint, method, target, headers, body)
         var deadline = _now_ns() + self.config.timeout_ms * 1_000_000
         var fd = self._take_idle(endpoint)
         if fd >= 0:
             try:
-                return self._exchange(fd, endpoint, method, deadline, True)
+                self._send_request(fd, deadline, True)
+                return PendingRequest(
+                    endpoint.copy(),
+                    method,
+                    deadline,
+                    fd,
+                    True,
+                    # Only a reused connection of an idempotent method can
+                    # send the request again, so only it keeps the bytes.
+                    self._out.copy() if method.is_idempotent() else List[
+                        UInt8
+                    ](),
+                )
             except e:
                 if not self._retry:
                     raise e^
         fd = self._connect(endpoint, deadline)
-        return self._exchange(fd, endpoint, method, deadline, False)
+        self._send_request(fd, deadline, False)
+        return PendingRequest(
+            endpoint.copy(), method, deadline, fd, False, List[UInt8]()
+        )
+
+    def finish(
+        mut self, var pending: PendingRequest
+    ) raises HttpError -> Response:
+        """Read the whole response of a request that `start` sent.
+
+        Args:
+            pending: The request in flight.
+
+        Returns:
+            The response.
+
+        Raises:
+            HttpError: `CONNECT`, `TIMEOUT`, `CLOSED`, `PROTOCOL`, `LIMIT` or
+                `OS` when the exchange fails.
+        """
+        try:
+            return self._receive_on(pending.fd, pending, pending.reused)
+        except e:
+            if not self._retry:
+                raise e^
+        self._out = pending.request.copy()
+        var fd = self._connect(pending.endpoint, pending.deadline)
+        self._send_request(fd, pending.deadline, False)
+        return self._receive_on(fd, pending, False)
 
     def _build(
         mut self,
@@ -462,14 +558,20 @@ struct Client(Movable, ResponseSource):
         return -1
 
     def _give_back(mut self, fd: Int, endpoint: Endpoint):
-        """Put a connection in the pool, or close it when the pool is off.
+        """Put a connection in the pool, or close it when the pool has
+        `max_idle_per_host` idle connections to the endpoint.
 
-        The client sends one request at a time, and `send` takes the idle
-        connection of an endpoint before it opens a new one. So the pool
-        never holds a second connection to an endpoint, and a limit of 1 or
-        more never closes one.
+        Requests that `start` sends at the same time each use their own
+        connection, so the pool can hold more than one per endpoint.
         """
-        if self.config.max_idle_per_host < 1:
+        var count = 0
+        for idle in self._idle:
+            if (
+                idle.address == endpoint.address.value
+                and idle.port == endpoint.port
+            ):
+                count += 1
+        if count >= self.config.max_idle_per_host:
             self.sys.close(fd)
             return
         self._idle.append(_Idle(endpoint.address.value, endpoint.port, fd))
@@ -517,15 +619,10 @@ struct Client(Movable, ResponseSource):
             )
         return fd
 
-    def _exchange(
-        mut self,
-        fd: Int,
-        endpoint: Endpoint,
-        method: Method,
-        deadline: Int,
-        reused: Bool,
-    ) raises HttpError -> Response:
-        """Send `_out` on a connection and read the response.
+    def _send_request(
+        mut self, fd: Int, deadline: Int, reused: Bool
+    ) raises HttpError:
+        """Send `_out` on a connection.
 
         It sets `_retry` before it raises: whether a new connection can
         send the request again.
@@ -537,21 +634,30 @@ struct Client(Movable, ResponseSource):
             self.sys.close(fd)
             self._retry = reused and e.kind != ErrorKind.TIMEOUT
             raise e^
+
+    def _receive_on(
+        mut self, fd: Int, pending: PendingRequest, reused: Bool
+    ) raises HttpError -> Response:
+        """Read the response of a request on its connection.
+
+        It sets `_retry` before it raises, as `_send_request` does.
+        """
+        self._retry = False
         var response = Response()
         var keep: Bool
         try:
-            keep = self._receive(fd, method, deadline, response)
+            keep = self._receive(fd, pending.method, pending.deadline, response)
         except e:
             self.sys.close(fd)
             self._retry = (
                 reused
                 and self._got == 0
                 and e.kind == ErrorKind.CLOSED
-                and method.is_idempotent()
+                and pending.method.is_idempotent()
             )
             raise e^
         if keep:
-            self._give_back(fd, endpoint)
+            self._give_back(fd, pending.endpoint)
         else:
             self.sys.close(fd)
         return response^

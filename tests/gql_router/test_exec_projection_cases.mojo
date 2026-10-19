@@ -33,7 +33,8 @@ enum Color { RED GREEN }"""
 
 def test_include_and_skip_follow_the_variables() raises:
     var query = String(
-        "query($a: Boolean!) { user { id @include(if: $a) name @skip(if: $a) } }"
+        "query($a: Boolean!) { user { id @include(if: $a) name @skip(if:"
+        " $a) } }"
     )
     var data = String('{"user":{"id":"1","name":"Ada"}}')
     assert_equal(
@@ -51,7 +52,9 @@ def test_fragments_on_abstract_types_select_by_typename() raises:
         "{ node { id ... on User { name } ... on Bot { model } } }"
     )
     assert_equal(
-        project(SDL, query, '{"node":{"__typename":"Bot","id":"b","model":"x"}}'),
+        project(
+            SDL, query, '{"node":{"__typename":"Bot","id":"b","model":"x"}}'
+        ),
         '{"data":{"node":{"id":"b","model":"x"}}}',
     )
     assert_equal(
@@ -63,7 +66,9 @@ def test_fragments_on_abstract_types_select_by_typename() raises:
 
 
 def test_an_unknown_enum_value_is_null_with_an_error() raises:
-    var out = project(SDL, "{ color colors }", '{"color":"BLUE","colors":["RED"]}')
+    var out = project(
+        SDL, "{ color colors }", '{"color":"BLUE","colors":["RED"]}'
+    )
     assert_equal(
         out,
         '{"data":{"color":null,"colors":["RED"]},"errors":[{"message":'
@@ -147,6 +152,52 @@ def test_combined_conditions() raises:
     assert_equal(
         project(PEERS, query, data, '{"a":false,"b":false}'),
         '{"data":{"node":{}}}',
+    )
+
+
+def test_fragments_of_two_types_with_variables() raises:
+    # The fragments give two `id` fields of different parent scopes, as
+    # upstream `merge_selection_set`; the scope picks one, its variable
+    # decides.
+    var query = String(
+        "query($a: Boolean!, $b: Boolean!) { node {"
+        + " ... on User @include(if: $a) { id }"
+        + " ... on Bot @include(if: $b) { id } } }"
+    )
+    var user = String('{"node":{"__typename":"User","id":"1"}}')
+    var bot = String('{"node":{"__typename":"Bot","id":"2"}}')
+    assert_equal(
+        project(PEERS, query, user, '{"a":true,"b":true}'),
+        '{"data":{"node":{"id":"1"}}}',
+    )
+    assert_equal(
+        project(PEERS, query, bot, '{"a":true,"b":true}'),
+        '{"data":{"node":{"id":"2"}}}',
+    )
+    assert_equal(
+        project(PEERS, query, user, '{"a":false,"b":true}'),
+        '{"data":{"node":{}}}',
+    )
+    assert_equal(
+        project(PEERS, query, bot, '{"a":true,"b":false}'),
+        '{"data":{"node":{}}}',
+    )
+
+
+def test_a_missing_enum_value_is_null() raises:
+    assert_equal(project(SDL, "{ color }", "{}"), '{"data":{"color":null}}')
+
+
+def test_lists_deeper_than_the_field_type() raises:
+    # As upstream `ShapeCursor::list_item`, a list below the last list
+    # level of the type keeps that level.
+    assert_equal(
+        project(
+            SDL,
+            "{ user { name } grid }",
+            '{"user":{"name":["a"]},' + '"grid":[[[1]],[2]]}',
+        ),
+        '{"data":{"user":{"name":["a"]},"grid":[[[1]],[2]]}}',
     )
 
 
@@ -239,7 +290,9 @@ def test_a_wide_object_grows_the_member_stack() raises:
     for index in range(300):
         data += '"k' + String(index) + '":0,'
     data += '"id":"1"}}'
-    assert_equal(project(SDL, "{ user { id } }", data), '{"data":{"user":{"id":"1"}}}')
+    assert_equal(
+        project(SDL, "{ user { id } }", data), '{"data":{"user":{"id":"1"}}}'
+    )
 
 
 def test_outcomes_are_valid() raises:
@@ -251,7 +304,9 @@ def test_errors_null_data_and_a_small_buffer() raises:
     var planner = Planner(SDL)
     var operation = planner.normalize("{ user { id name } }")
     var metadata = metadata_of(SDL)
-    var built = ProjectionPlan.from_operation(planner.store, operation, metadata)
+    var built = ProjectionPlan.from_operation(
+        planner.store, operation, metadata
+    )
     var errors = List[GraphQLError]()
     errors.append(graphql_error("a"))
     errors.append(graphql_error("b"))

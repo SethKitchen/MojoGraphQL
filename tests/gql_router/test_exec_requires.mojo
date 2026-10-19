@@ -185,7 +185,9 @@ def test_project_requires_object_of_none_of_the_fragment_types_without_typename(
         + '{"__typename":"Bird"},{"__typename":"Dog","tricks":3}],"id":"s1"}',
     )
     assert_equal(
-        _project("... on Cat { __typename id }", '{"__typename":"Dog","id":"d1"}'),
+        _project(
+            "... on Cat { __typename id }", '{"__typename":"Dog","id":"d1"}'
+        ),
         NONE_TEXT,
     )
 
@@ -263,7 +265,9 @@ def test_project_requires_missing_key_field_leaves_entity_out() raises:
 def test_project_requires_missing_key_field_leaves_entity_out_with_other_fields() raises:
     var requires = String("... on Product { __typename upc price weight }")
     var keys = _keys("Product", ["upc"])
-    assert_equal(_project(requires, '{"__typename":"Product"}', keys, True), NONE_TEXT)
+    assert_equal(
+        _project(requires, '{"__typename":"Product"}', keys, True), NONE_TEXT
+    )
     assert_equal(
         _project(requires, '{"__typename":"Product","price":899}', keys, True),
         NONE_TEXT,
@@ -315,7 +319,9 @@ def test_requires_hash_ignores_fields_outside_the_selection() raises:
         != _hash(requires, '{"id":"1","name":"a"}')
     )
     assert_equal(_hash("id", '"\\u0041"'), _hash("id", '"A"'))
-    assert_true(_hash("id", "[true, false, null, 1.5]") != _hash("id", "[true]"))
+    assert_true(
+        _hash("id", "[true, false, null, 1.5]") != _hash("id", "[true]")
+    )
 
 
 def test_project_requires_edge_values() raises:
@@ -325,9 +331,7 @@ def test_project_requires_edge_values() raises:
         '{"items":[{"id":1},{"id":2}]}',
     )
     # A leaf with an object value is written whole.
-    assert_equal(
-        _project("meta", '{"meta":{"a":[1]}}'), '{"meta":{"a":[1]}}'
-    )
+    assert_equal(_project("meta", '{"meta":{"a":[1]}}'), '{"meta":{"a":[1]}}')
     # Without `__typename`, a fragment applies, and known keys do not
     # look the type up.
     assert_equal(

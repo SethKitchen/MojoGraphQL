@@ -137,7 +137,7 @@ The tests in `tests/gql_router/test_plan_*.mojo` port the snapshot tests of upst
 
 `requires_alias_scopes.rs` reads the JSON form of a plan. Its port walks the plan arena for the same fields. Upstream checks one operation with the `graphql_tools` rule `OverlappingFieldsCanBeMerged`. The port checks the same rule for the types of the upstream test schema.
 
-The executor tests port the unit tests of upstream `bin/router/src/executor/`: `test_exec_variables_*.mojo` port `variables/tests/`, and `test_exec_projection.mojo`, `test_exec_projection_plan.mojo`, `test_exec_requires.mojo`, `test_exec_value.mojo`, `test_exec_traverse.mojo`, `test_exec_subgraph_response.mojo` and `test_exec_plan.mojo` port the tests of `projection/`, `response/`, `utils/traverse.rs` and `execution/plan.rs`.
+The executor tests port the unit tests of upstream `bin/router/src/executor/`. The `test_exec_variables_*.mojo` suites port `variables/tests/`. The projection suites port `projection/`. `test_exec_value.mojo` and `test_exec_subgraph_response.mojo` port `response/`. `test_exec_traverse.mojo` ports `utils/traverse.rs`. `test_exec_requires.mojo` and `test_exec_plan.mojo` port `execution/plan.rs`.
 
 `test_pipeline.mojo` runs the upstream benchmark operation through `Router.execute` with the canned responses of the `hive-router/execute` benchmark. The response must equal the upstream `expected_response.json` byte for byte. `test_router_server.mojo` serves the router and two subgraphs over HTTP on the loopback interface.
 
@@ -214,17 +214,21 @@ The response type is `application/graphql-response+json` when the `Accept` heade
 
 ## Executor
 
-`Executor[T].execute` runs a query plan through a `SubgraphTransport`, as upstream `execute_query_plan`. A sequence runs its children in order. A parallel node prepares each child, then sends each one. A condition node runs the branch that its variable selects. A subscription node and a defer node raise `Error`.
+`Executor[T].execute` runs a query plan through a `SubgraphTransport`, as upstream `execute_query_plan`. A sequence runs its children in order. A parallel node prepares each child from the same data. Then it starts each request, and then it reads and merges each response. A condition node runs the branch that its variable selects. A subscription node and a defer node raise `Error`.
 
 A fetch sends the variables that it uses, and merges its data at the root. A flatten fetch walks its path, writes one representation for each different entity, and merges each returned entity back into each value that sent it. A batch fetch does the same for each alias. The merge uses the values that the prepare step found, so the path is walked once. When the subgraph returns errors, the merge walks the path again to get the error paths.
 
-`HttpTransport` sends each request with `gql_http.client`, over keep-alive connections. `CannedTransport` answers in the same process with fixed responses, for tests and benchmarks.
+`HttpTransport` sends each request with `gql_http.client`, over keep-alive connections. Each request in flight has its own connection, so the requests of a parallel node overlap. The slowest subgraph sets the time of the node. `CannedTransport` answers in the same process with fixed responses, for tests and benchmarks.
 
 A failed request, an empty body, a bad content type and a malformed body each add an error with the subgraph name, as upstream. A status that is not 2xx adds `SUBREQUEST_HTTP_ERROR`.
 
 ## Subgraph responses
 
 `read_subgraph_response` reads `data`, `errors` and `extensions`, as upstream `SubgraphResponse`. Any other member is ignored. A repeated member, a member of the wrong type, or `null` data without `errors` is malformed. The data goes into the response arena.
+
+Each error object is read as upstream `GraphQLError`. `message` must be a string. `locations` and `path` can be `null` or missing.
+
+A location must have an integer `line` and `column` that are not negative. A path index must not be negative. `extensions` must be an object. In it, `code` and `service` must be strings, and `affectedPath` must be a string or `null`. A repeated member is malformed at each level.
 
 `error_json` writes a GraphQL error. `handle_subgraph_errors` adds the subgraph name and the affected path. An `_entities` error moves to the path of each value that sent that entity.
 
@@ -247,9 +251,12 @@ The projection builds a table for the plan once per request: the `"key":` bytes 
 ## Differences from upstream in the executor
 
 - One operation cache keeps the parse, normalization and plan results. Upstream keeps three caches.
+- A parallel node merges its responses in plan order. Upstream merges each response when it arrives. So the errors are in plan order.
+- A transport has no tasks. `start` sends a request, and `finish` reads the oldest response.
 - Operations are not validated against the schema.
 - There are no plugins, coprocessors, persisted documents, demand control, CSRF prevention, CORS, request decompression, subscriptions, SSE, WebSocket or multipart responses.
 - Header propagation, error masking and operation name forwarding are not ported.
 - The representation hash folds eight bytes per multiply. Upstream uses XXH3. Equal representations still have equal hashes.
 - The projection keeps one position hint for each plan field during the whole walk. Upstream keeps the hints for each list.
+- The projection has no parent type check. Collection removes each parent type check from a real plan, in upstream too. Some fallbacks of the projection plan that a normalized operation cannot reach are not ported.
 - `extensions` are not written to the client response.

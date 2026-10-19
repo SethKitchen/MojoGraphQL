@@ -112,6 +112,8 @@ comptime MIN_INITIAL_SIZE = 1200
 """The smallest datagram that carries an ack-eliciting Initial packet."""
 comptime MAX_CRYPTO_BUFFER = 65536
 """The most CRYPTO bytes of a space that wait for the bytes before them."""
+comptime _NEVER = Int.MAX
+"""A time later than every timer."""
 
 
 @fieldwise_init
@@ -379,7 +381,7 @@ struct Connection(Movable):
         self.crypto = crypto
         self.state = ConnectionState.HANDSHAKE
         self.spaces = List[PacketSpace]()
-        for _ in range(3):
+        while len(self.spaces) < 3:
             self.spaces.append(PacketSpace())
         self.spaces[INITIAL].keys.append(
             initial_keys(crypto, original_dcid.bytes(), side.is_server())
@@ -428,7 +430,7 @@ struct Connection(Movable):
         self.datagrams_received = 0
         self._pending_local = List[List[DirectionalKeys]]()
         self._pending_remote = List[List[DirectionalKeys]]()
-        for _ in range(3):
+        while len(self._pending_local) < 3:
             self._pending_local.append(List[DirectionalKeys]())
             self._pending_remote.append(List[DirectionalKeys]())
         self._peer_cids = List[Tuple[UInt64, ConnectionId]]()
@@ -605,10 +607,10 @@ struct Connection(Movable):
 
     def _install(mut self, space: Int):
         """Install the keys of a space once both directions are known."""
-        if (
-            len(self._pending_local[space]) == 0
-            or len(self._pending_remote[space]) == 0
-        ):
+        var ready = min(
+            len(self._pending_local[space]), len(self._pending_remote[space])
+        )
+        if ready == 0:
             return
         var local = self._pending_local[space].pop()
         var remote = self._pending_remote[space].pop()
@@ -630,25 +632,30 @@ struct Connection(Movable):
             self._fail(now, QuicError(code, reason))
             return
         var secrets = self.tls.take_secrets()
-        if len(secrets) > 0:
-            var suite = self.tls.cipher_suite()
-            for index in range(len(secrets)):
-                ref secret = secrets[index]
-                var space = _level_space(secret.level)
-                if space < 0:
-                    continue
-                var keys = DirectionalKeys(
-                    self.crypto, suite, secret.secret, secret.write
-                )
-                if secret.write:
-                    self._pending_local[space].append(keys^)
-                else:
-                    self._pending_remote[space].append(keys^)
-                self._install(space)
-        for space in range(3):
+        var index = 0
+        while index < len(secrets):
+            ref secret = secrets[index]
+            index += 1
+            var space = _level_space(secret.level)
+            if space < 0:
+                continue
+            var keys = DirectionalKeys(
+                self.crypto,
+                self.tls.cipher_suite(),
+                secret.secret,
+                secret.write,
+            )
+            if secret.write:
+                self._pending_local[space].append(keys^)
+            else:
+                self._pending_remote[space].append(keys^)
+            self._install(space)
+        var space = 0
+        while space < 3:
             var data = self.tls.take_send(_space_level(space))
             if len(data) > 0:
                 self.spaces[space].crypto_send.write(data)
+            space += 1
         if not self.params_done and self.tls.has_peer_params():
             try:
                 self._apply_params(self.tls.peer_params())
@@ -690,7 +697,9 @@ struct Connection(Movable):
             params.initial_max_streams_uni,
         )
         var peer_idle = Int(params.max_idle_timeout) * NS_PER_MS
-        if peer_idle > 0 and (self.idle_timeout == 0 or peer_idle < self.idle_timeout):
+        if peer_idle > 0 and (
+            self.idle_timeout == 0 or peer_idle < self.idle_timeout
+        ):
             self.idle_timeout = peer_idle
         self.peer_max_ack_delay = Int(params.max_ack_delay) * NS_PER_MS
         self.peer_ack_delay_exponent = params.ack_delay_exponent
@@ -729,8 +738,10 @@ struct Connection(Movable):
             except e:
                 self._fail(now, e)
                 return
-        if self._tls_dirty:
-            self._drive_tls(now)
+            # The keys of the next packet, such as the Handshake packet
+            # after the Initial of a server, can come from these bytes.
+            if self._tls_dirty:
+                self._drive_tls(now)
 
     def _handle_packet(
         mut self,
@@ -743,7 +754,9 @@ struct Connection(Movable):
             if self.side.is_client() and not self._have_server_cid:
                 # QUIC version 1 is the only version: no common version.
                 self.state = ConnectionState.DRAINED
-                self.close_reason = String("the server offers no QUIC version 1")
+                self.close_reason = String(
+                    "the server offers no QUIC version 1"
+                )
             return
         if header.is_long and (
             not header.is_supported_version()
@@ -755,21 +768,27 @@ struct Connection(Movable):
         if not self.spaces[space].has_keys():
             return
         var start = header.start
-        var pn_len = self.spaces[space].keys[0].remote.header.unprotect(
-            data, start, header.pn_offset, header.end
+        var pn_len = (
+            self.spaces[space]
+            .keys[0]
+            .remote.header.unprotect(data, start, header.pn_offset, header.end)
         )
         if pn_len == 0:
             return
         var first = data[unsafe_offset=start]
         var truncated = UInt64(0)
-        for index in range(pn_len):
+        var index = 0
+        while index < pn_len:
             truncated = (truncated << 8) | UInt64(
                 data[unsafe_offset=header.pn_offset + index]
             )
+            index += 1
         var expected = UInt64(self.spaces[space].rx_largest + 1)
         var pn = decode_packet_number(expected, truncated, pn_len)
         var header_end = header.pn_offset + pn_len
-        if not self._open(space, data, start, header_end, header.end, pn, first):
+        if not self._open(
+            space, data, start, header_end, header.end, pn, first
+        ):
             return
         if not reserved_bits_valid(first, header.is_long):
             raise QuicError(
@@ -793,9 +812,9 @@ struct Connection(Movable):
             unsafe_ptr=data.unsafe_offset(header_end),
             length=header.end - TAG_SIZE - header_end,
         )
+        # No frame discards the keys of the space that carried it: only
+        # HANDSHAKE_DONE discards keys, and only a 1-RTT packet carries it.
         var eliciting = self._process_payload(now, space, payload)
-        if not self.spaces[space].has_keys():
-            return
         ref sp = self.spaces[space]
         var in_order = Int64(pn) == sp.rx_largest + 1
         _ = sp.pending_acks.insert_one(pn)
@@ -807,8 +826,12 @@ struct Connection(Movable):
         sp.unacked_eliciting += 1
         if space != DATA or sp.unacked_eliciting >= 2 or not in_order:
             sp.immediate_ack = True
-        elif sp.ack_deadline < 0:
-            sp.ack_deadline = now + Int(self.config.max_ack_delay_ms) * NS_PER_MS
+        else:
+            # The first ack-eliciting packet since the last ACK frame: no
+            # deadline runs, as the ACK frame cleared it.
+            sp.ack_deadline = (
+                now + Int(self.config.max_ack_delay_ms) * NS_PER_MS
+            )
 
     def _open(
         mut self,
@@ -962,29 +985,30 @@ struct Connection(Movable):
             if not known:
                 self._peer_cids.append((f.sequence, f.cid))
         if f.retire_prior_to > self.remote_cid_seq:
-            var best = -1
-            for index in range(len(self._peer_cids)):
+            # `read_frame` refuses Retire Prior To above the Sequence
+            # Number, so the ID of this frame, which is in the list now,
+            # stays: `best` is found.
+            var best = 0
+            var best_seq = UInt64.MAX
+            var index = 0
+            while index < len(self._peer_cids):
                 var seq = self._peer_cids[index][0]
-                if seq >= f.retire_prior_to and (
-                    best < 0 or seq < self._peer_cids[best][0]
-                ):
+                if seq >= f.retire_prior_to and seq < best_seq:
                     best = index
-            if best < 0:
-                raise QuicError(
-                    TransportErrorCode.PROTOCOL_VIOLATION,
-                    FrameType.NEW_CONNECTION_ID.value,
-                    "every connection ID of the peer is retired",
-                )
+                    best_seq = seq
+                index += 1
             self._retire_queue.append(self.remote_cid_seq)
-            self.remote_cid_seq = self._peer_cids[best][0]
+            self.remote_cid_seq = best_seq
             self.remote_cid = self._peer_cids[best][1]
             var keep = List[Tuple[UInt64, ConnectionId]]()
-            for index in range(len(self._peer_cids)):
+            index = 0
+            while index < len(self._peer_cids):
                 var seq = self._peer_cids[index][0]
                 if seq < f.retire_prior_to:
                     self._retire_queue.append(seq)
                 elif seq != self.remote_cid_seq:
                     keep.append(self._peer_cids[index])
+                index += 1
             self._peer_cids = keep^
         # This end allows two IDs of the peer at once: the one in use and
         # one more (active_connection_id_limit 2).
@@ -1009,31 +1033,28 @@ struct Connection(Movable):
             )
         self._ack_scratch.clear()
         ack_ranges(payload, f, self._ack_scratch)
-        ref sp = self.spaces[space]
-        if Int64(f.ack_largest) > sp.largest_acked:
-            sp.largest_acked = Int64(f.ack_largest)
-        var any_eliciting = False
+        if Int64(f.ack_largest) > self.spaces[space].largest_acked:
+            self.spaces[space].largest_acked = Int64(f.ack_largest)
+        # `sent` holds only ack-eliciting packets, so an RTT sample is
+        # taken when the largest acknowledged packet is one of them.
         var largest_time = -1
-        var index = len(sp.sent) - 1
+        var index = len(self.spaces[space].sent) - 1
         var acked = 0
         while index >= 0:
-            var pn = sp.sent[index].pn
+            var pn = self.spaces[space].sent[index].pn
             if self._ack_scratch.contains(pn):
-                var packet = sp.sent.pop(index)
+                var packet = self.spaces[space].sent.pop(index)
                 acked += 1
                 if pn == f.ack_largest:
                     largest_time = packet.time
-                any_eliciting = any_eliciting or packet.ack_eliciting
                 self._on_packet_acked(space, packet)
             index -= 1
         if acked == 0:
             return
-        if largest_time >= 0 and any_eliciting:
+        if largest_time >= 0:
             var delay = 0
             if space == DATA:
-                delay = (
-                    Int(f.ack_delay << self.peer_ack_delay_exponent) * 1000
-                )
+                delay = Int(f.ack_delay << self.peer_ack_delay_exponent) * 1000
                 if self.handshake_confirmed:
                     delay = min(delay, self.peer_max_ack_delay)
             self.rtt.update(delay, now - largest_time)
@@ -1041,21 +1062,25 @@ struct Connection(Movable):
         self._detect_lost(now, space)
 
     def _on_packet_acked(mut self, space: Int, packet: SentPacket):
-        """Release what an acknowledged packet carried."""
+        """Release what an acknowledged packet carried: an ack-eliciting
+        packet in flight."""
         ref sp = self.spaces[space]
-        if packet.in_flight:
-            self.bytes_in_flight -= packet.size
-            self.cc.on_ack(packet.time, packet.size, False)
-        if packet.ack_eliciting:
-            sp.ack_eliciting_in_flight -= 1
-        for index in range(len(packet.frames)):
+        self.bytes_in_flight -= packet.size
+        self.cc.on_ack(packet.time, packet.size, False)
+        sp.ack_eliciting_in_flight -= 1
+        var index = 0
+        while index < len(packet.frames):
             ref frame = packet.frames[index]
+            index += 1
             var kind = frame.kind
             if kind == FrameType.ACK.value:
                 _ = sp.pending_acks.remove(0, frame.value + 1)
             elif kind == FrameType.CRYPTO.value:
                 sp.crypto_send.ack(frame.offset, frame.offset + frame.length)
-            elif kind == FrameType.STREAM.value or kind == FrameType.RESET_STREAM.value:
+            elif (
+                kind == FrameType.STREAM.value
+                or kind == FrameType.RESET_STREAM.value
+            ):
                 self.streams.on_frame_acked(frame)
 
     def _on_frame_lost(mut self, space: Int, frame: SentFrame):
@@ -1075,35 +1100,37 @@ struct Connection(Movable):
     def _detect_lost(mut self, now: Int, space: Int):
         """Declare the packets lost that a later acknowledgment or the time
         threshold condemns (RFC 9002 section 6.1)."""
-        ref sp = self.spaces[space]
-        sp.loss_time = -1
-        if sp.largest_acked < 0:
-            return
-        var largest = UInt64(sp.largest_acked)
+        # An ACK frame or a loss time, which needs an ACK frame, calls
+        # this, so `largest_acked` is set.
+        self.spaces[space].loss_time = -1
+        var largest = UInt64(self.spaces[space].largest_acked)
         var loss_delay = max(
             9 * max(self.rtt.latest, self.rtt.get()) // 8, TIMER_GRANULARITY
         )
         var lost_before = now - loss_delay
         var lost_time = -1
-        var index = 0
-        while index < len(sp.sent):
-            ref packet = sp.sent[index]
-            if packet.pn > largest:
+        var loss_time = -1
+        while len(self.spaces[space].sent) > 0:
+            var pn = self.spaces[space].sent[0].pn
+            var sent_time = self.spaces[space].sent[0].time
+            if pn > largest:
                 break
-            if packet.pn + PACKET_THRESHOLD <= largest or packet.time <= lost_before:
-                var gone = sp.sent.pop(index)
+            if pn + PACKET_THRESHOLD <= largest or sent_time <= lost_before:
+                var gone = self.spaces[space].sent.pop(0)
                 lost_time = max(lost_time, gone.time)
-                if gone.in_flight:
-                    self.bytes_in_flight -= gone.size
-                if gone.ack_eliciting:
-                    sp.ack_eliciting_in_flight -= 1
-                for at in range(len(gone.frames)):
+                self.bytes_in_flight -= gone.size
+                self.spaces[space].ack_eliciting_in_flight -= 1
+                var at = 0
+                while at < len(gone.frames):
                     self._on_frame_lost(space, gone.frames[at])
+                    at += 1
                 continue
-            var when = packet.time + loss_delay
-            if sp.loss_time < 0 or when < sp.loss_time:
-                sp.loss_time = when
-            index += 1
+            # `sent` is in the order of packet numbers and of times, so
+            # the later packets are not lost either, and this one is the
+            # first that the time threshold will condemn.
+            loss_time = sent_time + loss_delay
+            break
+        self.spaces[space].loss_time = loss_time
         if lost_time >= 0:
             self.cc.on_congestion_event(now, lost_time, False)
 
@@ -1112,26 +1139,73 @@ struct Connection(Movable):
         always for a server, after the handshake for a client."""
         return self.side.is_server() or self.handshake_done
 
+    def _amplification_limited(self) -> Bool:
+        """Return True when a server cannot send a full datagram: before
+        it validates the address of the client, it sends at most three
+        times what it received (RFC 9000 section 8). A client validates
+        nothing, so the limit never applies to it."""
+        if self.address_validated:
+            return False
+        return (
+            3 * self.bytes_received - self.bytes_sent
+            < self.config.datagram_size
+        )
+
+    def _loss_space(self) -> Int:
+        """Return the space with the earliest loss time, or -1."""
+        var best = -1
+        var earliest = _NEVER
+        var space = 0
+        while space < 3:
+            var t = self.spaces[space].loss_time
+            if t < 0:
+                t = _NEVER
+            if t < earliest:
+                earliest = t
+                best = space
+            space += 1
+        return best
+
+    def _probe_time(self, space: Int) -> Int:
+        """Return when the probe timeout of a space fires: `_NEVER` when
+        nothing is in flight, and for the application data space before
+        the handshake is confirmed."""
+        ref sp = self.spaces[space]
+        if sp.ack_eliciting_in_flight == 0:
+            return _NEVER
+        if space == DATA and not self.handshake_confirmed:
+            return _NEVER
+        return sp.last_ack_eliciting + self._pto(space)
+
+    def _probe_space(self) -> Int:
+        """Return the space with the earliest probe timeout, or -1."""
+        var best = -1
+        var earliest = _NEVER
+        var space = 0
+        while space < 3:
+            var t = self._probe_time(space)
+            if t < earliest:
+                earliest = t
+                best = space
+            space += 1
+        return best
+
     def loss_timer(self) -> Int:
         """Return when loss detection or a probe timeout fires.
 
         Returns:
             The time, or -1 when no timer runs (RFC 9002 appendix A.8).
         """
-        var earliest = -1
-        for space in range(3):
-            var t = self.spaces[space].loss_time
-            if t >= 0 and (earliest < 0 or t < earliest):
-                earliest = t
-        if earliest >= 0:
-            return earliest
-        if self.side.is_server() and not self.address_validated and (
-            self.bytes_sent >= 3 * self.bytes_received
-        ):
+        var space = self._loss_space()
+        if space >= 0:
+            return self.spaces[space].loss_time
+        if self._amplification_limited():
             return -1
-        var in_flight = 0
-        for space in range(3):
-            in_flight += self.spaces[space].ack_eliciting_in_flight
+        var in_flight = (
+            self.spaces[INITIAL].ack_eliciting_in_flight
+            + self.spaces[HANDSHAKE].ack_eliciting_in_flight
+            + self.spaces[DATA].ack_eliciting_in_flight
+        )
         if in_flight == 0:
             if self._peer_validated():
                 return -1
@@ -1141,36 +1215,22 @@ struct Connection(Movable):
                 self.spaces[HANDSHAKE].last_ack_eliciting,
             )
             return max(last, 0) + self._pto(INITIAL)
-        for space in range(3):
-            ref sp = self.spaces[space]
-            if sp.ack_eliciting_in_flight == 0:
-                continue
-            if space == DATA and not self.handshake_confirmed:
-                continue
-            var t = sp.last_ack_eliciting + self._pto(space)
-            if earliest < 0 or t < earliest:
-                earliest = t
-        return earliest
+        space = self._probe_space()
+        if space < 0:
+            return -1
+        return self._probe_time(space)
 
     def _on_loss_timeout(mut self, now: Int):
-        """Run loss detection, or send probes (RFC 9002 section 6.2.4)."""
-        for space in range(3):
-            var t = self.spaces[space].loss_time
-            if t >= 0 and t <= now:
-                self._detect_lost(now, space)
-                return
-        var probe = -1
-        var earliest = -1
-        for space in range(3):
-            ref sp = self.spaces[space]
-            if sp.ack_eliciting_in_flight == 0:
-                continue
-            if space == DATA and not self.handshake_confirmed:
-                continue
-            var t = sp.last_ack_eliciting + self._pto(space)
-            if earliest < 0 or t < earliest:
-                earliest = t
-                probe = space
+        """Run loss detection, or send probes (RFC 9002 section 6.2.4).
+
+        `handle_timeout` calls it once `loss_timer` is due, so the earliest
+        loss time, when there is one, is due.
+        """
+        var space = self._loss_space()
+        if space >= 0:
+            self._detect_lost(now, space)
+            return
+        var probe = self._probe_space()
         if probe < 0:
             # The client has nothing in flight: probe in the highest space
             # with keys, so that the server can answer.
@@ -1182,15 +1242,16 @@ struct Connection(Movable):
     # ---- transmit ----
 
     def _requeue_probe(mut self, space: Int):
-        """Queue again the frames of the oldest ack-eliciting packet in
-        flight, as the content of a probe."""
+        """Queue again the frames of the oldest packet in flight, as the
+        content of a probe; every packet in `sent` is ack-eliciting."""
         ref sp = self.spaces[space]
-        for index in range(len(sp.sent)):
-            if sp.sent[index].ack_eliciting:
-                var frames = sp.sent[index].frames.copy()
-                for at in range(len(frames)):
-                    self._on_frame_lost(space, frames[at])
-                return
+        if len(sp.sent) == 0:
+            return
+        var frames = sp.sent[0].frames.copy()
+        var at = 0
+        while at < len(frames):
+            self._on_frame_lost(space, frames[at])
+            at += 1
 
     def _data_work(self) -> Bool:
         """Return True when the application data space has frames to send."""
@@ -1246,7 +1307,9 @@ struct Connection(Movable):
                 out, False, self.key_phase, self.remote_cid, pn, pn_len
             )
         else:
-            var kind = LongType.INITIAL if space == INITIAL else LongType.HANDSHAKE
+            var kind = (
+                LongType.INITIAL if space == INITIAL else LongType.HANDSHAKE
+            )
             marks = write_long_header(
                 out,
                 kind,
@@ -1262,9 +1325,10 @@ struct Connection(Movable):
         if not sp.pending_acks.is_empty():
             var delay = UInt64(0)
             if space == DATA:
-                delay = UInt64(
-                    max(now - sp.rx_largest_time, 0) // 1000
-                ) >> self.config.ack_delay_exponent
+                delay = (
+                    UInt64(max(now - sp.rx_largest_time, 0) // 1000)
+                    >> self.config.ack_delay_exponent
+                )
             write_ack(out, sp.pending_acks, delay)
             record.frames.append(
                 SentFrame(
@@ -1279,6 +1343,7 @@ struct Connection(Movable):
             sp.immediate_ack = False
             sp.unacked_eliciting = 0
             sp.ack_deadline = -1
+        var acks = len(record.frames)
         var eliciting = False
         if closing:
             if self.close_app and space == DATA:
@@ -1297,6 +1362,13 @@ struct Connection(Movable):
                     out, code, frame_type, self.close_reason, limit - len(out)
                 )
         elif work:
+            # A PING goes first, as in quinn: the packet has room for it.
+            if sp.ping_pending:
+                sp.ping_pending = False
+                write_ping(out)
+                record.frames.append(
+                    SentFrame(FrameType.PING.value, 0, 0, 0, False, 0)
+                )
             if space == DATA and self.handshake_done_pending:
                 self.handshake_done_pending = False
                 write_handshake_done(out)
@@ -1344,15 +1416,8 @@ struct Connection(Movable):
                     )
                 self.streams.write_control(out, limit, record.frames)
                 self.streams.write_frames(out, limit, record.frames)
-            if sp.ping_pending and len(out) < limit:
-                sp.ping_pending = False
-                write_ping(out)
-                record.frames.append(
-                    SentFrame(FrameType.PING.value, 0, 0, 0, False, 0)
-                )
-            for index in range(len(record.frames)):
-                if record.frames[index].kind != FrameType.ACK.value:
-                    eliciting = True
+            # Every frame after the ACK frame elicits an ACK.
+            eliciting = len(record.frames) > acks
         var header_end = marks.pn_at + pn_len
         if len(out) == header_end:
             out.resize(packet_start, 0)
@@ -1394,24 +1459,24 @@ struct Connection(Movable):
             return 0
         var start = len(out)
         var size = self.config.datagram_size
-        if not self.address_validated:
-            # A server sends at most three times what it received before
-            # the address of the client is validated (RFC 9000 section 8).
-            if 3 * self.bytes_received - self.bytes_sent < size:
-                return 0
+        if self._amplification_limited():
+            return 0
         self._built.clear()
         var pad = False
         var handshake_sent = False
-        var established = self.spaces[DATA].has_keys() and self.handshake_done
-        for space in range(3):
-            if not self.spaces[space].has_keys():
+        # Before the handshake is confirmed the peer may lack the 1-RTT
+        # keys, so a close goes out in each space with keys (RFC 9000
+        # section 10.2.3); after it, only the 1-RTT keys remain.
+        var space = 0
+        while space < 3:
+            var this = space
+            space += 1
+            if not self.spaces[this].has_keys():
                 continue
-            if closing and established and space != DATA:
-                continue
-            var built = self._build_packet(now, space, out, start + size)
-            if built == 2 and space == INITIAL:
+            var built = self._build_packet(now, this, out, start + size)
+            if built == 2 and this == INITIAL:
                 pad = True
-            if built > 0 and space == HANDSHAKE:
+            if built > 0 and this == HANDSHAKE:
                 handshake_sent = True
         if closing:
             self.close_pending = False
@@ -1426,8 +1491,10 @@ struct Connection(Movable):
             last.payload_end += extra
             out.resize(last.payload_end + TAG_SIZE, 0)
         var p = out.unsafe_ptr()
-        for index in range(len(self._built)):
+        var index = 0
+        while index < len(self._built):
             ref b = self._built[index]
+            index += 1
             set_length(out, b.marks, b.payload_end + TAG_SIZE)
             ref keys = self.spaces[b.space].keys[0]
             var header_end = b.marks.pn_at + b.marks.pn_len
@@ -1457,16 +1524,20 @@ struct Connection(Movable):
         if self.is_closed():
             return self.close_deadline
         var earliest = self.loss_timer()
-        if self.idle_deadline >= 0 and (
-            earliest < 0 or self.idle_deadline < earliest
-        ):
-            earliest = self.idle_deadline
-        for space in range(3):
-            ref sp = self.spaces[space]
-            if sp.ack_deadline >= 0 and not sp.pending_acks.is_empty() and (
-                earliest < 0 or sp.ack_deadline < earliest
-            ):
-                earliest = sp.ack_deadline
+        if earliest < 0:
+            earliest = _NEVER
+        if self.idle_deadline >= 0:
+            earliest = min(earliest, self.idle_deadline)
+        # An ACK deadline comes with a new packet number in `pending_acks`,
+        # and the ACK frame that carries it clears the deadline.
+        var space = 0
+        while space < 3:
+            var deadline = self.spaces[space].ack_deadline
+            space += 1
+            if deadline >= 0:
+                earliest = min(earliest, deadline)
+        if earliest == _NEVER:
+            return -1
         return earliest
 
     def handle_timeout(mut self, now: Int):

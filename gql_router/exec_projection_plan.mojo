@@ -23,7 +23,10 @@ tables (`encode.rs`, `tables.rs`). This port keeps the merged fields in
 one arena, and the projection walks the arena. Type sets and conditions are
 interned, so equal sets and equal conditions have equal ids, where
 upstream compares them by value. The authorization rewrite of `rewrite.rs`
-is not ported.
+is not ported. The plan is built only from a normalized operation, so some
+upstream fallbacks are not ported: `child_parent_type` never meets an empty
+scope or mixed outputs without a declaration on the parent, and
+`specialize_variants` always finds a variant for each object type.
 """
 
 from std.collections import Set
@@ -502,8 +505,6 @@ struct ProjectionPlan(Copyable, Movable):
         elif operation.kind == OperationKind.SUBSCRIPTION:
             root = schema.subscription_type_name
         var plan = ProjectionPlan()
-        if root.byte_length() == 0:
-            return (root^, plan^)
         var collected = plan._collect_set(
             store, schema, operation.selection_set, root, ALWAYS
         )
@@ -520,8 +521,9 @@ struct ProjectionPlan(Copyable, Movable):
 
     def _type_set(mut self, schema: SchemaMetadata, type_name: String) -> Int:
         """Return the types a value of a type can be, as upstream
-        `Collector::type_set`."""
-        if schema.is_object_type(type_name) or schema.is_scalar_type(type_name):
+        `Collector::type_set`. Only composite types reach it, so the scalar
+        check of upstream is left out: it gives the same set."""
+        if schema.is_object_type(type_name):
             return self.tables.exact(type_name)
         var names = List[String]()
         var possible = schema.possible_types.map.get(type_name)
@@ -570,12 +572,11 @@ struct ProjectionPlan(Copyable, Movable):
                 store, schema, current, type_condition, frag_cond
             )
             for index in inner:
-                var narrowed = scope
-                if self.fields[index].parent_scope != NO_SET:
-                    narrowed = self.tables.intersect(
-                        self.fields[index].parent_scope, scope
-                    )
-                self.fields[index].parent_scope = narrowed
+                # `frag_cond` holds `ParentType(scope)`, so each field of the
+                # fragment has a parent scope already.
+                self.fields[index].parent_scope = self.tables.intersect(
+                    self.fields[index].parent_scope, scope
+                )
                 collected.append(index)
         return collected^
 
@@ -595,10 +596,9 @@ struct ProjectionPlan(Copyable, Movable):
         var output_type = String("String")
         var nullability = FieldNullability.type_name()
         if not is_typename:
-            var fields = schema.type_fields.get(parent_type)
-            if not fields:
-                return
-            var info = fields.value().get(name)
+            # One lookup for both upstream skips: a parent type or a field
+            # that the metadata does not have, as `__schema` on the root.
+            var info = schema.field_types.get(parent_type + "." + name)
             if not info:
                 return
             output_type = info.value().output_type_name
@@ -611,7 +611,8 @@ struct ProjectionPlan(Copyable, Movable):
         ):
             output_types = self._type_set(schema, output_type)
             condition = self.tables.and_(
-                condition, self.tables.set_cond(CondKind.FIELD_TYPE, output_types)
+                condition,
+                self.tables.set_cond(CondKind.FIELD_TYPE, output_types),
             )
         var include = _variable(store, item.include)
         var skip = _variable(store, item.skip)
@@ -644,7 +645,9 @@ struct ProjectionPlan(Copyable, Movable):
             if parent_scope != NO_SET:
                 if output_types == NO_SET:
                     output_types = self._type_set(schema, output_type)
-                inherited = self.tables.set_cond(CondKind.PARENT_TYPE, output_types)
+                inherited = self.tables.set_cond(
+                    CondKind.PARENT_TYPE, output_types
+                )
             var children_cond = self.tables.with_directives(
                 self.tables.and_(
                     self.tables.inherited_by_child(parent_cond), inherited
@@ -679,9 +682,8 @@ struct ProjectionPlan(Copyable, Movable):
         self, schema: SchemaMetadata, on_type: String, field_name: String
     ) -> String:
         """Return the output type of a field on a type, or empty, as
-        upstream `Merger::output_on`."""
-        if field_name == "__typename":
-            return String()
+        upstream `Merger::output_on`. Only fields with children reach it,
+        so the `__typename` check of upstream is left out."""
         return schema.field_type(on_type, field_name)
 
     def _child_parent_type(
@@ -692,30 +694,24 @@ struct ProjectionPlan(Copyable, Movable):
         field_name: String,
     ) -> String:
         """Return the output type of a field under a scope, as upstream
-        `child_parent_type`; empty when it is unknown."""
+        `child_parent_type`.
+
+        A scope is never empty, because normalization drops a fragment
+        that no object can match, and each member of a scope declares the
+        field. A scope with mixed outputs comes only from a fragment on the
+        parent type itself, so `parent_type` declares the field too. Thus
+        the `None` results and the `min_output` fallback of upstream are
+        left out."""
         if scope == NO_SET:
             return self._output_on(schema, parent_type, field_name)
-        var first = String()
-        var lowest = String()
-        var mixed = False
-        for member in self.tables.sets[scope]:
-            var output = self._output_on(schema, member, field_name)
-            if output.byte_length() == 0:
-                continue
-            if first.byte_length() == 0:
-                first = output
-                lowest = output
-                continue
-            if output < lowest:
-                lowest = output
-            if output != first:
-                mixed = True
-        if not mixed:
-            return first^
-        var declared = self._output_on(schema, parent_type, field_name)
-        if declared.byte_length() > 0:
-            return declared^
-        return lowest^
+        ref members = self.tables.sets[scope]
+        var first = self._output_on(schema, members[0], field_name)
+        var index = 1
+        while index < len(members):
+            if self._output_on(schema, members[index], field_name) != first:
+                return self._output_on(schema, parent_type, field_name)
+            index += 1
+        return first^
 
     def _child_scope(
         self,
@@ -725,19 +721,24 @@ struct ProjectionPlan(Copyable, Movable):
         field_name: String,
     ) -> String:
         """Return the parent type of the children of a field, as upstream
-        `child_scope`."""
-        var found = self._child_parent_type(schema, parent_type, scope, field_name)
-        if found.byte_length() == 0:
-            return parent_type
-        return found^
+        `child_scope`. `_child_parent_type` always finds a type, so the
+        `parent_type` fallback of upstream is left out."""
+        return self._child_parent_type(schema, parent_type, scope, field_name)
 
     def _merge_set(
-        mut self, schema: SchemaMetadata, var siblings: List[Int], parent_type: String
+        mut self,
+        schema: SchemaMetadata,
+        var siblings: List[Int],
+        parent_type: String,
     ) -> List[Int]:
         """Merge sibling fields, as upstream `merge_selection_set`."""
         if len(siblings) == 0:
             return siblings^
-        for index in siblings:
+        # `siblings` is not empty here, so these loops are `while` loops.
+        var position = 0
+        while position < len(siblings):
+            var index = siblings[position]
+            position += 1
             if not self.fields[index].has_children:
                 continue
             var child_type = self._child_scope(
@@ -752,7 +753,10 @@ struct ProjectionPlan(Copyable, Movable):
         var keys = List[String]()
         var groups = List[List[Int]]()
         var key_index = Dict[String, Int]()
-        for next in siblings:
+        position = 0
+        while position < len(siblings):
+            var next = siblings[position]
+            position += 1
             var key = self.fields[next].response_key
             var slot = key_index.get(key)
             var group: Int
@@ -778,14 +782,21 @@ struct ProjectionPlan(Copyable, Movable):
         return self._merge_groups(schema, groups^, parent_type)
 
     def _merge_into(
-        mut self, schema: SchemaMetadata, kept: Int, next: Int, parent_type: String
+        mut self,
+        schema: SchemaMetadata,
+        kept: Int,
+        next: Int,
+        parent_type: String,
     ):
         """Merge one field into another with the same key and scope, as
         upstream `Merger::merge`."""
         self.fields[kept].condition = self.tables.or_(
             self.fields[kept].condition, self.fields[next].condition
         )
-        if not self.fields[kept].has_children or not self.fields[next].has_children:
+        if (
+            not self.fields[kept].has_children
+            or not self.fields[next].has_children
+        ):
             return
         var child_type = self._child_scope(
             schema,
@@ -798,8 +809,12 @@ struct ProjectionPlan(Copyable, Movable):
         var merged_children = self._merge_set(schema, joined^, child_type)
         self.fields[kept].children = merged_children^
 
-    def _object_types(self, schema: SchemaMetadata, parent_type: String) -> List[String]:
-        """Return the object types a parent can be, sorted."""
+    def _object_types(
+        self, schema: SchemaMetadata, parent_type: String
+    ) -> List[String]:
+        """Return the object types a parent can be, sorted. The possible
+        types are a set and an object type has none, so no name repeats
+        and the `dedup` of upstream is left out."""
         var names = List[String]()
         var possible = schema.possible_types.map.get(parent_type)
         if possible:
@@ -809,11 +824,7 @@ struct ProjectionPlan(Copyable, Movable):
         if schema.is_object_type(parent_type):
             names.append(parent_type)
         sort(names)
-        var unique = List[String]()
-        for name in names:
-            if len(unique) == 0 or unique[len(unique) - 1] != name:
-                unique.append(name)
-        return unique^
+        return names^
 
     def _merge_groups(
         mut self,
@@ -822,16 +833,27 @@ struct ProjectionPlan(Copyable, Movable):
         parent_type: String,
     ) -> List[Int]:
         """Collapse the variants of each response key, as upstream
-        `merge_groups`."""
+        `merge_groups`.
+
+        Each group has one variant or more, and `_merge_set` passes one
+        group or more, so the loops over them are `while` loops. A group
+        with a variant for every type or with a multi-type scope can match
+        each object type: normalization keeps an abstract fragment only on
+        the parent type itself. So each object type finds a variant."""
         var merged = List[Int]()
         var object_types = List[String]()
         var have_object_types = False
-        for variants in groups:
+        var group = 0
+        while group < len(groups):
+            ref variants = groups[group]
+            group += 1
             var exclusive = len(variants) == 1
             if not exclusive:
                 exclusive = True
-                for variant in variants:
-                    var scope = self.fields[variant].parent_scope
+                var position = 0
+                while position < len(variants):
+                    var scope = self.fields[variants[position]].parent_scope
+                    position += 1
                     if scope == NO_SET or len(self.tables.sets[scope]) != 1:
                         exclusive = False
                         break
@@ -843,20 +865,24 @@ struct ProjectionPlan(Copyable, Movable):
                 have_object_types = True
             for object_type in object_types:
                 var kept = -1
-                for variant in variants:
+                var position = 0
+                while position < len(variants):
+                    var variant = variants[position]
+                    position += 1
                     var scope = self.fields[variant].parent_scope
                     if scope != NO_SET and not self.tables.matches(
                         scope, object_type
                     ):
                         continue
                     var exact = self._clone(variant)
-                    self.fields[exact].parent_scope = self.tables.exact(object_type)
+                    self.fields[exact].parent_scope = self.tables.exact(
+                        object_type
+                    )
                     if kept < 0:
                         kept = exact
                     else:
                         self._merge_into(schema, kept, exact, parent_type)
-                if kept >= 0:
-                    merged.append(kept)
+                merged.append(kept)
         return merged^
 
     def _clone(mut self, field: Int) -> Int:
@@ -866,8 +892,11 @@ struct ProjectionPlan(Copyable, Movable):
             return self._add(copy^)
         var children = List[Int]()
         var originals = copy.children.copy()
-        for child in originals:
-            children.append(self._clone(child))
+        # `originals` is not empty here.
+        var position = 0
+        while position < len(originals):
+            children.append(self._clone(originals[position]))
+            position += 1
         copy.children = children^
         return self._add(copy^)
 
@@ -875,41 +904,57 @@ struct ProjectionPlan(Copyable, Movable):
         mut self, schema: SchemaMetadata, scope: Int, field_name: String
     ) -> Int:
         """Return every output type of a field under a scope, as upstream
-        `possible_output_types`, or `NO_SET`."""
+        `possible_output_types`, or `NO_SET` for no scope. As in
+        `_child_parent_type`, a scope is never empty and each member
+        declares the field."""
         if scope == NO_SET:
             return NO_SET
+        ref members = self.tables.sets[scope]
         var outputs = List[String]()
-        for member in self.tables.sets[scope]:
-            var output = self._output_on(schema, member, field_name)
-            if output.byte_length() > 0:
-                outputs.append(output)
-        if len(outputs) == 0:
-            return NO_SET
+        var position = 0
+        while position < len(members):
+            outputs.append(
+                self._output_on(schema, members[position], field_name)
+            )
+            position += 1
         return self.tables.intern_sorted(outputs^)
 
-    def _prune(mut self, schema: SchemaMetadata, siblings: List[Int], parent_type: String):
+    def _prune(
+        mut self,
+        schema: SchemaMetadata,
+        siblings: List[Int],
+        parent_type: String,
+    ):
         """Drop child scopes that match every output of their field, as
         upstream `prune_redundant_scopes`."""
         if len(siblings) == 0:
             return
-        for index in siblings:
+        # `siblings` is not empty here.
+        var position = 0
+        while position < len(siblings):
+            var index = siblings[position]
+            position += 1
             if not self.fields[index].has_children:
                 continue
             var scope = self.fields[index].parent_scope
             var field_name = self.fields[index].field_name
-            var child_type = self._child_scope(schema, parent_type, scope, field_name)
-            var possible = self._possible_output_types(schema, scope, field_name)
+            var child_type = self._child_scope(
+                schema, parent_type, scope, field_name
+            )
+            var possible = self._possible_output_types(
+                schema, scope, field_name
+            )
             var children = self.fields[index].children.copy()
             if possible != NO_SET:
                 for child in children:
                     if self.fields[child].parent_scope == possible:
                         self.fields[child].parent_scope = NO_SET
                         continue
-                    self.fields[child].condition = (
-                        self.tables.without_redundant_parent_scope(
-                            self.fields[child].condition,
-                            self.fields[child].parent_scope,
-                        )
+                    self.fields[
+                        child
+                    ].condition = self.tables.without_redundant_parent_scope(
+                        self.fields[child].condition,
+                        self.fields[child].parent_scope,
                     )
             self._prune(schema, children, child_type)
 
