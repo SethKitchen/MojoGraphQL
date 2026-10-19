@@ -35,7 +35,7 @@ the graphql-js order, and the errors are the same.
 
 from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_schema.definition import NO_TYPE, Schema, TypeKind, TypeRef
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_schema.suggestions import natural_compare
 from gql_validation.context import ValidationContext
 from gql_validation.type_info import NO_FIELD, NO_TYPE_REF, type_from_ast

@@ -29,7 +29,7 @@ same order when the comparisons agree with one total order.
 from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_schema.builtins import INTROSPECTION_TYPE_NAMES, SPECIFIED_SCALAR_NAMES
 from gql_schema.definition import NO_TYPE, Schema, TypeKind
-from gql_schema.names import NOT_FOUND
+from gql_language.names import NOT_FOUND
 from gql_schema.suggestions import did_you_mean, natural_compare
 from gql_validation.state import Walk
 from gql_validation.suggest import Suggester

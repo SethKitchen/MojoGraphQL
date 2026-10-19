@@ -39,7 +39,7 @@ from gql_schema.definition import (
     Range,
     Schema,
 )
-from gql_schema.names import NameTable
+from gql_language.names import NameTable
 from gql_schema.suggestions import natural_compare
 
 

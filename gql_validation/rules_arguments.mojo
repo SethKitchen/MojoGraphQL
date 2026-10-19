@@ -24,7 +24,7 @@ from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_language.directive_location import DirectiveLocation
 from gql_language.printer import print_node
 from gql_schema.definition import NO_TYPE, Schema, TypeKind, TypeRef
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_schema.suggestions import did_you_mean, suggestion_list
 from gql_schema.values import JsValues, parse_literal
 from gql_validation.state import Walk

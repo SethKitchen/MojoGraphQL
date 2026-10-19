@@ -33,7 +33,7 @@ as a black box:
 from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_language.concat_ast import concat_ast
 from gql_language.parser import parse
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_schema.suggestions import did_you_mean, suggestion_list
 from gql_subgraph.link import LinkInfo, read_links
 from gql_subgraph.model import (

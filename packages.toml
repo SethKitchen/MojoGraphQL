@@ -110,3 +110,8 @@ upstream = ["Apollo Kotlin afe947c (5.2.1-SNAPSHOT; the benchmark runs the publi
 summary = "seamstress: the offline Apollo Rover commands supergraph compose, subgraph introspect and graph introspect"
 depends = ["gql_language", "gql_json", "gql_schema", "gql_execution", "gql_http", "gql_composition"]
 upstream = ["Apollo Rover 1.0.0 (39a041a) MIT parts: src/command/supergraph/compose, src/composition/supergraph/config (subgraph resolution), src/command/subgraph/introspect.rs, src/command/graph/introspect.rs, src/command/output.rs, src/options/output.rs, src/error, src/federation.rs, src/utils/parsers.rs, src/cli.rs; crates/rover-client/src/operations/subgraph/introspect and graph/introspect; crates/rover-graphql/src/lib.rs; apollo-federation-types 0.18.0-rc.1 src/config and src/rover (MIT); apollo-compiler 1.33.0 src/ast/serialize.rs and its built-in introspection types (MIT arm of MIT OR Apache-2.0). src/utils/expansion.rs (Elastic License 2.0) and the supergraph plugin are excluded"]
+
+[packages.gql_compiler]
+summary = "apollo-compiler: the Schema model built from AST documents, without copies"
+depends = ["gql_language"]
+upstream = ["apollo-compiler 1.33.0 (apollo-rs b7eee5c) crates/apollo-compiler/src: schema/mod.rs, schema/component.rs, schema/from_ast.rs, built_in_types.graphql (the MIT arm of MIT OR Apache-2.0)"]

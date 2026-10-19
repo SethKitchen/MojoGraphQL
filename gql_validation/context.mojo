@@ -34,7 +34,7 @@ from gql_language.block_string import utf16_count
 from gql_language.error import GraphQLError, print_source_location
 from gql_language.source import Source, SourceLocation
 from gql_schema.definition import Schema, TypeRef
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_validation.type_info import TypeInfo
 
 comptime TOO_MANY_ERRORS = (

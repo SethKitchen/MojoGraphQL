@@ -12,7 +12,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project is new. Today it has nineteen finished packages, and more are in progress.
+The project is new. Today it has twenty finished packages, and more are in progress.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
@@ -124,6 +124,7 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_router`](https://github.com/SethKitchen/MojoGraphQL/wiki/Router): a port of Hive Router. It plans a federated operation with the [query planner](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#planner), runs the plan against the subgraphs, and serves the supergraph over HTTP. It has the operation cache, [authorization](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#authorization) and [null bubbling](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#null-bubbling).
 - [x] [`gql_client`](https://github.com/SethKitchen/MojoGraphQL/wiki/Client): a port of the Apollo Client normalized cache, `InMemoryCache` with type and field policies.
 - [x] [`gql_codegen`](https://github.com/SethKitchen/MojoGraphQL/wiki/Codegen): code generation in the style of Apollo Kotlin. It writes Mojo models for operations.
+- [x] [`gql_compiler`](https://github.com/SethKitchen/MojoGraphQL/wiki/Compiler): a port of the apollo-compiler schema model from apollo-rs. Its validation and executable documents are not ported yet.
 - [x] [`gql_mcp`](https://github.com/SethKitchen/MojoGraphQL/wiki/Mcp): a port of Apollo MCP Server.
 - [x] [`gql_seamstress`](https://github.com/SethKitchen/MojoGraphQL/wiki/Seamstress): `seamstress`, a port of the MIT parts of the Rover CLI: `supergraph compose`, `subgraph introspect` and `graph introspect`.
 - [x] [Compatibility](https://github.com/SethKitchen/MojoGraphQL/wiki/Compatibility): the Apollo Federation subgraph compatibility suite, as tests of `gql_subgraph`. Every check passes, federated tracing (`ftv1`) included.
@@ -161,6 +162,7 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_router` | Done | `gql_language`, `gql_json`, `gql_http` | Hive Router `1a29df9` query planner, executor and pipeline |
 | `gql_client` | Done, except optimistic layers | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache` |
 | `gql_codegen` | Done, `operationBased` models only | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
+| `gql_compiler` | Schema model done; validation planned | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
 | `gql_mcp` | Done | `gql_validation`, `gql_http` | Apollo MCP Server 2.0.0 |
 | `gql_seamstress` | Done, offline commands only | `gql_composition`, `gql_execution`, `gql_http` | Rover 1.0.0, MIT parts |
 
@@ -168,7 +170,7 @@ The dependencies of a planned package can change before it is written. `packages
 
 ## Benchmarks
 
-Mojo is faster than every baseline on every workload except one: building a schema from a parsed AST, where apollo-compiler is faster. Each package with a hot path has a benchmark against its upstream library, on the same fixtures. Mojo must be faster than every baseline.
+Mojo is faster than every baseline on every workload. Each package with a hot path has a benchmark against its upstream library, on the same fixtures. Mojo must be faster than every baseline.
 
 | Package | Workload | Mojo | Fastest other library | Mojo speedup |
 | --- | --- | ---: | --- | ---: |
@@ -191,7 +193,8 @@ Mojo is faster than every baseline on every workload except one: building a sche
 | `gql_http3` | HTTP/3 round trip with a small JSON body | 101 µs | h3 and quinn, 110 µs | 1.09x |
 | `gql_schema` | Parse and build the GitHub schema | 1.07 ms | apollo-compiler, 7.85 ms | 7.3x |
 | `gql_schema` | Validate the GitHub schema SDL (graphql-js benchmark) | 3.32 ms | graphql-js, 8.01 ms | 2.4x |
-| `gql_schema` | **Build a schema from a parsed AST (graphql-js benchmark)** | **465 µs** | **apollo-compiler, 308 µs** | **0.66x (slower)** |
+| `gql_schema` | Build a schema from a parsed AST, as graphql-js `buildASTSchema` (graphql-js benchmark) | 457 µs | graphql-js, 4.54 ms | 9.9x |
+| `gql_compiler` | Build a schema from a parsed AST, as apollo-compiler `Schema::from_ast` | 221 µs | apollo-compiler, 308 µs | 1.39x |
 | `gql_validation` | Validate the introspection query (graphql-js benchmark) | 40.2 µs | graphql-js, 409 µs | 10.2x |
 | `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 694 µs | apollo-compiler, 2.13 ms | 3.1x |
 | `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 418 µs | apollo-compiler, 3.03 ms | 7.2x |
@@ -224,7 +227,7 @@ Mojo is faster than every baseline on every workload except one: building a sche
 | `gql_seamstress` | `graph introspect` of the GitHub schema | 30.1 ms | Rover, 118 ms | 3.9x |
 | `gql_seamstress` | `subgraph introspect` of the catalog subgraph | 21.7 ms | Rover, 107 ms | 4.9x |
 
-Each time is one operation: the fastest of 5 rounds of at least one second, after a warm-up. The numbers are from one full run on 2026-10-19, on WSL2 on Windows 11 with 24 hardware threads. Other machines give other times, but the ratios stay close. One gap is open. apollo-compiler builds its schema from an AST that its slower parser already prepared.
+Each time is one operation: the fastest of 5 rounds of at least one second, after a warm-up. The numbers are from one full run on 2026-10-19, on WSL2 on Windows 11 with 24 hardware threads. Other machines give other times, but the ratios stay close. Each workload compares libraries that do the same work: [Benchmarks](https://github.com/SethKitchen/MojoGraphQL/wiki/Benchmarks#like-for-like) explains the schema builds.
 
 ```bash
 make bench         # run the benchmarks and write bench/RESULTS.md

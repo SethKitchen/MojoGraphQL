@@ -34,6 +34,7 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Mcp](Mcp): the `gql_mcp` package, which is the Model Context Protocol server of Apollo MCP Server.
 - [Seamstress](Seamstress): the `gql_seamstress` package and its `seamstress` program, a port of the local commands of Apollo Rover: `supergraph compose`, `subgraph introspect` and `graph introspect`.
 - [Codegen](Codegen): the `gql_codegen` package, which writes Mojo models for operations, as the Apollo Kotlin compiler writes Kotlin.
+- [Compiler](Compiler): the `gql_compiler` package, a port of the apollo-compiler schema model from apollo-rs.
 - [Compatibility](Compatibility): the result of each check of the Apollo Federation subgraph compatibility suite.
 - [Coverage tool](Coverage-tool): what `make coverage` measures, and how.
 

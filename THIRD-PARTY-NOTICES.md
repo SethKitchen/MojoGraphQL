@@ -59,7 +59,11 @@ the values of the public OpenSSL headers. A program that does not import
   public Apollo Federation specification and from Hive Federation
   Composition, never from `internals-js`.
 - **apollo-rs.** The project is dual licensed MIT OR Apache-2.0. MojoGraphQL
-  uses it under the MIT License only.
+  uses it under the MIT License only. `gql_compiler` ports these files of
+  `crates/apollo-compiler` at `b7eee5c` (apollo-compiler 1.33.0):
+  `src/schema/mod.rs`, `src/schema/component.rs`, `src/schema/from_ast.rs`
+  and `src/built_in_types.graphql`, and the tests of `tests/extensions.rs`
+  and `tests/schema.rs`.
 - **Apollo Kotlin.** These files are Apache-2.0 licensed and are not ported:
   - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonReader.kt`
   - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonWriter.kt`

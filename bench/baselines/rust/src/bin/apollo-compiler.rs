@@ -126,10 +126,11 @@ fn main() {
     let document = parse(&fixture("go-tools-print-operation.graphql"));
     measure("go-tools/Print", || document.to_string().len());
 
-    // Schema building, with no validation: the AST is parsed outside the
-    // timer, as graphql-js benchmark/buildASTSchema-benchmark.js does.
+    // apollo-compiler schema building, with no validation: the AST is
+    // parsed outside the timer. gql_compiler, the Mojo port of
+    // apollo-compiler, runs the same workload.
     let github = parse(&fixture("github-schema.graphql"));
-    measure("graphql-js/build-ast-schema", || {
+    measure("apollo-compiler/schema-from-ast", || {
         match Schema::builder().add_ast(&github).build() {
             Ok(schema) => schema.types.len(),
             Err(errors) => errors.partial.types.len(),

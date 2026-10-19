@@ -60,6 +60,15 @@ All implementations read the same bytes. The fixtures are in `bench/fixtures/`, 
 - `parse/<fixture>` parses the text into a document.
 - `print/<fixture>` parses the text and prints the document again, as graphql-js `print(parse(text))`.
 
+## Like for like
+
+A workload compares two libraries only when both do the same work. A schema build is the main case:
+
+- `graphql-js/build-ast-schema` runs graphql-js `buildASTSchema`. It resolves every type reference and orders the type map. `gql_schema` does the same work, so it is compared with graphql-js.
+- `apollo-compiler/schema-from-ast` runs apollo-compiler `Schema::builder().add_ast(&ast).build()`. It points into the AST and resolves no types. `gql_compiler` ports that model, so it is compared with apollo-compiler.
+
+Until `gql_compiler` existed, the apollo-compiler build was a baseline of `graphql-js/build-ast-schema`. That pairing compared different work, so it moved to its own workload.
+
 ## Results
 
 `make bench` writes `bench/RESULTS.md`. It has one table for each workload, with the time of each implementation and its speedup. It also names the machine and the toolchains. The speedup is the baseline time divided by the Mojo time, so a speedup above 1.00 means that Mojo is faster.

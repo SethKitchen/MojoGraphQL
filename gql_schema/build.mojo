@@ -40,7 +40,7 @@ from gql_schema.definition import (
     TypeKind,
     TypeRef,
 )
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_schema.sdl_validation import (
     assert_valid_sdl,
     assert_valid_sdl_extension,

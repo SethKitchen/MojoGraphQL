@@ -17,7 +17,7 @@ Each function is the handler of one rule for one node kind, and the walk of
 from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_language.printer import print_node
 from gql_schema.definition import NO_TYPE, Schema
-from gql_schema.names import NOT_FOUND
+from gql_language.names import NOT_FOUND
 from gql_schema.type_comparators import do_types_overlap
 from gql_validation.state import Walk
 from gql_validation.type_info import is_defined, type_from_ast

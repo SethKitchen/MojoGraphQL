@@ -3,14 +3,14 @@
 # Noncommercial use is free; commercial use requires a paid license.
 # See LICENSE, LICENSE-COMMERCIAL.md and THIRD-PARTY-NOTICES.md.
 
-"""Tests for `gql_schema.names`.
+"""Tests for `gql_language.names`.
 
 `NameTable` has no graphql-js counterpart, so no upstream test file is
 ported. The tests use only the public behavior: `find`, `insert`, `assign`,
 `find_or_insert`, the `capacity` argument and `len`.
 """
 
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
 
@@ -187,6 +187,17 @@ def test_copy_is_independent() raises:
     assert_equal(copy.find(-1, "b"), NOT_FOUND)
     assert_equal(copy.__len__(), 1)
     assert_equal(table.find(-1, "a"), 3)
+
+
+def test_reserve_keeps_keys() raises:
+    var table = NameTable()
+    assert_true(table.insert(-1, "a", 1))
+    table.reserve(100)
+    table.reserve(0)
+    assert_equal(table.find(-1, "a"), 1)
+    for index in range(100):
+        assert_true(table.insert(0, String("k", index), index))
+    assert_equal(table.find(0, "k99"), 99)
 
 
 def main() raises:

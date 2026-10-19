@@ -16,7 +16,7 @@ its `LexicalDistance`), `jsutils/didYouMean.ts` and
   letter. GraphQL names are ASCII, so a name gives the same result.
 """
 
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 
 comptime _MAX_SUGGESTIONS = 5
 

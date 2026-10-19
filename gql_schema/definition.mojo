@@ -30,7 +30,7 @@ the same way, so a federation subgraph can read `@key` and `@external`.
 
 from gql_language.ast import NO_NODE, Document
 from gql_language.directive_location import DirectiveLocation
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 
 
 @fieldwise_init

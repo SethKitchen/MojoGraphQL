@@ -25,7 +25,7 @@ raises an `Error` with the same message; the error has no location.
 from gql_language.ast import NO_NODE, Document, Kind, OperationType, Role
 from gql_language.printer import print_node
 from gql_schema.definition import NO_TYPE, Schema, TypeKind, TypeRef
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_schema.type_comparators import is_type_sub_type_of
 from gql_validation.state import Walk
 from gql_validation.type_info import (

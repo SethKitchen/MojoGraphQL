@@ -338,15 +338,16 @@ def baselines() -> List[Baseline]:
     return out^
 
 
-comptime CORE_PACKAGES: Array[StaticString, 4] = [
+comptime CORE_PACKAGES: Array[StaticString, 5] = [
     "gql_language",
     "gql_schema",
     "gql_validation",
     "gql_execution",
+    "gql_compiler",
 ]
 """The packages that the GraphQL libraries themselves measure: the baseline
 directories without a dash run graphql-js, apollo-rs and graphql-go-tools,
-which hold all four."""
+which hold all five."""
 
 
 comptime ALSO_SERVES: Array[StaticString, 2] = ["rust-tls", "gql_https2"]

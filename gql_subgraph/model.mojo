@@ -36,7 +36,7 @@ generates and parses into a second document.
 """
 
 from gql_language.ast import NO_NODE, Document, Kind, Role
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_subgraph.spec import FederationVersion
 
 comptime USER = 0

@@ -18,7 +18,7 @@ table.
 from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_language.error import GraphQLError
 from gql_schema.definition import NO_TYPE, Schema
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_validation.context import ValidationContext
 from gql_validation.overlapping import OverlapState
 from gql_validation.rules import ValidationRule

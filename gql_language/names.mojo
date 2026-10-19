@@ -257,6 +257,16 @@ struct NameTable(Copyable, Movable):
             return
         self._add(slot, hash, owner, bytes, value)
 
+    def reserve(mut self, additional: Int):
+        """Make room for more keys, so that adding them does not grow the
+        table.
+
+        Args:
+            additional: How many keys will be added.
+        """
+        while (self._count + additional) * 2 > len(self._slots):
+            self._grow()
+
     def _grow(mut self):
         """Double the slots and place every key again."""
         var old = self._slots^

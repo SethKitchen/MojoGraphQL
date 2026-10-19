@@ -45,7 +45,7 @@ from gql_language.parser import parse, parse_value
 from gql_schema.build import BuildOptions, build_ast_schema
 from gql_schema.builtins import SPECIFIED_SCALAR_NAMES
 from gql_schema.definition import Schema, TypeKind
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_execution.value import Values, inspect
 from gql_schema.values import js_number_to_string
 

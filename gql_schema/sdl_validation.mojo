@@ -39,7 +39,7 @@ from gql_language.error import GraphQLError
 from gql_schema.builtins import INTROSPECTION_TYPE_NAMES, SPECIFIED_SCALAR_NAMES
 from gql_schema.definition import NO_TYPE, AstRef, Schema, TypeKind
 from gql_schema.errors import error_at
-from gql_schema.names import NOT_FOUND, NameTable
+from gql_language.names import NOT_FOUND, NameTable
 from gql_schema.suggestions import did_you_mean, suggestion_list
 
 
