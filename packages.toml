@@ -48,7 +48,7 @@ upstream = ["RFC 9113 section 3.2 and RFC 7301; no code is ported: the package j
 [packages.gql_quic]
 summary = "QUIC transport (RFC 9000, 9001, 9002): packets, frames, streams, flow control, loss recovery and NewReno, with the TLS handshake and the AEAD of the system OpenSSL 3.5"
 depends = ["gql_tls"]
-upstream = ["quinn-proto 0.11.19 (8192ed3) quinn-proto/src: packet.rs, frame.rs, varint.rs, transport_parameters.rs, transport_error.rs, range_set, connection (mod.rs, spaces.rs, assembler.rs, send_buffer.rs, streams, paths.rs RttEstimator), congestion/new_reno.rs, endpoint.rs, and the tests of src/tests (MIT OR Apache-2.0, used under MIT); RFC 9000, RFC 9001 and RFC 9002; the TLS and libcrypto API of OpenSSL 3.5 (Apache-2.0) is loaded with dlopen at run time, and no OpenSSL code is ported"]
+upstream = ["quinn-proto 0.11.19 (8192ed3) quinn-proto/src: packet.rs, frame.rs, varint.rs, transport_parameters.rs, transport_error.rs, range_set, connection (mod.rs, spaces.rs, assembler.rs, send_buffer.rs, streams, paths.rs RttEstimator), congestion/new_reno.rs, endpoint.rs, and the tests of src/tests; quinn 0.11.12 at the same revision, the drivers of quinn/src/endpoint.rs and quinn/src/connection.rs and the tests of quinn/src/tests.rs; quinn-udp 0.5.16 at the same revision, quinn-udp/src/unix.rs and quinn-udp/tests/tests.rs (all MIT OR Apache-2.0, used under MIT); RFC 9000, RFC 9001 and RFC 9002; the TLS and libcrypto API of OpenSSL 3.5 (Apache-2.0) is loaded with dlopen at run time, and no OpenSSL code is ported"]
 
 [packages.gql_http3]
 summary = "HTTP/3 and QPACK over QUIC: gql_quic by default, or the QUIC stack of the system OpenSSL; Alt-Svc and the client fallback chain"

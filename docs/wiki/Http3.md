@@ -5,7 +5,9 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Http3
 
-`gql_http3` is HTTP/3 (RFC 9114) and QPACK (RFC 9204) in Mojo, over the QUIC API of the system OpenSSL 3.5. It serves the `Handler` of `gql_http` on UDP. It has a client, `Alt-Svc` support (RFC 7838), and a client that falls back to TCP. It depends on `gql_http`, `gql_tls`, `gql_quic`, `gql_http2` and `gql_https2`, and it runs on Linux only. The fallback chain needs the HTTP/2 packages.
+`gql_http3` is HTTP/3 (RFC 9114) and QPACK (RFC 9204) in Mojo. The default QUIC transport is `gql_quic`. OpenSSL 3.5 runs the TLS handshake. The same library can run the OpenSSL QUIC stack instead. The server serves the `Handler` of `gql_http` on UDP. It has a client, `Alt-Svc` (RFC 7838) and a TCP fallback.
+
+It depends on `gql_http`, `gql_tls`, `gql_quic`, `gql_http2` and `gql_https2`. It runs on Linux only. The fallback chain needs the HTTP/2 packages.
 
 | Module | Contents |
 | --- | --- |
@@ -13,7 +15,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_http3.client` | `H3Client`, `h3_error` |
 | `gql_http3.fallback` | `FallbackClient`, `FallbackConfig`, `Protocol` |
 | `gql_http3.alt_svc` | `AltSvc`, `AltService`, `AltSvcCache`, `parse_alt_svc` |
-| `gql_http3.quic` | `Quic`, `QuicContext`, `QuicCall`, `QuicFaults`, `ReadResult`, `ReadState` |
+| `gql_http3.quic` | `Quic`, `QuicTransport`, `QuicContext`, `QuicCall`, `QuicFaults`, `ReadResult`, `ReadState` |
 | `gql_http3.message` | `MessageReader`, `to_http1_request`, `from_http1_response`, `request_fields`, `to_http1_response`, `write_message` |
 | `gql_http3.frame` | `FrameType`, `StreamType`, `SettingId`, `Settings`, `FrameReader`, `parse_frame_head` and the frame writers |
 | `gql_http3.qpack` | `QpackEncoder`, `QpackDecoder`, `FieldList`, the static table, prefix integers and strings |
@@ -137,19 +139,17 @@ h2c is off by default, because a server without HTTP/2 must first refuse the pre
 
 ## QUIC
 
-`Quic(openssl)` looks up the QUIC functions in the library of a `gql_tls.OpenSsl`. An OpenSSL older than 3.5 has no QUIC server API, and `Quic` raises a `LIBRARY` error. `QuicContext.server(quic, cert_file, key_file)` and `QuicContext.client(quic, ca_file, verify)` make the contexts, with the ALPN protocol `h3`. `Quic.faults` makes one kind of call fail, for tests.
+`Quic(openssl)` uses the native transport, `QuicTransport.NATIVE`, by default. That is [Quic](Quic). Pass `transport=QuicTransport.OPENSSL` to use the QUIC stack of OpenSSL 3.5 instead. An older OpenSSL has neither API, and `Quic` raises a `LIBRARY` error. `QuicContext.server` and `QuicContext.client` make the contexts, with the ALPN protocol `h3`. `Quic.faults` makes one kind of call fail, for tests.
 
 ## Performance
 
-The QPACK coder is 2.5 to 3.1 times faster than the coder of h3. The HTTP/3 round trip is slower than h3 with quinn: about 140 µs against 111 µs on localhost. This is an open item.
+The round-trip gap to h3 with quinn is closed. The QPACK coder is 2.6 to 3.2 times faster than the coder of h3. A 32-byte QUIC stream echo takes 73 µs. quinn takes 90 µs for the same echo. An HTTP/3 round trip of a small JSON body takes 98 µs. h3 with quinn takes 112 µs.
 
-- **Datagrams:** OpenSSL sends an ACK in a datagram of its own, after each second packet that it receives. Thus a round trip costs 3 datagrams, against 2.2 for quinn. quinn puts the ACK into its next packet.
-- **CPU:** the QUIC stack of OpenSSL takes about two times the user CPU of quinn for each round trip. The framing and QPACK of this package are a small part of the time.
-- **Fix:** a QUIC transport in Mojo, with the third-party QUIC TLS API of OpenSSL 3.5 (`SSL_set_quic_tls_cbs`) for the handshake. That is a separate task.
+The OpenSSL QUIC stack remains an option. It sends each ACK in its own datagram, so a round trip on that stack is slower.
 
 ## Differences from upstream
 
-- **Async:** h3 is async and generic over a QUIC implementation. This port is a poll loop over the OpenSSL QUIC API.
+- **Async:** h3 is async and generic over a QUIC implementation. This port is a poll loop. The default transport is `gql_quic`. OpenSSL QUIC remains available.
 - **Messages:** h3 builds `http::Request` values. The server writes HTTP/1.1 bytes instead, because the handlers take a `gql_http` `Request`.
 - **Huffman:** the encoder uses Huffman only when it is shorter, so the empty string is `0x00` where h3 writes `0x80`. Huffman padding of more than 7 bits is an error, as RFC 7541 section 5.2 tells.
 - **Encoder base:** the encoder base is the insert count, and the prefix is encoded against the SETTINGS maximum.

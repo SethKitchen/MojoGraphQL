@@ -36,14 +36,14 @@ h3/src/connection.rs and h3/src/server/connection.rs (MIT): the first
 frame of the control stream, the unique critical streams, and the frames
 that each stream type allows.
 
-Performance: the round trip is slower than h3 with quinn, an open item.
-OpenSSL sends ACKs in datagrams of their own, so a round trip costs three
-datagrams against about two, and its QUIC stack takes about twice the CPU.
-A QUIC transport in Mojo over `SSL_set_quic_tls_cbs` is the planned fix.
+Performance: on the default `gql_quic` transport, the round trip is
+faster than h3 with quinn. The OpenSSL QUIC stack sends each ACK in a
+datagram of its own, so a round trip on that stack is slower.
 
 Differences from upstream: h3 is generic over a QUIC implementation and
-async. This server is a poll loop over the OpenSSL QUIC API. It sends no
-GOAWAY at shutdown, and it never pushes.
+async. This server is a poll loop over the `Quic` handles, on `gql_quic`
+or on the OpenSSL QUIC API. It sends no GOAWAY at shutdown, and it never
+pushes.
 """
 
 from std.memory import ArcPointer

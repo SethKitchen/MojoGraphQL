@@ -12,7 +12,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project is new. Today it has eighteen finished packages, and more are in progress.
+The project is new. Today it has nineteen finished packages, and more are in progress.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
@@ -116,7 +116,8 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_http2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http2): HTTP/2 and HPACK in Mojo. The server detects the HTTP/2 preface and falls back to HTTP/1.1.
 - [x] [`gql_tls`](https://github.com/SethKitchen/MojoGraphQL/wiki/Tls): TLS 1.3 and ALPN through the system OpenSSL, loaded at run time. Only users who pick it need OpenSSL.
 - [x] [`gql_https2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Https2): HTTP/2 over TLS. ALPN picks `h2`, and the same connection falls back to HTTPS/1.1.
-- [x] [`gql_http3`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3): HTTP/3 and QPACK over QUIC, with `Alt-Svc`. Its client falls back in this order: h3, h2 over TLS, HTTPS/1.1, h2c, HTTP/1.1.
+- [x] [`gql_quic`](https://github.com/SethKitchen/MojoGraphQL/wiki/Quic): a QUIC transport in Mojo, a port of quinn-proto. OpenSSL does only the TLS handshake and the packet protection.
+- [x] [`gql_http3`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3): HTTP/3 and QPACK over `gql_quic`, with `Alt-Svc`. Its client falls back in this order: h3, h2 over TLS, HTTPS/1.1, h2c, HTTP/1.1.
 - [x] [`gql_server`](https://github.com/SethKitchen/MojoGraphQL/wiki/Server): a port of Apollo Server, with the request pipeline, plugins, batching, persisted queries and a standalone server.
 - [x] [`gql_subgraph`](https://github.com/SethKitchen/MojoGraphQL/wiki/Subgraph): a port of `@apollo/subgraph` and the Apollo Federation subgraph specification.
 - [x] [`gql_composition`](https://github.com/SethKitchen/MojoGraphQL/wiki/Composition): a port of Hive Federation Composition: subgraph validation, supergraph composition, satisfiability and contracts, for federation v1 and v2.0 to v2.15.
@@ -152,7 +153,8 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_http2` | Done | `gql_http` | hyperium/h2 0.4.20; RFC 9113, RFC 7541 |
 | `gql_tls` | Done | `gql_http`; system OpenSSL 3 at run time | RFC 8446, RFC 7301 |
 | `gql_https2` | Done | `gql_tls`, `gql_http2` | RFC 9113 over TLS; RFC 7301 |
-| `gql_http3` | Done; own QUIC transport in progress | `gql_https2`; OpenSSL 3.5 QUIC at run time | hyperium/h3; RFC 9114, RFC 9204 |
+| `gql_quic` | Done | `gql_tls`; system OpenSSL 3.5 at run time | quinn-proto 0.11.19; RFC 9000, RFC 9001, RFC 9002 |
+| `gql_http3` | Done | `gql_quic`, `gql_https2`; OpenSSL 3.5 at run time | hyperium/h3; RFC 9114, RFC 9204 |
 | `gql_server` | Done | `gql_validation`, `gql_execution`, `gql_http` | Apollo Server 5.5.1 |
 | `gql_subgraph` | Done | `gql_execution` | `@apollo/subgraph` 2.14.4 |
 | `gql_composition` | Done | `gql_language` | Hive Federation Composition v0.27.0 |
@@ -171,56 +173,58 @@ Mojo is faster than every baseline on every workload except one: building a sche
 | Package | Workload | Mojo | Fastest other library | Mojo speedup |
 | --- | --- | ---: | --- | ---: |
 | `gql_language` | Parse the GitHub schema (368 KB of SDL) | 566 µs | graphql-go-tools, 1.61 ms | 2.85x |
-| `gql_language` | Parse the introspection query (graphql-js benchmark) | 4.67 µs | graphql-go-tools, 8.35 µs | 1.79x |
-| `gql_language` | Print the kitchen sink (graphql-js benchmark) | 2.62 µs | apollo-compiler, 2.76 µs | 1.05x |
-| `gql_language` | Strip ignored characters from the GitHub schema | 755 µs | graphql-js, 5.12 ms | 6.8x |
-| `gql_json` | Parse the introspection result | 1.23 ms | Node.js `JSON.parse`, 3.89 ms | 3.2x |
-| `gql_json` | Stringify a small response | 1.84 µs | serde_json, 2.49 µs | 1.35x |
-| `gql_http` | Parse a request | 197 ns | httparse, 222 ns | 1.12x |
-| `gql_http` | Keep-alive request with a JSON body | 9.6 µs | hyper, 11.7 µs | 1.22x |
-| `gql_http2` | HPACK encode a GraphQL request header block | 822 ns | h2, 1.04 µs | 1.27x |
-| `gql_http2` | HPACK decode the same block | 1.02 µs | h2, 2.03 µs | 1.98x |
-| `gql_http2` | h2c round trip with a small JSON body | 69.4 µs | hyper and h2, 78.7 µs | 1.13x |
-| `gql_tls` | TLS keep-alive request round trip | 82.5 µs | hyper and rustls, 91.5 µs | 1.11x |
-| `gql_https2` | h2 over TLS round trip with a small JSON body | 92.0 µs | hyper, h2 and rustls, 113 µs | 1.23x |
-| `gql_http3` | QPACK encode and decode of request header blocks | [Http3](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3) | h3 | 2.6x to 3.1x |
-| `gql_http3` | **HTTP/3 round trip (OpenSSL QUIC)** | **138 µs** | **h3 and quinn, 119 µs** | **0.86x (slower)** |
-| `gql_schema` | Parse and build the GitHub schema | 1.07 ms | apollo-compiler, 7.95 ms | 7.4x |
-| `gql_schema` | Validate the GitHub schema SDL (graphql-js benchmark) | 3.25 ms | graphql-js, 8.12 ms | 2.5x |
-| `gql_schema` | **Build a schema from a parsed AST (graphql-js benchmark)** | **467 µs** | **apollo-compiler, 305 µs** | **0.65x (slower)** |
-| `gql_validation` | Validate the introspection query (graphql-js benchmark) | 40.3 µs | graphql-js, 414 µs | 10.3x |
-| `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 733 µs | apollo-compiler, 2.09 ms | 2.8x |
-| `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 441 µs | apollo-compiler, 3.32 ms | 7.5x |
-| `gql_execution` | Execute the introspection query on the GitHub schema (graphql-js benchmark) | 1.91 ms | apollo-compiler, 22.0 ms | 11.5x |
-| `gql_execution` | Parse and execute many repeated fields (graphql-js benchmark, no validation) | 25.4 µs | graphql-js, 397 µs | 15.6x |
-| `gql_execution` | Build a client schema from the GitHub introspection result | 3.01 ms | graphql-js, 7.46 ms | 2.5x |
-| `gql_client` | Write a 1000-item query result into a new cache | 1.89 ms | Apollo Client, 20.3 ms | 10.8x |
-| `gql_client` | Read a 1000-item query from the cache | 1.01 ms | Apollo Client, 12.9 ms | 12.9x |
-| `gql_client` | Extract the cache as JSON text | 0.63 ms | Apollo Client, 1.18 ms | 1.86x |
-| `gql_server` | Execute a small operation | 10.7 µs | Apollo Server, 99.4 µs | 9.3x |
-| `gql_server` | Answer an automatic persisted query hit | 14.1 µs | Apollo Server, 59.8 µs | 4.2x |
-| `gql_server` | Serve a small POST over HTTP | 54.9 µs | Apollo Server, 943 µs | 17.2x |
-| `gql_subgraph` | Build a catalog subgraph schema | 410 µs | `@apollo/subgraph`, 5.46 ms | 13.3x |
-| `gql_subgraph` | Print the catalog subgraph schema | 35.7 µs | `@apollo/subgraph`, 1.87 ms | 52x |
-| `gql_subgraph` | Answer `_service { sdl }` | 1.63 µs | `@apollo/subgraph`, 2.41 µs | 1.48x |
-| `gql_subgraph` | Resolve 100 entities | 91.2 µs | `@apollo/subgraph`, 380 µs | 4.2x |
-| `gql_mcp` | List 200 operation tools | 644 µs | Apollo MCP Server, 2.45 ms | 3.8x |
-| `gql_mcp` | Call an operation tool | 128 µs | Apollo MCP Server, 365 µs | 2.85x |
-| `gql_mcp` | Call the search tool | 548 µs | Apollo MCP Server, 3.30 ms | 6.0x |
-| `gql_mcp` | Call the introspect tool | 191 µs | Apollo MCP Server, 465 µs | 2.44x |
-| `gql_mcp` | Call the validate tool | 69.2 µs | Apollo MCP Server, 264 µs | 3.8x |
-| `gql_mcp` | Make a tool from a large operation | 722 µs | Apollo MCP Server, 3.34 ms | 4.6x |
-| `gql_codegen` | Generate code for four operations on the GitHub schema | 9.31 ms | Apollo Kotlin, 139 ms | 15x |
-| `gql_composition` | Validate the subgraphs of the Netflix DGS example | 8.45 ms | Hive, 34.1 ms | 4.0x |
-| `gql_composition` | Validate a huge subgraph schema | 45.1 ms | Hive, 184 ms | 4.1x |
-| `gql_composition` | Compose the stars-stuff supergraph | 1.23 ms | Hive, 5.96 ms | 4.8x |
-| `gql_router` | Plan the Hive Router benchmark query (`qp_benches.rs`) | 653 µs | Hive Router, 894 µs | 1.37x |
-| `gql_router` | Execute the plan of that query against canned subgraph responses | 186 µs | Hive Router, 282 µs | 1.51x |
-| `gql_seamstress` | `supergraph compose` of three subgraphs | 1.22 ms | Hive `composeServices`, 6.82 ms | 5.6x |
-| `gql_seamstress` | `graph introspect` of the GitHub schema | 31.7 ms | Rover, 119 ms | 3.75x |
-| `gql_seamstress` | `subgraph introspect` of the catalog subgraph | 23.5 ms | Rover, 109 ms | 4.6x |
+| `gql_language` | Parse the introspection query (graphql-js benchmark) | 4.69 µs | graphql-go-tools, 8.41 µs | 1.79x |
+| `gql_language` | Print the kitchen sink (graphql-js benchmark) | 2.65 µs | apollo-compiler, 2.73 µs | 1.03x |
+| `gql_language` | Strip ignored characters from the GitHub schema | 747 µs | graphql-js, 5.15 ms | 6.9x |
+| `gql_json` | Parse the introspection result | 1.21 ms | Node.js `JSON.parse`, 3.85 ms | 3.2x |
+| `gql_json` | Stringify a small response | 1.83 µs | astjson, 2.85 µs | 1.56x |
+| `gql_http` | Parse a request | 200 ns | httparse, 221 ns | 1.11x |
+| `gql_http` | Keep-alive request with a JSON body | 8.95 µs | hyper, 12.7 µs | 1.42x |
+| `gql_http2` | HPACK encode a GraphQL request header block | 815 ns | h2, 1.04 µs | 1.28x |
+| `gql_http2` | HPACK decode the same block | 1.02 µs | h2, 2.04 µs | 2.0x |
+| `gql_http2` | h2c round trip with a small JSON body | 69.6 µs | hyper and h2, 79.6 µs | 1.14x |
+| `gql_tls` | TLS keep-alive request round trip | 82.4 µs | hyper and rustls, 85.4 µs | 1.04x |
+| `gql_https2` | h2 over TLS round trip with a small JSON body | 94.1 µs | hyper, h2 and rustls, 113 µs | 1.20x |
+| `gql_quic` | Echo 32 bytes on one QUIC stream | 72.3 µs | quinn, 90.3 µs | 1.25x |
+| `gql_http3` | QPACK encode a request header block | 702 ns | h3, 2.18 µs | 3.1x |
+| `gql_http3` | QPACK decode a request header block | 879 ns | h3, 2.56 µs | 2.9x |
+| `gql_http3` | HTTP/3 round trip with a small JSON body | 101 µs | h3 and quinn, 110 µs | 1.09x |
+| `gql_schema` | Parse and build the GitHub schema | 1.07 ms | apollo-compiler, 7.85 ms | 7.3x |
+| `gql_schema` | Validate the GitHub schema SDL (graphql-js benchmark) | 3.32 ms | graphql-js, 8.01 ms | 2.4x |
+| `gql_schema` | **Build a schema from a parsed AST (graphql-js benchmark)** | **465 µs** | **apollo-compiler, 308 µs** | **0.66x (slower)** |
+| `gql_validation` | Validate the introspection query (graphql-js benchmark) | 40.2 µs | graphql-js, 409 µs | 10.2x |
+| `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 694 µs | apollo-compiler, 2.13 ms | 3.1x |
+| `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 418 µs | apollo-compiler, 3.03 ms | 7.2x |
+| `gql_execution` | Execute the introspection query on the GitHub schema (graphql-js benchmark) | 1.82 ms | apollo-compiler, 18.7 ms | 10.3x |
+| `gql_execution` | Parse and execute many repeated fields (graphql-js benchmark, no validation) | 17.0 µs | graphql-js, 411 µs | 24x |
+| `gql_execution` | Build a client schema from the GitHub introspection result | 2.94 ms | graphql-js, 6.30 ms | 2.1x |
+| `gql_client` | Write a 1000-item query result into a new cache | 1.87 ms | Apollo Client, 20.3 ms | 10.8x |
+| `gql_client` | Read a 1000-item query from the cache | 1.01 ms | Apollo Client, 13.0 ms | 12.9x |
+| `gql_client` | Extract the cache as JSON text | 0.62 ms | Apollo Client, 1.14 ms | 1.84x |
+| `gql_server` | Execute a small operation | 2.28 µs | Apollo Server, 12.3 µs | 5.4x |
+| `gql_server` | Answer an automatic persisted query hit | 2.56 µs | Apollo Server, 9.49 µs | 3.7x |
+| `gql_server` | Serve a small POST over HTTP | 26.0 µs | Apollo Server, 160 µs | 6.2x |
+| `gql_server` | Execute with a federated trace (`ftv1`) | 20.2 µs | Apollo Server, 84.4 µs | 4.2x |
+| `gql_subgraph` | Build a catalog subgraph schema | 414 µs | `@apollo/subgraph`, 3.12 ms | 7.5x |
+| `gql_subgraph` | Print the catalog subgraph schema | 36.1 µs | `@apollo/subgraph`, 1.72 ms | 47x |
+| `gql_subgraph` | Answer `_service { sdl }` | 1.63 µs | `@apollo/subgraph`, 2.33 µs | 1.43x |
+| `gql_subgraph` | Resolve 100 entities | 88.3 µs | `@apollo/subgraph`, 370 µs | 4.2x |
+| `gql_mcp` | List 200 operation tools | 593 µs | Apollo MCP Server, 2.24 ms | 3.8x |
+| `gql_mcp` | Call an operation tool | 125 µs | Apollo MCP Server, 318 µs | 2.5x |
+| `gql_mcp` | Call the search tool | 531 µs | Apollo MCP Server, 3.16 ms | 6.0x |
+| `gql_mcp` | Call the introspect tool | 184 µs | Apollo MCP Server, 411 µs | 2.24x |
+| `gql_mcp` | Call the validate tool | 65.7 µs | Apollo MCP Server, 241 µs | 3.7x |
+| `gql_mcp` | Make a tool from a large operation | 641 µs | Apollo MCP Server, 3.30 ms | 5.2x |
+| `gql_codegen` | Generate code for four operations on the GitHub schema | 7.88 ms | Apollo Kotlin, 128 ms | 16x |
+| `gql_composition` | Validate the subgraphs of the Netflix DGS example | 8.28 ms | Hive, 31.8 ms | 3.8x |
+| `gql_composition` | Validate a huge subgraph schema | 42.5 ms | Hive, 170 ms | 4.0x |
+| `gql_router` | Plan the Hive Router benchmark query (`qp_benches.rs`) | 653 µs | Hive Router, 892 µs | 1.37x |
+| `gql_router` | Execute the plan of that query against canned subgraph responses | 187 µs | Hive Router, 277 µs | 1.48x |
+| `gql_seamstress` | `supergraph compose` of three subgraphs | 1.22 ms | Hive `composeServices`, 5.43 ms | 4.4x |
+| `gql_seamstress` | `graph introspect` of the GitHub schema | 30.1 ms | Rover, 118 ms | 3.9x |
+| `gql_seamstress` | `subgraph introspect` of the catalog subgraph | 21.7 ms | Rover, 107 ms | 4.9x |
 
-Each time is one operation: the fastest of 5 rounds of at least one second, after a warm-up. The numbers are from 2026-10-15 to 2026-10-18, on WSL2 on Windows 11 with 24 hardware threads. Other machines give other times, but the ratios stay close. Two gaps are open. apollo-compiler builds its schema from an AST that its slower parser already prepared. The HTTP/3 round trip runs on the QUIC stack of OpenSSL, and our own QUIC transport (`gql_quic`) is in progress to replace it.
+Each time is one operation: the fastest of 5 rounds of at least one second, after a warm-up. The numbers are from one full run on 2026-10-19, on WSL2 on Windows 11 with 24 hardware threads. Other machines give other times, but the ratios stay close. One gap is open. apollo-compiler builds its schema from an AST that its slower parser already prepared.
 
 ```bash
 make bench         # run the benchmarks and write bench/RESULTS.md

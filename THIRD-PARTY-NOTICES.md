@@ -33,12 +33,16 @@ the Elastic License 2.0. The exclusions are listed with each project.
 | Apollo Federation subgraph compatibility | [apollographql/apollo-federation-subgraph-compatibility](https://github.com/apollographql/apollo-federation-subgraph-compatibility) | `f9520a4` | MIT | Copyright (c) 2022 Apollo Graph |
 | hyperium/h3 | [hyperium/h3](https://github.com/hyperium/h3), `h3/src/qpack` and `h3/src/proto` only | `h3-v0.0.8` (`22c1aa3`) | MIT | Copyright (c) 2020 h3 authors |
 | hyperium/h2 | [hyperium/h2](https://github.com/hyperium/h2), `src/hpack`, `src/frame`, `src/proto`, `src/server.rs`, `src/client.rs`, and the tests of `tests/h2-tests` and `src/hpack/test` | `v0.4.20` (`b0e8908`) | MIT | Copyright (c) 2017 h2 authors |
+| quinn | [quinn-rs/quinn](https://github.com/quinn-rs/quinn), `quinn-proto/` (crate `0.11.19`) and the drivers of `quinn/` (crate `0.11.12`) only | `quinn-proto-0.11.19` (`8192ed3`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2018 The quinn Developers |
+| quinn-udp | [quinn-rs/quinn](https://github.com/quinn-rs/quinn), `quinn-udp/` (crate `0.5.16`) only | `quinn-proto-0.11.19` (`8192ed3`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2018 The quinn Developers |
 
 ## Libraries loaded at run time
 
-`gql_tls` and `gql_http3` load the OpenSSL 3 libraries of the system,
-`libssl.so.3` and `libcrypto.so.3`, with `dlopen` at run time. They call the
-public C API of OpenSSL: TLS, ALPN, and the QUIC API of OpenSSL 3.5.
+`gql_tls`, `gql_quic` and `gql_http3` load the OpenSSL 3 libraries of the
+system, `libssl.so.3` and `libcrypto.so.3`, with `dlopen` at run time. They
+call the public C API of OpenSSL: TLS, ALPN, the AEAD, header protection
+and HKDF functions of libcrypto, the third-party QUIC TLS API of OpenSSL 3.5
+(`SSL_set_quic_tls_cbs`), and the QUIC API of OpenSSL 3.5.
 OpenSSL is Apache-2.0 licensed. MojoGraphQL ports no OpenSSL code, copies
 none of its headers, and does not ship OpenSSL; the constants it uses are
 the values of the public OpenSSL headers. A program that does not import
@@ -158,6 +162,29 @@ the values of the public OpenSSL headers. A program that does not import
   `src/graphql/` and `src/utils/`. The federation versions `v2.10` to
   `v2.15` come from the public Apollo GraphOS documentation, not from code.
 
+- **quinn and quinn-udp.** The repository is dual licensed MIT OR
+  Apache-2.0 (`LICENSE-MIT` and `LICENSE-APACHE`). MojoGraphQL uses it under
+  the MIT License only. `gql_quic` ports these files of quinn-proto `0.11.19`
+  (`8192ed3`): `src/packet.rs`, `src/frame.rs`, `src/varint.rs`,
+  `src/coding.rs`, `src/transport_parameters.rs`, `src/transport_error.rs`,
+  `src/shared.rs`, `src/lib.rs` (`Side`, `Dir`, `StreamId`),
+  `src/cid_generator.rs`, `src/token.rs` (`ResetToken`),
+  `src/range_set/array_range_set.rs`, `src/crypto.rs`,
+  `src/crypto/rustls.rs` (`initial_keys` and the role of `TlsSession`),
+  `src/connection/mod.rs`, `src/connection/spaces.rs`,
+  `src/connection/assembler.rs`, `src/connection/send_buffer.rs`,
+  `src/connection/streams/` (`state.rs`, `send.rs`, `recv.rs`),
+  `src/connection/paths.rs` (`RttEstimator`),
+  `src/congestion/new_reno.rs`, `src/endpoint.rs`, and the tests of
+  `src/tests/` and `src/range_set/tests.rs`. It ports the role of
+  `quinn/src/endpoint.rs` and `quinn/src/connection.rs` of quinn `0.11.12`,
+  with the tests of `quinn/src/tests.rs`. It ports the batched receive and
+  the GSO send of `quinn-udp/src/unix.rs` of quinn-udp `0.5.16`, with the
+  tests of `quinn-udp/tests/tests.rs`. It does not port Cubic, BBR (whose
+  `min_max.rs` is based on BSD licensed Google code), the rustls and ring
+  providers, the hashed connection ID generator, Retry tokens, path
+  migration, MTU discovery, or the Windows and Apple code of quinn-udp.
+
 ## Benchmark baselines and fixtures
 
 - `bench/fixtures/kitchen-sink.graphql` and
@@ -211,6 +238,13 @@ the values of the public OpenSSL headers. A program that does not import
   `0.0.10` (MIT), quinn `0.11` and rustls `0.23` with ring (the MIT arm of
   MIT OR Apache-2.0), and rcgen `0.13` (the MIT arm of MIT OR Apache-2.0).
   It runs only as a benchmark baseline.
+- `bench/baselines/rust-quic/` runs the published crates quinn-proto
+  `0.11.19` and quinn `0.11.12` (the MIT arm of MIT OR Apache-2.0) on tokio
+  (MIT), with rustls `0.23` and ring and rcgen `0.13` (the MIT arm of MIT OR
+  Apache-2.0). `quic-stream` drives quinn-proto in memory, and `quic-echo`
+  runs quinn over localhost UDP. Its `h3-interop-server` and
+  `h3-interop-client` programs use h3 `0.0.8` and h3-quinn `0.0.10` (MIT),
+  and are test peers. It runs only as the benchmark baseline of `gql_quic`.
 - `bench/baselines/rust-http2/` runs hyper `1.12.0` (MIT) with h2 `0.4.20`
   (MIT) on tokio (MIT). h2 keeps its HPACK coder private, so `build.rs`
   compiles the `src/hpack` and `src/ext.rs` files of the h2 `0.4.20` crate
