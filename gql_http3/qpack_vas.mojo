@@ -32,8 +32,6 @@ def index_error(what: StaticString, index: Int) -> H3Error:
     Returns:
         A `QPACK_DECOMPRESSION_FAILED` error.
     """
-    return H3Error(what: StaticString, index: Int) -> H3Error:
-    """Return the error of an index that names no live entry."""
     return H3Error(
         H3ErrorCode.QPACK_DECOMPRESSION_FAILED,
         String("bad ", what, " index ", index),
@@ -183,6 +181,10 @@ struct VirtualAddressSpace(ImplicitlyCopyable, Writable):
             writer: The destination.
         """
         writer.write(
-            "inserted ", self.inserted, " dropped ", self.dropped, " live ",
+            "inserted ",
+            self.inserted,
+            " dropped ",
+            self.dropped,
+            " live ",
             self.delta,
         )

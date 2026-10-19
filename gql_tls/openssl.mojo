@@ -35,11 +35,16 @@ Differences from upstream: none; there is no upstream.
 
 from std.ffi import OwnedDLHandle, RTLD, _DLCallable, external_call
 from std.memory import ArcPointer, stack_allocation
+from std.sys._libc_errno import ErrNo, set_errno
 
 from gql_tls.error import TlsError, TlsErrorKind
 
 comptime CFunction[R: RegisterPassable] = _DLCallable[R, MutUntrackedOrigin]
-"""A function of a loaded library that returns `R`."""
+"""A function of a loaded library that returns `R`.
+
+Parameters:
+    R: The return type of the function.
+"""
 
 comptime SSL_ERROR_NONE: Int32 = 0
 """`SSL_get_error`: the call succeeded."""
@@ -63,6 +68,8 @@ comptime SSL_CTRL_MODE: Int32 = 33
 """`SSL_CTX_ctrl`: add mode bits."""
 comptime SSL_CTRL_SET_TLSEXT_HOSTNAME: Int32 = 55
 """`SSL_ctrl`: set the server name indication."""
+comptime SSL_CTRL_SET_READ_AHEAD: Int32 = 41
+"""`SSL_ctrl`: read as many bytes as the socket has, not one record."""
 comptime SSL_CTRL_SET_MIN_PROTO_VERSION: Int32 = 123
 """`SSL_CTX_ctrl`: set the oldest protocol version."""
 comptime SSL_MODE_ENABLE_PARTIAL_WRITE = 0x1
@@ -138,12 +145,13 @@ struct TlsCall(Equatable, ImplicitlyCopyable, Writable):
         writer.write("TlsCall(", self.value, ")")
 
 
-@fieldwise_init
 struct TlsFaults(Copyable, Movable):
     """A plan that makes one kind of OpenSSL call fail, for tests.
 
     The first `skip` matching calls run. The next `count` matching calls
     fail without reaching OpenSSL. A `count` of -1 fails every later call.
+    A failed handshake, read or write gives the `SSL_get_error` code
+    `error`, and sets `errno` to `errno`.
     """
 
     var call: TlsCall
@@ -152,12 +160,44 @@ struct TlsFaults(Copyable, Movable):
     """How many matching calls run before the first failure."""
     var count: Int
     """How many matching calls fail; -1 for no limit."""
+    var error: Int32
+    """The `SSL_ERROR_*` code of a failed handshake, read or write; not
+    `SSL_ERROR_NONE`."""
+    var errno: Int
+    """The system error number that a failed handshake, read or write
+    sets."""
 
     def __init__(out self):
         """Make a plan that fails nothing."""
         self.call = TlsCall.NONE
         self.skip = 0
         self.count = 0
+        self.error = SSL_ERROR_SSL
+        self.errno = 0
+
+    def __init__(
+        out self,
+        call: TlsCall,
+        skip: Int,
+        count: Int,
+        error: Int32 = SSL_ERROR_SSL,
+        errno: Int = 0,
+    ):
+        """Make a plan that fails calls of one kind.
+
+        Args:
+            call: The kind of call to fail.
+            skip: How many matching calls run before the first failure.
+            count: How many matching calls fail; -1 for no limit.
+            error: The `SSL_ERROR_*` code of a failed handshake, read or
+                write, such as `SSL_ERROR_WANT_WRITE`.
+            errno: The system error number that such a failure sets.
+        """
+        self.call = call
+        self.skip = skip
+        self.count = count
+        self.error = error
+        self.errno = errno
 
     def take(mut self, call: TlsCall) -> Bool:
         """Decide whether this call fails.
@@ -270,9 +310,9 @@ def _open(path: String) raises TlsError -> ArcPointer[OwnedDLHandle]:
 
 def _find[
     R: RegisterPassable
-](library: ArcPointer[OwnedDLHandle], name: StaticString) raises TlsError -> (
-    CFunction[R]
-):
+](
+    library: ArcPointer[OwnedDLHandle], name: StaticString
+) raises TlsError -> CFunction[R]:
     """Look up one function of an open library."""
     var symbol = library[].get_symbol[NoneType](String(name))
     if not symbol:
@@ -330,11 +370,12 @@ struct OpenSsl(Copyable, Movable):
     var _ssl_ctrl: CFunction[Int]
     var _verify_result: CFunction[Int]
     var _pending: CFunction[Int32]
+    var _has_pending: CFunction[Int32]
     var _err_get: CFunction[UInt64]
     var _err_string: CFunction[NoneType]
     var _err_clear: CFunction[NoneType]
     var _verify_string: CFunction[Int]
-    var _faulted: Bool
+    var _fault_error: Int32
 
     def __init__(
         out self,
@@ -400,6 +441,7 @@ struct OpenSsl(Copyable, Movable):
         self._ssl_ctrl = _find[Int](ssl, "SSL_ctrl")
         self._verify_result = _find[Int](ssl, "SSL_get_verify_result")
         self._pending = _find[Int32](ssl, "SSL_pending")
+        self._has_pending = _find[Int32](ssl, "SSL_has_pending")
         self._err_get = _find[UInt64](crypto, "ERR_get_error")
         self._err_string = _find[NoneType](crypto, "ERR_error_string_n")
         self._err_clear = _find[NoneType](crypto, "ERR_clear_error")
@@ -410,7 +452,7 @@ struct OpenSsl(Copyable, Movable):
         self.crypto_library = crypto^
         self.faults = TlsFaults()
         self.version = version
-        self._faulted = False
+        self._fault_error = 0
 
     def function[
         R: RegisterPassable
@@ -650,6 +692,17 @@ struct OpenSsl(Copyable, Movable):
         """
         self._accept_state(ssl)
 
+    def set_read_ahead(mut self, ssl: Int):
+        """Make a connection object read as many bytes as the socket has.
+
+        Without it, OpenSSL reads the header of each record, then its
+        body: two system calls for each record.
+
+        Args:
+            ssl: The object.
+        """
+        _ = self._ssl_ctrl(ssl, SSL_CTRL_SET_READ_AHEAD, 1, 0)
+
     def set_connect_state(mut self, ssl: Int):
         """Make a connection object act as the client.
 
@@ -668,10 +721,11 @@ struct OpenSsl(Copyable, Movable):
         Returns:
             Whether it worked.
         """
-        if self._fail(TlsCall.SET_HOST):
-            return False
         var name = host.as_c_string_span().ptr()
-        if self._set1_host(ssl, name) != 1:
+        var verified = self._set1_host(ssl, name)
+        if self._fail(TlsCall.SET_HOST):
+            verified = 0
+        if verified != 1:
             return False
         var sni = self._ssl_ctrl(
             ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, 0, Int(name)
@@ -688,9 +742,14 @@ struct OpenSsl(Copyable, Movable):
             1 when done, else a value for `get_error`.
         """
         if self._fail(TlsCall.HANDSHAKE):
-            self._faulted = True
-            return -1
+            return self._io_fault()
         return self._handshake(ssl)
+
+    def _io_fault(mut self) -> Int32:
+        """Fail a handshake, a read or a write as the fault plan says."""
+        self._fault_error = self.faults.error
+        set_errno(ErrNo(Int32(self.faults.errno)))
+        return -1
 
     def read(mut self, ssl: Int, data: Pointer[UInt8, _], size: Int) -> Int32:
         """Read decrypted bytes.
@@ -704,8 +763,7 @@ struct OpenSsl(Copyable, Movable):
             The count of bytes, else a value for `get_error`.
         """
         if self._fail(TlsCall.READ):
-            self._faulted = True
-            return -1
+            return self._io_fault()
         return self._read(ssl, data, Int32(min(size, 0x7FFFFFFF)))
 
     def write(mut self, ssl: Int, data: Pointer[UInt8, _], size: Int) -> Int32:
@@ -720,14 +778,14 @@ struct OpenSsl(Copyable, Movable):
             The count of bytes taken, else a value for `get_error`.
         """
         if self._fail(TlsCall.WRITE):
-            self._faulted = True
-            return -1
+            return self._io_fault()
         return self._write(ssl, data, Int32(min(size, 0x7FFFFFFF)))
 
     def get_error(mut self, ssl: Int, result: Int32) -> Int32:
         """Classify the result of a handshake, a read or a write.
 
-        The result of a call that a fault made fail is `SSL_ERROR_SSL`.
+        The result of a call that a fault made fail is the `error` of the
+        fault plan.
 
         Args:
             ssl: The object.
@@ -736,9 +794,10 @@ struct OpenSsl(Copyable, Movable):
         Returns:
             An `SSL_ERROR_*` value.
         """
-        if self._faulted:
-            self._faulted = False
-            return SSL_ERROR_SSL
+        if self._fault_error != 0:
+            var code = self._fault_error
+            self._fault_error = 0
+            return code
         return self._get_error(ssl, result)
 
     def shutdown(mut self, ssl: Int) -> Int32:
@@ -797,3 +856,15 @@ struct OpenSsl(Copyable, Movable):
             The count.
         """
         return Int(self._pending(ssl))
+
+    def has_pending(mut self, ssl: Int) -> Bool:
+        """Return True when OpenSSL holds bytes of the peer, decrypted or
+        not, that the socket no longer has.
+
+        Args:
+            ssl: The object.
+
+        Returns:
+            Whether a read can return bytes without the socket.
+        """
+        return self._has_pending(ssl) == 1

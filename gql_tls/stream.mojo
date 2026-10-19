@@ -36,7 +36,6 @@ from gql_tls.openssl import (
 )
 
 
-
 @fieldwise_init
 struct IoWant(Equatable, ImplicitlyCopyable, Writable):
     """What a TLS operation waits for, as a type and not a bare integer."""
@@ -147,6 +146,7 @@ struct TlsStream(Movable):
             raise self._error(TlsErrorKind.CONFIG, "SSL_new failed")
         if not self.openssl.set_fd(self.ssl, fd):
             raise self._error(TlsErrorKind.CONFIG, "SSL_set_fd failed")
+        self.openssl.set_read_ahead(self.ssl)
 
     def __init__(out self, openssl: OpenSsl):
         """Make a stream with no connection, as a placeholder.
@@ -274,7 +274,9 @@ struct TlsStream(Movable):
             )
         raise self._error(TlsErrorKind.HANDSHAKE, "the TLS handshake failed")
 
-    def read(mut self, data: Pointer[UInt8, _], size: Int) raises TlsError -> Int:
+    def read(
+        mut self, data: Pointer[UInt8, _], size: Int
+    ) raises TlsError -> Int:
         """Read decrypted bytes.
 
         Args:
@@ -345,6 +347,18 @@ struct TlsStream(Movable):
             The count.
         """
         return self.openssl.pending(self.ssl)
+
+    def has_pending(mut self) -> Bool:
+        """Return True when OpenSSL holds bytes that the socket no longer
+        has, so that `read` can return bytes without a readable socket.
+
+        A caller that waits for the socket must first read until this is
+        False.
+
+        Returns:
+            Whether OpenSSL holds bytes of the peer.
+        """
+        return self.openssl.has_pending(self.ssl)
 
     def shutdown(mut self) -> Bool:
         """Send `close_notify`, once. The stream reads no answer.

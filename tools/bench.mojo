@@ -56,6 +56,16 @@ comptime HTTP_LOADGEN = (
 )
 """The load generator and its workload; the server command follows."""
 
+comptime H2_LOADGEN_BUILD = (
+    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
+    " .cache/bin/h2load bench/gql_http2/_h2load.mojo > /dev/null)"
+)
+"""The shell command that builds the gql_http2 h2c load generator, from a
+baseline directory."""
+
+comptime H2_LOADGEN = "../../../.cache/bin/h2load http2/roundtrip-small-json"
+"""The h2c load generator and its workload; the server command follows."""
+
 comptime MCP_DRIVER_BUILD = (
     "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
     " .cache/bin/mcp_driver bench/gql_mcp/_driver.mojo > /dev/null)"
@@ -205,6 +215,38 @@ def baselines() -> List[Baseline]:
             "cargo build --release --locked --quiet && " + HTTP_LOADGEN_BUILD,
             HTTP_LOADGEN
             + " ./target/release/hyper-server && ./target/release/httparse",
+        )
+    )
+    # The TLS baseline runs its own client and server, as the Mojo one does.
+    out.append(
+        Baseline(
+            "hyper 1.12.0 and rustls 0.23.45 (Rust)",
+            "bench/baselines/rust-tls",
+            "cargo build --release --locked --quiet",
+            "./target/release/hyper-rustls",
+        )
+    )
+    # The HTTP/2 servers run under the Mojo h2c load generator of
+    # gql_http2. h2's HPACK coder is private, so the crate compiles its
+    # sources from the cargo registry copy of h2 0.4.20.
+    out.append(
+        Baseline(
+            "hyper 1.12.0 and h2 0.4.20 (Rust)",
+            "bench/baselines/rust-http2",
+            "cargo build --release --locked --quiet && " + H2_LOADGEN_BUILD,
+            H2_LOADGEN
+            + " ./target/release/hyper-h2-server && ./target/release/h2-hpack",
+        )
+    )
+    # h3's QPACK coder is private: build.sh fetches h3 at the pinned
+    # revision and the crate includes its sources. h3-roundtrip runs h3,
+    # h3-quinn and quinn over localhost UDP.
+    out.append(
+        Baseline(
+            "h3 0.0.8 and quinn 0.11 (Rust)",
+            "bench/baselines/rust-http3",
+            "sh build.sh",
+            "./target/release/h3-qpack && ./target/release/h3-roundtrip",
         )
     )
     # The HTTP workload of Apollo Server runs under the same Mojo load

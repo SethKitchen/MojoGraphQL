@@ -17,8 +17,7 @@ applies the rest of the path to each item. A type condition passes when
 **Differences from upstream.** A key renamer with an empty path, or whose
 last step is a type condition, changes nothing. Upstream reads past the end
 of the path and panics. This module works on the executor arena of
-`gql_router.exec_value`; `gql_router.rewrite` is the same rewrite for its
-own possible types.
+`gql_router.exec_value`.
 """
 
 from gql_json.value import NO_NODE, JsonDocument, JsonKind
@@ -27,7 +26,6 @@ from gql_router.exec_value import (
     key_is,
     set_key,
     set_string,
-    string_text,
     typename_node,
 )
 from gql_router.fetch_step import FetchRewrite
@@ -80,7 +78,7 @@ def _apply(
     if not segment.is_key:
         var type_node = typename_node(document, node)
         if type_node == NO_NODE or satisfies_any(
-            store, possible_types, string_text(document, type_node), segment.types
+            store, possible_types, document, type_node, segment.types
         ):
             _apply(store, possible_types, rewrite, document, node, at + 1)
         return

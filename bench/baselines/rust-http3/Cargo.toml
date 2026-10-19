@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Rust HTTP/3 baselines. `h3-qpack` times the QPACK coder of hyperium/h3
+# h3-v0.0.8 (MIT): its `qpack` module is private, so build.sh fetches the
+# h3 sources at the pinned revision into upstream/, and src/bin/qpack.rs
+# includes `h3/src/qpack` and the two `h3/src/proto` files that it needs
+# with `#[path]`. bytes is MIT.
+#
+# `h3-roundtrip` runs an HTTP/3 round trip with the published h3 0.0.8,
+# h3-quinn 0.0.10 (MIT), quinn 0.11 and rustls 0.23 with ring (MIT OR
+# Apache-2.0, used under MIT), and rcgen for the certificate. The server
+# runs on its own thread with a current-thread tokio runtime, like the Mojo
+# server in its own process; the client runs on the main thread.
+
+[package]
+name = "mojographql-bench-http3-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+bytes = "1"
+futures = "0.3"
+h3 = "=0.0.8"
+h3-quinn = "=0.0.10"
+http = "1"
+quinn = { version = "0.11", default-features = false, features = ["runtime-tokio", "rustls", "ring"] }
+rcgen = "0.13"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+tokio = { version = "1.27", features = ["rt", "macros", "net", "time"] }
+
+[features]
+# h3 guards its trace calls with this feature; it stays off.
+tracing = []
+
+[[bin]]
+name = "h3-qpack"
+path = "src/bin/qpack.rs"
+
+[[bin]]
+name = "h3-roundtrip"
+path = "src/bin/roundtrip.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

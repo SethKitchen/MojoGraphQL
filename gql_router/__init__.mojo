@@ -38,26 +38,29 @@ The other modules port other parts of Hive Router:
   `executor/execution/error_masking.rs`.
 - `gql_router.operation_name` builds the operation name sent to a
   subgraph, as `executor/execution/operation_name.rs`.
-- `gql_router.rewrite` applies a fetch rewrite to a JSON value, as
-  `executor/execution/rewrites.rs`.
-- `gql_router.response_merge` merges one JSON response into another, as
-  `executor/response/merge.rs`.
 - `gql_router.graphql_error` is a subgraph GraphQL error, as
   `executor/response/graphql_error.rs`. `handle_subgraph_errors` attaches
   those errors, as `ExecutionContext::handle_errors`.
-- `gql_router.response_storage` keeps response bodies until they merge, as
-  `executor/response/storage.rs`.
-- `gql_router.subgraph_response` reads a subgraph response, as
-  `executor/response/subgraph_response.rs`.
-- `gql_router.fetch_variables` keeps the variables a fetch uses and
-  chooses a condition branch, as `executor/execution/plan.rs`.
-- `gql_router.plan_execute` lists the fetches a plan runs, in that same
-  dispatch order.
-- `gql_router.response_path` merges a fetch into the response at a path,
-  as `executor/utils/traverse.rs`.
-- `gql_router.batch_alias` splits a batch response into alias errors and
-  entity arrays, then merges each entity back, as
-  `executor/execution/plan.rs`.
+
+The executor ports `bin/router/src/executor` and `bin/router/src/pipeline`:
+
+- `gql_router.pipeline` runs a request: `RouterSchema` reads a supergraph
+  and `Router.execute` parses, normalizes, coerces, plans, executes and
+  projects, as `pipeline/mod.rs`.
+- `gql_router.exec_plan` runs a query plan against the subgraphs, as
+  `executor/execution/plan.rs`. `gql_router.exec_http` builds the
+  subgraph requests and holds the transports.
+- `gql_router.exec_projection_plan` and `gql_router.exec_projection`
+  write the client response, as `executor/projection`.
+- `gql_router.exec_variables` coerces the request variables, as
+  `executor/variables`.
+- `gql_router.exec_value`, `gql_router.exec_traverse`,
+  `gql_router.exec_rewrites`, `gql_router.exec_requires` and
+  `gql_router.exec_subgraph_response` work on the response arena, as
+  `executor/response` and `executor/utils`.
+- `gql_router.consumer_schema`, `gql_router.schema_metadata`,
+  `gql_router.entity_keys`, `gql_router.exec_partition` and
+  `gql_router.exec_introspection` hold the schema facts the executor uses.
 
 `apollo-router-workspace/` is excluded.
 """

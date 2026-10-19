@@ -473,15 +473,15 @@ struct _Entry(Copyable, Movable):
     """The last read or write time in milliseconds."""
 
 
-struct OperationCache:
+struct OperationCache(Movable):
     """A string cache with the router's entry limit and expiry."""
 
     var limits: CacheLimits
     """The limits that govern this cache."""
-    var _entries: Dict[String, _Entry]
-    """The stored values."""
-    var _order: List[String]
-    """Keys from oldest insertion to newest."""
+    var _keys: List[String]
+    """The keys, from the oldest insertion to the newest."""
+    var _entries: List[_Entry]
+    """The value of each key, parallel to `_keys`."""
 
     def __init__(out self, limits: CacheLimits):
         """Start an empty cache.
@@ -490,35 +490,42 @@ struct OperationCache:
             limits: The entry limit and expiry times.
         """
         self.limits = limits.copy()
-        self._entries = Dict[String, _Entry]()
-        self._order = List[String]()
+        self._keys = List[String]()
+        self._entries = List[_Entry]()
 
-    def insert(mut self, key: String, value: String, now_ms: Int) raises:
+    def _find(self, key: String) -> Int:
+        """Return the position of a key, or -1."""
+        var index = 0
+        while index < len(self._keys):
+            if self._keys[index] == key:
+                return index
+            index += 1
+        return -1
+
+    def insert(mut self, key: String, value: String, now_ms: Int):
         """Store a value, or do nothing when the entry limit is zero.
+
+        When the cache is full, the oldest inserted entry is removed.
 
         Args:
             key: The cache key.
             value: The stored text.
             now_ms: The current time in milliseconds.
-
-        Raises:
-            Error: When removing an expired entry fails.
         """
         if self.limits.max_entries == 0:
             return
         self._drop_expired(now_ms)
-        var existing = self._entries.get(key)
-        if existing:
-            self._entries[key] = _Entry(value, now_ms, now_ms)
+        var found = self._find(key)
+        if found >= 0:
+            self._entries[found] = _Entry(value, now_ms, now_ms)
             return
-        while len(self._order) >= self.limits.max_entries:
-            var oldest = self._order[0]
-            self._forget(oldest)
-        self._entries[key] = _Entry(value, now_ms, now_ms)
-        self._order.append(key)
+        while len(self._keys) >= self.limits.max_entries:
+            self._remove(0)
+        self._keys.append(key)
+        self._entries.append(_Entry(value, now_ms, now_ms))
 
-    def get(mut self, key: String, now_ms: Int) raises -> Optional[String]:
-        """Return a stored value and mark it as read.
+    def get(mut self, key: String, now_ms: Int) -> Optional[String]:
+        """Return a value and mark it as read.
 
         Args:
             key: The cache key.
@@ -526,37 +533,28 @@ struct OperationCache:
 
         Returns:
             The value, or none when the key is absent or expired.
-
-        Raises:
-            Error: When removing an expired entry fails.
         """
         self._drop_expired(now_ms)
-        var found = self._entries.get(key)
-        if not found:
+        var found = self._find(key)
+        if found < 0:
             return None
-        var entry = found.value().copy()
-        var stored = String(entry.value)
-        entry.accessed_ms = now_ms
-        self._entries[key] = entry^
-        return stored
+        self._entries[found].accessed_ms = now_ms
+        return self._entries[found].value
 
-    def entry_count(mut self, now_ms: Int) raises -> Int:
-        """Return how many entries are still live.
+    def entry_count(mut self, now_ms: Int) -> Int:
+        """Return the number of entries that have not expired.
 
         Args:
             now_ms: The current time in milliseconds.
 
         Returns:
             The number of unexpired entries.
-
-        Raises:
-            Error: When removing an expired entry fails.
         """
         self._drop_expired(now_ms)
-        return len(self._order)
+        return len(self._keys)
 
     def _expired(self, entry: _Entry, now_ms: Int) -> Bool:
-        """Return True when time to live or time to idle has elapsed."""
+        """Return True if an entry is past its time to live or to idle."""
         var live = self.limits.time_to_live_ms
         if live > 0 and now_ms - entry.inserted_ms >= live:
             return True
@@ -565,25 +563,18 @@ struct OperationCache:
             return True
         return False
 
-    def _drop_expired(mut self, now_ms: Int) raises:
+    def _drop_expired(mut self, now_ms: Int):
         """Remove every expired entry."""
-        var dead = List[String]()
-        for index in range(len(self._order)):
-            # `_order` and `_entries` hold the same keys.
-            var key = self._order[index]
-            if self._expired(self._entries[key].copy(), now_ms):
-                dead.append(key)
-        for index in range(len(dead)):
-            self._forget(dead[index])
-
-    def _forget(mut self, key: String) raises:
-        """Remove one key from the map and the insertion order."""
-        _ = self._entries.pop(key)
-        var next = List[String]()
-        # The key is in `_order`, so `_order` is never empty.
         var index = 0
-        while index < len(self._order):
-            if self._order[index] != key:
-                next.append(self._order[index])
-            index += 1
-        self._order = next^
+        while index < len(self._keys):
+            if self._expired(self._entries[index], now_ms):
+                self._remove(index)
+            else:
+                index += 1
+
+    def _remove(mut self, index: Int):
+        """Remove the entry at a position."""
+        _ = self._keys.pop(index)
+        _ = self._entries.pop(index)
+
+

@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Rust HTTP/2 baselines. `hyper-h2-server` is a hyper 1 server that
+# speaks HTTP/2 only, with h2c prior knowledge, on a tokio runtime with one
+# thread. `h2-hpack` times the HPACK encoder and decoder of h2 0.4.20.
+# h2 keeps its `hpack` module private, so build.rs compiles h2's own
+# `src/hpack` and `src/ext.rs` from the cargo registry copy of the pinned
+# h2 crate. hyper, hyper-util, h2, tokio, http, http-body-util, bytes, fnv
+# and tracing are MIT, or MIT OR Apache-2.0 used under MIT.
+
+[package]
+name = "mojographql-bench-http2-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+build = "build.rs"
+
+[dependencies]
+hyper = { version = "1", features = ["server", "http2"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+bytes = "1"
+tokio = { version = "1", features = ["rt", "net", "macros"] }
+h2 = "=0.4.20"
+http = "1"
+fnv = "1"
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+
+[[bin]]
+name = "hyper-h2-server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "h2-hpack"
+path = "src/bin/hpack.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

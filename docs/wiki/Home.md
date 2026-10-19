@@ -20,6 +20,9 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Json](Json): the `gql_json` package, which is the JSON parser, document and writer.
 - [Execution](Execution): the `gql_execution` package: execute operations, introspection and `buildClientSchema`.
 - [Http](Http): the `gql_http` package, which is the HTTP/1.1 server, client and parser.
+- [Http2](Http2): the `gql_http2` package, which is HTTP/2 and HPACK: h2c, the h2c upgrade, the HTTP/1.1 fallback, and a `Transport` for TLS.
+- [Tls](Tls): the `gql_tls` package, which is TLS 1.3 and ALPN through the system OpenSSL, and the HTTPS server and client.
+- [Http3](Http3): the `gql_http3` package, which is HTTP/3 and QPACK over QUIC, `Alt-Svc`, and the client fallback chain.
 - [Validation](Validation): the `gql_validation` package, which checks an executable document against a schema.
 - [Client](Client): the `gql_client` package, which is the normalized cache of a GraphQL client.
 - [Composition](Composition): the `gql_composition` package, which validates Apollo Federation subgraphs.

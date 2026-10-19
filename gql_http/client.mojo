@@ -621,9 +621,8 @@ struct Client(Movable, ResponseSource):
         open."""
         self._fd = fd
         self._got = 0
-        return read_response(
-            self, method, self.config.limits, deadline, response
-        )
+        var limits = self.config.limits
+        return read_response(self, method, limits, deadline, response)
 
 
 trait ResponseSource:

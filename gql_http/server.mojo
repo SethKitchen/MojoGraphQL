@@ -431,10 +431,13 @@ struct ResponseWriter(Movable):
         What the socket does not take stays in `out`, and goes out after
         the handler returns.
 
+        A writer that is not bound to a connection, such as the writer of
+        an HTTP/2 stream, keeps `out` for its owner.
+
         Raises:
             HttpError: `OS` when the connection has failed.
         """
-        if len(self.out) == 0:
+        if len(self.out) == 0 or self._fd < 0:
             return
         var sent = self.sys.send(self._fd, self.out.unsafe_ptr(), len(self.out))
         if sent == -EAGAIN or sent == -EINTR:
@@ -794,6 +797,10 @@ struct Server[H: Handler](Movable):
     ) raises HttpError:
         """Serve on a listening socket that is open already.
 
+        A listener with the descriptor -1 makes a server without a
+        listening socket. It serves only the connections that `adopt`
+        gives it, such as the HTTP/1.1 connections of an HTTP/2 server.
+
         Args:
             handler: The handler of every request.
             config: The configuration.
@@ -828,6 +835,8 @@ struct Server[H: Handler](Movable):
             self.close()
             raise HttpError.os("epoll_create1", -epoll)
         self._epoll_fd = epoll
+        if listener.fd < 0:
+            return
         var rc = self.sys.epoll_ctl(epoll, EPOLL_CTL_ADD, listener.fd, EPOLLIN)
         if rc < 0:
             self.close()
@@ -1004,6 +1013,48 @@ struct Server[H: Handler](Movable):
                 self._now + self.config.idle_timeout_ms
             )
             self.open_connections += 1
+
+    def epoll_fd(self) -> Int:
+        """Return the epoll descriptor of the loop.
+
+        Another event loop can watch it for `EPOLLIN`, and call `poll(0)`
+        when it is readable.
+
+        Returns:
+            The descriptor.
+        """
+        return self._epoll_fd
+
+    def adopt(mut self, fd: Int, data: Span[UInt8, _]):
+        """Serve a connection that another loop accepted, with the bytes
+        that it read from the connection already.
+
+        An HTTP/2 server uses it for a connection that does not start with
+        the HTTP/2 preface. The server owns the descriptor from now on: it
+        closes it when it cannot take the connection.
+
+        Args:
+            fd: The connected socket, non-blocking.
+            data: The bytes that were read from the socket, in order.
+        """
+        self._tick()
+        if (
+            self.draining
+            or self.open_connections >= self.config.max_connections
+        ):
+            self.sys.close(fd)
+            return
+        while len(self._conns) <= fd:
+            self._conns.append(_Connection(self.config.limits))
+        if self.sys.epoll_ctl(self._epoll_fd, EPOLL_CTL_ADD, fd, EPOLLIN) < 0:
+            self.sys.close(fd)
+            return
+        self._conns[fd].fd = fd
+        self._conns[fd].interest = EPOLLIN
+        self._conns[fd].deadline_ms = self._now + self.config.idle_timeout_ms
+        self.open_connections += 1
+        self._conns[fd].reader.append(data)
+        self._process(fd)
 
     def _close(mut self, fd: Int):
         """Close a connection and make its slot free."""
@@ -1394,3 +1445,30 @@ def listen[
         sys, config.host, config.port, config.backlog, config.reuse_port
     )
     return Server(handler^, config, listener, sys^)
+
+
+def detached[
+    H: Handler
+](
+    var handler: H, config: ServerConfig, var sys: Sys = Sys()
+) raises HttpError -> Server[H]:
+    """Make a server without a listening socket, in this process.
+
+    It serves only the connections that `Server.adopt` gives it, such as
+    the HTTP/1.1 connections of an HTTP/2 server. Its `port` is 0.
+
+    Args:
+        handler: The handler of every request.
+        config: The configuration; the address and the port are not used.
+        sys: The system calls; tests give one with faults.
+
+    Returns:
+        The server.
+
+    Raises:
+        HttpError: `OS` when epoll cannot be opened.
+
+    Parameters:
+        H: The type of the handler.
+    """
+    return Server(handler^, config, Listener(-1, 0), sys^)

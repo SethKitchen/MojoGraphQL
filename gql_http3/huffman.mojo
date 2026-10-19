@@ -10,7 +10,9 @@ string literals (RFC 9204 section 4.1.2).
 bytes at a time. The last byte is padded with the high bits of EOS, that is
 with ones.
 
-`huffman_decode` keeps up to 64 input bits in an accumulator. A table of
+`huffman_decode` keeps up to 64 input bits in an accumulator, from its
+high bit down, and fills it with one 8-byte load while 8 bytes remain. A
+table of
 512 entries, indexed by the next 9 bits, gives the symbol and the length of
 every code of 9 bits or fewer: the common bytes of field names and values.
 The longer codes are found from the canonical form of the code: the codes
@@ -32,7 +34,9 @@ last bits are ones. This port refuses both, as RFC 7541 section 5.2
 requires.
 """
 
+from std.bit import byte_swap
 from std.builtin.globals import global_constant
+from std.memory import bitcast
 
 from gql_http3.error import H3Error, H3ErrorCode
 
@@ -733,21 +737,21 @@ def huffman_encode(data: Span[UInt8, _], mut out: List[UInt8]):
 
 
 @always_inline
-def _peek(acc: UInt64, nbits: Int, width: Int) -> UInt64:
-    """Return the next `width` bits, with ones after the last input bit."""
-    var mask = (UInt64(1) << UInt64(width)) - 1
-    if nbits >= width:
-        return (acc >> UInt64(nbits - width)) & mask
-    var fill = width - nbits
-    return ((acc << UInt64(fill)) | ((UInt64(1) << UInt64(fill)) - 1)) & mask
+def _load_be64(p: Pointer[UInt8, _], at: Int) -> UInt64:
+    """Return 8 bytes at an offset as a big-endian integer."""
+    var bytes = p.unsafe_offset(at).unsafe_load[width=8]()
+    return byte_swap(bitcast[DType.uint64, 1](bytes)[0])
 
 
-def _decode_long(acc: UInt64, nbits: Int) -> Tuple[Int, Int]:
+def _decode_long(acc: UInt64) -> Tuple[Int, Int]:
     """Find a code longer than `FAST_BITS` from the canonical tables.
 
+    `acc` holds the next bits from its high bit down; the bits after the
+    input are zeros.
+
     Returns:
-        The symbol and the length of the code. The ones after the last
-        input bit always end in a code, at the latest in EOS.
+        The symbol and the length of the code. The code is complete, so
+        30 bits always end in a code.
     """
     ref first = global_constant[_FIRST]()
     ref count = global_constant[_COUNT]()
@@ -755,7 +759,7 @@ def _decode_long(acc: UInt64, nbits: Int) -> Tuple[Int, Int]:
     ref sorted = global_constant[_SORTED]()
     var length = FAST_BITS + 1
     while True:
-        var code = _peek(acc, nbits, length)
+        var code = acc >> UInt64(64 - length)
         var delta = code - UInt64(first[length])
         if delta < UInt64(count[length]):
             return (Int(sorted[Int(offset[length]) + Int(delta)]), length)
@@ -771,6 +775,11 @@ def _invalid() -> H3Error:
 
 def huffman_decode(data: Span[UInt8, _], mut out: List[UInt8]) raises H3Error:
     """Append the bytes that a Huffman encoding holds.
+
+    The accumulator holds the next input bits from its high bit down. It
+    takes 8 bytes with one load while 8 remain, then one byte at a time.
+    A code that seems to end after the last input bit is an error, so the
+    zeros after the input never decode.
 
     Args:
         data: The encoded bytes.
@@ -792,20 +801,27 @@ def huffman_decode(data: Span[UInt8, _], mut out: List[UInt8]) raises H3Error:
     var nbits = 0
     var pos = 0
     while True:
-        while nbits <= 56 and pos < n:
-            acc = (acc << 8) | UInt64(p[unsafe_offset=pos])
-            nbits += 8
-            pos += 1
+        if nbits <= 56:
+            if pos + 8 <= n:
+                acc |= _load_be64(p, pos) >> UInt64(nbits)
+                var take = (63 - nbits) >> 3
+                pos += take
+                nbits += take * 8
+            else:
+                while nbits <= 56 and pos < n:
+                    acc |= UInt64(p[unsafe_offset=pos]) << UInt64(56 - nbits)
+                    nbits += 8
+                    pos += 1
         if nbits < 8:
             # The input is all read. Ones that fill the last byte end it.
             var ones = (UInt64(1) << UInt64(nbits)) - 1
-            if acc & ones == ones:
+            if (acc >> 56) >> UInt64(8 - nbits) == ones:
                 break
-        var entry = Int(fast_table[unsafe_offset=Int(_peek(acc, nbits, 9))])
+        var entry = Int(fast_table[unsafe_offset=Int(acc >> 55)])
         var symbol = entry & 0xFF
         var length = entry >> 8
         if length == 0:
-            var found = _decode_long(acc, nbits)
+            var found = _decode_long(acc)
             symbol = found[0]
             length = found[1]
         if length > nbits or symbol == EOS:
@@ -813,5 +829,6 @@ def huffman_decode(data: Span[UInt8, _], mut out: List[UInt8]) raises H3Error:
             raise _invalid()
         dest[unsafe_offset=at] = UInt8(symbol)
         at += 1
+        acc <<= UInt64(length)
         nbits -= length
     out._len = at

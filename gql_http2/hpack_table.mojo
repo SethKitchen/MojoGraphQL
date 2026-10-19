@@ -29,7 +29,7 @@ both, with the same lookups, the same evictions and the same results.
 """
 
 from std.builtin.globals import global_constant
-from std.memory import unsafe_memcmp
+from std.memory import unsafe_memcpy
 
 comptime STATIC_TABLE_LENGTH = 61
 """The number of entries in the static table."""
@@ -206,11 +206,118 @@ def static_value(index: Int) -> StaticString:
 
 
 @always_inline
+def _word(data: Pointer[UInt8, _], offset: Int) -> UInt64:
+    """Read 8 bytes at an offset."""
+    return (
+        data.unsafe_offset(offset)
+        .unsafe_bitcast[UInt64]()
+        .unsafe_load[alignment=1]()
+    )
+
+
+@always_inline
+def _half(data: Pointer[UInt8, _], offset: Int) -> UInt32:
+    """Read 4 bytes at an offset."""
+    return (
+        data.unsafe_offset(offset)
+        .unsafe_bitcast[UInt32]()
+        .unsafe_load[alignment=1]()
+    )
+
+
+@always_inline
+def bytes_equal(
+    a: Pointer[UInt8, _], b: Pointer[UInt8, _], length: Int
+) -> Bool:
+    """Return True when two runs of bytes are equal.
+
+    The compare reads 8 bytes at a time, and the last 8 bytes again, so a
+    field name takes one or two loads. It reads no byte past `length`.
+
+    Args:
+        a: The first bytes.
+        b: The second bytes.
+        length: How many bytes to compare.
+
+    Returns:
+        Whether the bytes are equal.
+    """
+    if length >= 8:
+        var offset = 0
+        while offset + 8 < length:
+            if _word(a, offset) != _word(b, offset):
+                return False
+            offset += 8
+        return _word(a, length - 8) == _word(b, length - 8)
+    if length >= 4:
+        var head = _half(a, 0) == _half(b, 0)
+        return head and _half(a, length - 4) == _half(b, length - 4)
+    var index = 0
+    while index < length:
+        if a[unsafe_offset=index] != b[unsafe_offset=index]:
+            return False
+        index += 1
+    return True
+
+
+@always_inline
+def _copy(
+    dst: Pointer[mut=True, UInt8, _], src: Pointer[UInt8, _], length: Int
+):
+    """Copy bytes 8 at a time, the last 8 again; a short name or value
+    takes one or two moves, without a call."""
+    if length >= 8:
+        var offset = 0
+        while offset + 8 < length:
+            dst.unsafe_offset(offset).unsafe_bitcast[UInt64]().unsafe_store[
+                alignment=1
+            ](_word(src, offset))
+            offset += 8
+        dst.unsafe_offset(length - 8).unsafe_bitcast[UInt64]().unsafe_store[
+            alignment=1
+        ](_word(src, length - 8))
+        return
+    if length >= 4:
+        var head = _half(src, 0)
+        var tail = _half(src, length - 4)
+        dst.unsafe_bitcast[UInt32]().unsafe_store[alignment=1](head)
+        dst.unsafe_offset(length - 4).unsafe_bitcast[UInt32]().unsafe_store[
+            alignment=1
+        ](tail)
+        return
+    var index = 0
+    while index < length:
+        dst[unsafe_offset=index] = src[unsafe_offset=index]
+        index += 1
+
+
+@always_inline
+def append_pair(
+    mut out: List[UInt8], first: Span[UInt8, _], second: Span[UInt8, _]
+):
+    """Append two runs of bytes to a buffer, with one capacity check.
+
+    Args:
+        out: The buffer.
+        first: The bytes to append first.
+        second: The bytes to append after them.
+    """
+    var start = len(out)
+    var total = start + len(first) + len(second)
+    if total > out.capacity():
+        out.reserve(max(total, out.capacity() * 2))
+    var dst = out.unsafe_ptr().unsafe_offset(start)
+    _copy(dst, first.unsafe_ptr(), len(first))
+    _copy(dst.unsafe_offset(len(first)), second.unsafe_ptr(), len(second))
+    out.resize(unsafe_uninit_length=total)
+
+
+@always_inline
 def _same(
     a: Pointer[UInt8, _], a_length: Int, b: Pointer[UInt8, _], b_length: Int
 ) -> Bool:
     """Return True when two byte strings are equal."""
-    return a_length == b_length and unsafe_memcmp(a, b, a_length) == 0
+    return a_length == b_length and bytes_equal(a, b, a_length)
 
 
 @always_inline
@@ -262,25 +369,27 @@ def _slot(hash: UInt64) -> Int:
     return Int(hash >> 57)
 
 
-struct StaticIndex(Copyable, Movable):
-    """A hash index of the static table names, for the encoder."""
+# Generated from the static names and `name_hash`. `test_hpack_encoder.mojo`
+# builds it again and checks that it is the same.
+comptime _STATIC_SLOTS: Array[UInt8, 128] = [
+    0x0, 0x0, 0x27, 0x30, 0x0, 0x0, 0x3a, 0x0, 0x0, 0x0, 0x0, 0x10, 0x0, 0x0, 0x2, 0x22,
+    0x0, 0x0, 0x0, 0x2d, 0x0, 0x0, 0x15, 0x0, 0x0, 0x0, 0x19, 0x1f, 0x36, 0x0, 0x0, 0x8,
+    0x0, 0x0, 0x0, 0x14, 0x11, 0x0, 0x0, 0x0, 0x1a, 0x0, 0x0, 0x25, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x0, 0x16, 0x2f, 0x38, 0x0, 0x3c, 0x18, 0x0, 0x17, 0x1b, 0x2c, 0x31, 0x0, 0x29,
+    0x0, 0x37, 0x3d, 0x0, 0x0, 0x24, 0x0, 0x0, 0x1d, 0x0, 0x0, 0x34, 0x1c, 0x20, 0x26, 0x3b,
+    0x12, 0x1, 0xf, 0x13, 0x32, 0x0, 0x0, 0x0, 0x0, 0x35, 0x39, 0x0, 0x0, 0x0, 0x0, 0x0,
+    0x0, 0x28, 0x0, 0x0, 0x21, 0x6, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4, 0x1e, 0x0, 0x0, 0x0,
+    0x0, 0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x23, 0x0, 0x0, 0x2b, 0x2e, 0x0, 0x33, 0x0,
+]  # fmt: skip
+"""For each of the 128 slots: the first static entry of a name, or 0. A
+name goes in the slot of the top 7 bits of its hash, or after it on a
+collision."""
 
-    var _slots: List[UInt8]
-    """For each slot: the first static entry of a name, or 0. A collision
-    takes the next slot."""
 
-    def __init__(out self):
-        """Build the index of the 52 static names."""
-        self._slots = List[UInt8](length=HASH_BUCKETS, fill=0)
-        var index = 1
-        while index <= STATIC_TABLE_LENGTH:
-            if Int(_static_first(index)) == index:
-                var name = static_name(index)
-                var slot = _slot(name_hash(name.as_bytes()))
-                while self._slots[slot] != 0:
-                    slot = (slot + 1) & (HASH_BUCKETS - 1)
-                self._slots[slot] = UInt8(index)
-            index += 1
+@fieldwise_init
+struct StaticIndex(ImplicitlyCopyable, Movable):
+    """The hash index of the static table names, for the encoder. Its
+    table is a constant, so it holds no state."""
 
     @always_inline
     def find(self, name: Span[UInt8, _], hash: UInt64) -> Int:
@@ -293,7 +402,7 @@ struct StaticIndex(Copyable, Movable):
         Returns:
             The index, 1 to 61, or 0 when no static entry has the name.
         """
-        var slots = self._slots.unsafe_ptr()
+        var slots = global_constant[_STATIC_SLOTS]().unsafe_ptr()
         var slot = _slot(hash)
         while True:
             var index = Int(slots[unsafe_offset=slot])
@@ -399,8 +508,9 @@ struct DynamicTable(Copyable, Movable):
             indexed: Whether `find` can look up the entries. An encoder
                 table is indexed; a decoder table is not.
         """
-        self._data = List[UInt8]()
-        self._entries = List[TableEntry]()
+        # One allocation each for a table of the default size.
+        self._data = List[UInt8](capacity=min(max_size, 4096))
+        self._entries = List[TableEntry](capacity=min(max_size // 64, 64))
         self._first = 0
         self._data_start = 0
         self._sequence_base = 0
@@ -462,7 +572,10 @@ struct DynamicTable(Copyable, Movable):
             The bytes of the name.
         """
         var found = self.entry(index)
-        return Span(self._data)[found.start : found.start + found.name_length]
+        return Span[UInt8, origin_of(self._data)](
+            unsafe_ptr=self._data.unsafe_ptr().unsafe_offset(found.start),
+            length=found.name_length,
+        )
 
     @always_inline
     def value(self, index: Int) -> Span[UInt8, origin_of(self._data)]:
@@ -476,7 +589,10 @@ struct DynamicTable(Copyable, Movable):
         """
         var found = self.entry(index)
         var start = found.start + found.name_length
-        return Span(self._data)[start : start + found.value_length]
+        return Span[UInt8, origin_of(self._data)](
+            unsafe_ptr=self._data.unsafe_ptr().unsafe_offset(start),
+            length=found.value_length,
+        )
 
     def _evict(mut self):
         """Remove the oldest entry."""
@@ -538,8 +654,7 @@ struct DynamicTable(Copyable, Movable):
         ):
             self._compact()
         var start = len(self._data)
-        self._data.extend(name)
-        self._data.extend(value)
+        append_pair(self._data, name, value)
         var sequence = self._sequence_base + len(self._entries)
         var next = -1
         if len(self._chains) > 0:
@@ -550,6 +665,7 @@ struct DynamicTable(Copyable, Movable):
         self._size += size
         return True
 
+    @always_inline
     def find(
         self, name: Span[UInt8, _], value: Span[UInt8, _], hash: UInt64
     ) -> TableMatch:

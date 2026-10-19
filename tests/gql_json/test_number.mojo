@@ -66,6 +66,8 @@ def test_read_float64_edge_cases() raises:
     # More than 15 digits, and trailing zeros the fast path counts.
     assert_equal(_read("1.000000000000000000"), 1.0)
     assert_equal(_read("12345678901234567890"), 12345678901234567890.0)
+    # The digits wrap the 64-bit accumulator to zero: 2 ** 64.
+    assert_equal(_read("18446744073709551616"), 18446744073709551616.0)
     # Ties go to the even significand.
     assert_equal(_read("9007199254740993"), 9007199254740992.0)
     assert_equal(_read("9007199254740995"), 9007199254740996.0)

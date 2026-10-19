@@ -159,6 +159,8 @@ struct SchemaMetadata(Copyable, Movable):
     """The values of each enum type."""
     var type_fields: Dict[String, Dict[String, FieldTypeInfo]]
     """The fields of each object and interface type."""
+    var field_types: Dict[String, FieldTypeInfo]
+    """Each field of `type_fields`, by `Type.field`."""
     var object_types: Set[String]
     """The object types."""
     var scalar_types: Set[String]
@@ -181,6 +183,7 @@ struct SchemaMetadata(Copyable, Movable):
         self.possible_types = PossibleTypes()
         self.enum_values = Dict[String, Set[String]]()
         self.type_fields = Dict[String, Dict[String, FieldTypeInfo]]()
+        self.field_types = Dict[String, FieldTypeInfo]()
         self.object_types = Set[String]()
         self.scalar_types = Set[String]()
         self.union_types = Set[String]()
@@ -245,13 +248,21 @@ struct SchemaMetadata(Copyable, Movable):
             The named output type, or empty when the type or the field is
             not in the schema.
         """
-        var fields = self.type_fields.get(type_name)
-        if not fields:
-            return String()
-        var info = fields.value().get(field_name)
+        var info = self.field_types.get(type_name + "." + field_name)
         if not info:
             return String()
         return info.value().output_type_name
+
+    def has_type_fields(self, type_name: String) -> Bool:
+        """Return True if the schema has the fields of a type.
+
+        Args:
+            type_name: The type name.
+
+        Returns:
+            Whether the type is an object or an interface type.
+        """
+        return type_name in self.type_fields
 
     def root_type_name(self, kind: OperationType) -> String:
         """Return the root type of an operation type.
@@ -473,4 +484,7 @@ def schema_metadata(document: Document) -> SchemaMetadata:
                     possible.add(inner)
         out.possible_types.map[first.names[slot]] = possible^
         slot += 1
+    for entry in out.type_fields.items():
+        for field in entry.value.items():
+            out.field_types[entry.key + "." + field.key] = field.value.copy()
     return out^

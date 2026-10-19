@@ -484,7 +484,7 @@ struct ProjectionPlan(Copyable, Movable):
     @staticmethod
     def from_operation(
         store: Store, operation: OperationDefinition, schema: SchemaMetadata
-    ) raises -> Tuple[String, ProjectionPlan]:
+    ) -> Tuple[String, ProjectionPlan]:
         """Build the plan of a normalized operation, as upstream
         `ProjectionPlan::from_operation`.
 
@@ -495,18 +495,15 @@ struct ProjectionPlan(Copyable, Movable):
 
         Returns:
             The root type name and the plan.
-
-        Raises:
-            Error: When the schema has no root type for the operation.
         """
         var root = schema.query_type_name
         if operation.kind == OperationKind.MUTATION:
             root = schema.mutation_type_name
         elif operation.kind == OperationKind.SUBSCRIPTION:
             root = schema.subscription_type_name
-        if root.byte_length() == 0:
-            raise Error("validated operation has a root type")
         var plan = ProjectionPlan()
+        if root.byte_length() == 0:
+            return (root^, plan^)
         var collected = plan._collect_set(
             store, schema, operation.selection_set, root, ALWAYS
         )
@@ -546,6 +543,10 @@ struct ProjectionPlan(Copyable, Movable):
         `collect_selection_set`."""
         var collected = List[Int]()
         var child = store.items[set].first
+        if child == NONE:
+            # Mojo 1.1 reports a recursion inside a loop as infinite unless
+            # the empty case returns first.
+            return collected^
         while child != NONE:
             var current = child
             ref item = store.items[current]
@@ -734,6 +735,8 @@ struct ProjectionPlan(Copyable, Movable):
         mut self, schema: SchemaMetadata, var siblings: List[Int], parent_type: String
     ) -> List[Int]:
         """Merge sibling fields, as upstream `merge_selection_set`."""
+        if len(siblings) == 0:
+            return siblings^
         for index in siblings:
             if not self.fields[index].has_children:
                 continue
@@ -859,6 +862,8 @@ struct ProjectionPlan(Copyable, Movable):
     def _clone(mut self, field: Int) -> Int:
         """Copy a field and its children, as upstream `Field::clone`."""
         var copy = self.fields[field].copy()
+        if len(copy.children) == 0:
+            return self._add(copy^)
         var children = List[Int]()
         var originals = copy.children.copy()
         for child in originals:
@@ -885,6 +890,8 @@ struct ProjectionPlan(Copyable, Movable):
     def _prune(mut self, schema: SchemaMetadata, siblings: List[Int], parent_type: String):
         """Drop child scopes that match every output of their field, as
         upstream `prune_redundant_scopes`."""
+        if len(siblings) == 0:
+            return
         for index in siblings:
             if not self.fields[index].has_children:
                 continue

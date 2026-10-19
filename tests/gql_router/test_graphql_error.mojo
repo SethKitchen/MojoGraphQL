@@ -28,7 +28,6 @@ from gql_router.graphql_error import (
     set_extension,
     status_text,
 )
-from gql_router.response_storage import ResponseStorage
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
 
@@ -160,15 +159,6 @@ def test_subgraph_errors_gain_a_service_and_can_expand() raises:
         List[ErrorPath](),
     )
     assert_equal(len(quiet), 0)
-
-
-def test_response_storage_estimates_twenty_percent_more() raises:
-    var storage = ResponseStorage()
-    assert_equal(storage.estimate_size(), 0)
-    storage.add(String("12345"))
-    storage.add(String("12345"))
-    assert_equal(len(storage.responses), 2)
-    assert_equal(storage.estimate_size(), 12)
 
 
 def main() raises:

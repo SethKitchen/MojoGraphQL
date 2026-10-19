@@ -301,7 +301,8 @@ def read_float64(text: Span[UInt8, _]) -> Float64:
         if digit < 10:
             value = value * 10 + UInt64(digit)
             # A zero before the first nonzero digit is not significant.
-            digits += Int(value > 0)
+            # `value` can wrap to zero, so the test reads the digits.
+            digits += Int(digits > 0 or digit != 0)
             power -= Int(in_fraction)
         elif byte == UInt8(ord(".")):
             in_fraction = True

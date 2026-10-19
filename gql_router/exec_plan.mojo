@@ -104,6 +104,8 @@ struct AliasState(Copyable, Movable):
     var path_entities: List[List[Int]]
     """For each merge path, the entity index of each value it reaches, or
     -1 when the value sends no representation."""
+    var path_targets: List[List[Int]]
+    """For each merge path, the values it reaches when it was prepared."""
     var count: Int
     """How many representations the alias sends."""
 
@@ -115,6 +117,7 @@ struct AliasState(Copyable, Movable):
         """
         self.alias = alias
         self.path_entities = List[List[Int]]()
+        self.path_targets = List[List[Int]]()
         self.count = 0
 
 
@@ -136,10 +139,14 @@ struct Job(Movable):
     var entities: List[Int]
     """For a flatten fetch, the entity index of each value at the path, or
     -1."""
+    var targets: List[Int]
+    """For a flatten fetch, the values at the path when it was prepared."""
     var aliases: List[AliasState]
     """For a batch fetch, the state of each alias."""
 
-    def __init__(out self, kind: JobKind, subgraph: String, plan_node: Int, fetch: Int):
+    def __init__(
+        out self, kind: JobKind, subgraph: String, plan_node: Int, fetch: Int
+    ):
         """Start a job with an empty body.
 
         Args:
@@ -155,6 +162,7 @@ struct Job(Movable):
         self.body = List[UInt8]()
         self.has_merge_path = False
         self.entities = List[Int]()
+        self.targets = List[Int]()
         self.aliases = List[AliasState]()
 
 
@@ -179,6 +187,14 @@ struct PlanExecutionOutput(Movable):
         self.error_count = error_count
         self.status_code = 200
 
+    def take_body(deinit self) -> List[UInt8]:
+        """Return the response body.
+
+        Returns:
+            The body.
+        """
+        return self.body^
+
 
 struct ExecutionContext(Movable):
     """The data and errors of one execution, as upstream
@@ -193,7 +209,12 @@ struct ExecutionContext(Movable):
     var response_bytes: Int
     """The size of every subgraph response, for the size estimate."""
 
-    def __init__(out self, var arena: JsonDocument, data: Int, var errors: List[GraphQLError]):
+    def __init__(
+        out self,
+        var arena: JsonDocument,
+        data: Int,
+        var errors: List[GraphQLError],
+    ):
         """Start an execution.
 
         Args:
@@ -261,7 +282,9 @@ def plan_error(
     return error^
 
 
-def failure_error(response: SubgraphHttpResponse, subgraph: String, affected_path: String) -> GraphQLError:
+def failure_error(
+    response: SubgraphHttpResponse, subgraph: String, affected_path: String
+) -> GraphQLError:
     """Make the error of a request that has no response.
 
     Args:
@@ -300,3 +323,814 @@ def failure_error(response: SubgraphHttpResponse, subgraph: String, affected_pat
         subgraph,
         affected_path,
     )
+
+
+def select_fetch_variables(
+    store: Store,
+    usages: List[Int],
+    has_usages: Bool,
+    variables: CoerceVariablesPayload,
+    mut names: List[String],
+    mut nodes: List[Int],
+) -> Bool:
+    """Pick the variables that a fetch uses, as upstream
+    `select_fetch_variables`.
+
+    Args:
+        store: The store with the variable names.
+        usages: The variables the fetch uses, as symbols.
+        has_usages: False when upstream `variable_usages` is `None`.
+        variables: The coerced variables.
+        names: Where the names of the used variables go.
+        nodes: Where their values go, parallel to `names`.
+
+    Returns:
+        False when upstream returns `None`: there is no variable map, or
+        the fetch has no usages.
+    """
+    if not variables.is_some or not has_usages:
+        return False
+    for usage in usages:
+        var name = String(store.name(usage))
+        var node = variables.variable(name)
+        if node != NO_NODE:
+            names.append(name^)
+            nodes.append(node)
+    return True
+
+
+def condition_target(
+    plan: QueryPlan, store: Store, node: Int, variables: CoerceVariablesPayload
+) -> Int:
+    """Pick the branch of a condition node, as upstream
+    `condition_node_by_variables`.
+
+    Args:
+        plan: The query plan.
+        store: The store with the variable name.
+        node: The condition node.
+        variables: The coerced variables.
+
+    Returns:
+        The `if` branch when the variable is `true`, the `else` branch
+        otherwise, and `NONE` when there is no variable map or no value.
+    """
+    if not variables.is_some:
+        return NONE
+    ref condition = plan.nodes[node]
+    var name = store.name(condition.condition)
+    if variables.variable(name) == NO_NODE:
+        return NONE
+    if variables.variable_equals_true(name):
+        return condition.if_clause
+    return condition.else_clause
+
+
+struct _Representations(Movable):
+    """The representations of one `_entities` list while it is built."""
+
+    var buffer: List[UInt8]
+    """The JSON array."""
+    var seen: Dict[UInt64, Int]
+    """The entity index of each representation hash."""
+    var count: Int
+    """How many representations the array has."""
+
+    def __init__(out self):
+        """Start an empty array."""
+        self.buffer = List[UInt8]()
+        self.buffer.append(UInt8(ord("[")))
+        self.seen = Dict[UInt64, Int]()
+        self.count = 0
+
+    def take(deinit self) -> List[UInt8]:
+        """Return the JSON array."""
+        return self.buffer^
+
+
+def _collect_representations(
+    store: Store,
+    metadata: SchemaMetadata,
+    keys: KeysByType,
+    has_keys: Bool,
+    requires: Int,
+    rewrites: List[FetchRewrite],
+    mut arena: JsonDocument,
+    data: Int,
+    path: FlattenNodePath,
+    mut reps: _Representations,
+    mut entities: List[Int],
+) -> List[Int]:
+    """Write the representation of each entity at a path, once per hash,
+    as upstream does in `prepare_job_future`. Returns the values at the
+    path, which the merge uses again."""
+    var targets = TraverseTargets(False)
+    traverse(arena, data, path, store, metadata.possible_types, targets)
+    for node in targets.nodes:
+        if arena.kind(node) == JsonKind.NULL:
+            entities.append(-1)
+            continue
+        var hash = requires_hash(
+            store, metadata.possible_types, requires, arena, node
+        )
+        var found = reps.seen.get(hash)
+        if found:
+            entities.append(found.value())
+            continue
+        var entity = node
+        if len(rewrites) > 0:
+            entity = copy_value(arena, node)
+            for rewrite in rewrites:
+                apply_rewrite(
+                    store, metadata.possible_types, rewrite, arena, entity
+                )
+        var projected = project_requires(
+            store,
+            metadata.possible_types,
+            requires,
+            arena,
+            entity,
+            reps.buffer,
+            len(reps.seen) == 0,
+            "",
+            False,
+            False,
+            keys,
+            has_keys,
+        )
+        if not projected:
+            entities.append(-1)
+            continue
+        reps.seen[hash] = reps.count
+        entities.append(reps.count)
+        reps.count += 1
+    return targets^.take_nodes()
+
+
+struct Executor[T: SubgraphTransport](Movable):
+    """Runs query plans through a transport, as upstream `Executor`.
+
+    Parameters:
+        T: The transport type.
+    """
+
+    var transport: Self.T
+    """Where subgraph requests go."""
+
+    def __init__(out self, var transport: Self.T):
+        """Make an executor.
+
+        Args:
+            transport: The transport.
+        """
+        self.transport = transport^
+
+    def execute(
+        mut self,
+        store: Store,
+        plan: QueryPlan,
+        metadata: SchemaMetadata,
+        keys: EntityKeys,
+        variables: CoerceVariablesPayload,
+        projection: ProjectionPlan,
+        root_type_name: String,
+        var arena: JsonDocument,
+        data: Int,
+        var errors: List[GraphQLError],
+    ) raises -> PlanExecutionOutput:
+        """Run a plan and project the response, as upstream
+        `execute_query_plan_with_data`.
+
+        Args:
+            store: The planner store.
+            plan: The executable query plan.
+            metadata: The metadata of the consumer schema.
+            keys: The entity keys of each subgraph.
+            variables: The coerced variables.
+            projection: The projection plan of the client operation.
+            root_type_name: The root type of the operation.
+            arena: The arena that holds `data`.
+            data: The initial data object, such as the introspection data,
+                or `NO_NODE` for an empty object.
+            errors: The initial errors.
+
+        Returns:
+            The response body.
+
+        Raises:
+            Error: For a subscription, or when the projection fails.
+        """
+        var start = data
+        if start == NO_NODE:
+            start = arena.add_object()
+        var ctx = ExecutionContext(arena^, start, errors^)
+        if plan.node != NONE:
+            self._run(ctx, store, plan, metadata, keys, variables, plan.node)
+        var error_count = len(ctx.errors)
+        var body = project_by_operation(
+            ctx.arena,
+            ctx.data,
+            ctx.errors.copy(),
+            root_type_name,
+            projection,
+            variables,
+            ctx.response_bytes,
+            metadata,
+        )
+        return PlanExecutionOutput(body^, error_count)
+
+    def _run(
+        mut self,
+        mut ctx: ExecutionContext,
+        store: Store,
+        plan: QueryPlan,
+        metadata: SchemaMetadata,
+        keys: EntityKeys,
+        variables: CoerceVariablesPayload,
+        node: Int,
+    ) raises:
+        """Run one plan node, as upstream `execute_plan_node`."""
+        var kind = plan.nodes[node].kind
+        if kind == PlanNodeKind.SEQUENCE:
+            for child in plan.nodes[node].nodes:
+                self._run(ctx, store, plan, metadata, keys, variables, child)
+            return
+        if kind == PlanNodeKind.PARALLEL:
+            var jobs = List[Job]()
+            for child in plan.nodes[node].nodes:
+                jobs.append(
+                    self._prepare(
+                        ctx, store, plan, metadata, keys, variables, child
+                    )
+                )
+            for index in range(len(jobs)):
+                self._send(ctx, store, plan, metadata, jobs[index])
+            return
+        if kind == PlanNodeKind.CONDITION:
+            var next = condition_target(plan, store, node, variables)
+            if next != NONE:
+                self._run(ctx, store, plan, metadata, keys, variables, next)
+            return
+        if kind == PlanNodeKind.SUBSCRIPTION or kind == PlanNodeKind.DEFER:
+            raise Error("Subscriptions and @defer are not supported")
+        var job = self._prepare(
+            ctx, store, plan, metadata, keys, variables, node
+        )
+        self._send(ctx, store, plan, metadata, job)
+
+    def _prepare(
+        mut self,
+        mut ctx: ExecutionContext,
+        store: Store,
+        plan: QueryPlan,
+        metadata: SchemaMetadata,
+        keys: EntityKeys,
+        variables: CoerceVariablesPayload,
+        node: Int,
+    ) -> Job:
+        """Prepare the request of a plan node, as upstream
+        `prepare_job_future`; a `NONE` job when there is nothing to send."""
+        ref plan_node = plan.nodes[node]
+        var kind = plan_node.kind
+        if kind == PlanNodeKind.CONDITION:
+            var next = condition_target(plan, store, node, variables)
+            if next == NONE:
+                return Job(JobKind.NONE, String(), node, NONE)
+            return self._prepare(
+                ctx, store, plan, metadata, keys, variables, next
+            )
+        if kind == PlanNodeKind.FETCH:
+            ref fetch = plan.fetches[plan_node.fetch]
+            var job = Job(
+                JobKind.FETCH,
+                String(store.name(fetch.service_name)),
+                node,
+                plan_node.fetch,
+            )
+            job.body = _fetch_body(
+                store,
+                fetch.operation.document_str,
+                fetch.variable_usages,
+                fetch.has_variable_usages,
+                variables,
+                List[String](),
+                List[List[UInt8]](),
+            )
+            return job^
+        if kind == PlanNodeKind.BATCH_FETCH:
+            return _prepare_batch(
+                ctx, store, plan, metadata, keys, variables, node
+            )
+        if (
+            kind != PlanNodeKind.FLATTEN
+            or plan.nodes[plan_node.node].kind != PlanNodeKind.FETCH
+        ):
+            return Job(JobKind.NONE, String(), node, NONE)
+        var fetch_index = plan.nodes[plan_node.node].fetch
+        ref fetch = plan.fetches[fetch_index]
+        var subgraph = String(store.name(fetch.service_name))
+        if fetch.requires == NONE:
+            var job = Job(JobKind.FETCH, subgraph, node, fetch_index)
+            job.has_merge_path = True
+            job.body = _fetch_body(
+                store,
+                fetch.operation.document_str,
+                fetch.variable_usages,
+                fetch.has_variable_usages,
+                variables,
+                List[String](),
+                List[List[UInt8]](),
+            )
+            return job^
+        var key_index = keys.index_of(subgraph)
+        var reps = _Representations()
+        var job = Job(JobKind.FLATTEN_FETCH, subgraph, node, fetch_index)
+        job.targets = _collect_representations(
+            store,
+            metadata,
+            keys.subgraphs[key_index],
+            key_index > 0,
+            fetch.requires,
+            fetch.input_rewrites,
+            ctx.arena,
+            ctx.data,
+            plan_node.path,
+            reps,
+            job.entities,
+        )
+        if reps.count == 0:
+            return Job(JobKind.NONE, subgraph, node, NONE)
+        reps.buffer.append(UInt8(ord("]")))
+        var raw_names: List[String] = ["representations"]
+        var raw_values = List[List[UInt8]]()
+        raw_values.append(reps^.take())
+        job.body = _fetch_body(
+            store,
+            fetch.operation.document_str,
+            fetch.variable_usages,
+            fetch.has_variable_usages,
+            variables,
+            raw_names,
+            raw_values,
+        )
+        return job^
+
+    def _send(
+        mut self,
+        mut ctx: ExecutionContext,
+        store: Store,
+        plan: QueryPlan,
+        metadata: SchemaMetadata,
+        job: Job,
+    ):
+        """Send a job and merge its response, as upstream
+        `prepare_execution_job` and `process_job_result`."""
+        if job.kind == JobKind.NONE:
+            return
+        var affected = String()
+        if job.kind == JobKind.FLATTEN_FETCH or job.has_merge_path:
+            affected = plan.nodes[job.plan_node].path.text(store)
+        var query: String
+        if job.kind == JobKind.BATCH_FETCH:
+            query = plan.batches[job.fetch].operation.document_str
+        else:
+            query = plan.fetches[job.fetch].operation.document_str
+        var result = self.transport.send(job.subgraph, query, job.body)
+        if result.failure != SubgraphFailure.NONE:
+            ctx.errors.append(failure_error(result, job.subgraph, affected))
+            return
+        if len(result.body) == 0:
+            ctx.errors.append(
+                plan_error(
+                    'Received empty response body from subgraph "'
+                    + job.subgraph
+                    + '"',
+                    "SUBGRAPH_RESPONSE_BODY_EMPTY",
+                    job.subgraph,
+                    affected,
+                )
+            )
+            return
+        if not result.has_content_type or not is_valid_graphql_content_type(
+            result.content_type
+        ):
+            ctx.errors.append(
+                plan_error(
+                    "Invalid content type returned from subgraph '"
+                    + job.subgraph
+                    + "': '"
+                    + result.content_type
+                    + "'",
+                    "SUBREQUEST_MALFORMED_RESPONSE",
+                    job.subgraph,
+                    affected,
+                )
+            )
+            return
+        ctx.response_bytes += len(result.body)
+        var status = result.status
+        var response: SubgraphResponse
+        try:
+            response = read_subgraph_response(ctx.arena, result^.take_body())
+        except e:
+            ctx.errors.append(
+                plan_error(
+                    String(e),
+                    "SUBREQUEST_MALFORMED_RESPONSE",
+                    job.subgraph,
+                    affected,
+                )
+            )
+            return
+        if status < 200 or status > 299:
+            response.append_error(
+                http_status_error(status, job.subgraph)
+            )
+        if job.kind == JobKind.FETCH:
+            _merge_fetch(ctx, store, plan, metadata, job, response^, affected)
+        elif job.kind == JobKind.FLATTEN_FETCH:
+            _merge_flatten(ctx, store, plan, metadata, job, response^, affected)
+        else:
+            _merge_batch(ctx, store, plan, metadata, job, response^)
+
+
+def _fetch_body(
+    store: Store,
+    query: String,
+    usages: List[Int],
+    has_usages: Bool,
+    variables: CoerceVariablesPayload,
+    raw_names: List[String],
+    raw_values: List[List[UInt8]],
+) -> List[UInt8]:
+    """Write the body of a fetch with the variables it uses."""
+    var names = List[String]()
+    var nodes = List[Int]()
+    _ = select_fetch_variables(
+        store, usages, has_usages, variables, names, nodes
+    )
+    return build_request_body(
+        query, names, variables.document, nodes, raw_names, raw_values
+    )
+
+
+def _prepare_batch(
+    mut ctx: ExecutionContext,
+    store: Store,
+    plan: QueryPlan,
+    metadata: SchemaMetadata,
+    keys: EntityKeys,
+    variables: CoerceVariablesPayload,
+    node: Int,
+) -> Job:
+    """Prepare a batch fetch, as upstream `prepare_batch_fetch_job_state`."""
+    var batch_index = plan.nodes[node].fetch
+    ref batch = plan.batches[batch_index]
+    var subgraph = String(store.name(batch.service_name))
+    var key_index = keys.index_of(subgraph)
+    var job = Job(JobKind.BATCH_FETCH, subgraph, node, batch_index)
+    var raw_names = List[String]()
+    var raw_values = List[List[UInt8]]()
+    var any = False
+    var alias_index = 0
+    while alias_index < len(batch.aliases):
+        ref alias = batch.aliases[alias_index]
+        var state = AliasState(alias_index)
+        var reps = _Representations()
+        var path_index = 0
+        while path_index < len(alias.merge_paths):
+            var leader = 0
+            while alias.merge_paths[leader] != alias.merge_paths[path_index]:
+                leader += 1
+            if leader < path_index:
+                state.path_entities.append(state.path_entities[leader].copy())
+                state.path_targets.append(state.path_targets[leader].copy())
+            else:
+                var entities = List[Int]()
+                var targets = _collect_representations(
+                    store,
+                    metadata,
+                    keys.subgraphs[key_index],
+                    key_index > 0,
+                    alias.requires,
+                    alias.input_rewrites,
+                    ctx.arena,
+                    ctx.data,
+                    alias.merge_paths[path_index],
+                    reps,
+                    entities,
+                )
+                state.path_entities.append(entities^)
+                state.path_targets.append(targets^)
+            path_index += 1
+        reps.buffer.append(UInt8(ord("]")))
+        state.count = reps.count
+        any = any or reps.count > 0
+        var name = String(store.name(alias.representations_variable_name))
+        if name not in raw_names:
+            raw_names.append(name^)
+            raw_values.append(reps^.take())
+        job.aliases.append(state^)
+        alias_index += 1
+    if not any:
+        return Job(JobKind.NONE, subgraph, node, NONE)
+    job.body = _fetch_body(
+        store,
+        batch.operation.document_str,
+        batch.variable_usages,
+        batch.has_variable_usages,
+        variables,
+        raw_names,
+        raw_values,
+    )
+    return job^
+
+
+def _merge_fetch(
+    mut ctx: ExecutionContext,
+    store: Store,
+    plan: QueryPlan,
+    metadata: SchemaMetadata,
+    job: Job,
+    var response: SubgraphResponse,
+    affected: String,
+):
+    """Merge a root fetch or a root re-entry fetch."""
+    ref fetch = plan.fetches[job.fetch]
+    if response.data != NO_NODE:
+        for rewrite in fetch.output_rewrites:
+            apply_rewrite(
+                store,
+                metadata.possible_types,
+                rewrite,
+                ctx.arena,
+                response.data,
+            )
+        if not job.has_merge_path:
+            deep_merge(ctx.arena, ctx.data, response.data)
+        else:
+            var targets = TraverseTargets(False)
+            traverse(
+                ctx.arena,
+                ctx.data,
+                plan.nodes[job.plan_node].path,
+                store,
+                metadata.possible_types,
+                targets,
+            )
+            for target in targets.nodes:
+                var source = copy_value(ctx.arena, response.data)
+                deep_merge(ctx.arena, target, source)
+    ctx.handle_errors(
+        job.subgraph,
+        affected,
+        job.has_merge_path,
+        response.errors.copy(),
+        False,
+        List[Int](),
+        List[ErrorPath](),
+    )
+
+
+def _merge_entities(
+    mut ctx: ExecutionContext,
+    store: Store,
+    metadata: SchemaMetadata,
+    path: FlattenNodePath,
+    prepared: List[Int],
+    entities: List[Int],
+    sources: List[Int],
+    mut uses: List[Int],
+    collect_paths: Bool,
+    mut indexes: List[Int],
+    mut paths: List[ErrorPath],
+):
+    """Merge each returned entity into the values at a path that sent it.
+
+    The values are the ones the job found when it was prepared. Only the
+    error paths need a new walk.
+    """
+    var targets = TraverseTargets(collect_paths)
+    if collect_paths:
+        traverse(
+            ctx.arena, ctx.data, path, store, metadata.possible_types, targets
+        )
+    else:
+        targets.nodes = prepared.copy()
+    var index = 0
+    while index < len(targets.nodes) and index < len(entities):
+        var entity = entities[index]
+        if entity >= 0:
+            if collect_paths:
+                indexes.append(entity)
+                paths.append(targets.paths[index].copy())
+            if entity < len(sources):
+                uses[entity] -= 1
+                var source = sources[entity]
+                if uses[entity] > 0:
+                    source = copy_value(ctx.arena, source)
+                deep_merge(ctx.arena, targets.nodes[index], source)
+        index += 1
+
+
+def _count_uses(path_entities: List[List[Int]], count: Int) -> List[Int]:
+    """Count how many values each entity merges into."""
+    var uses = List[Int](length=count, fill=0)
+    for entities in path_entities:
+        for entity in entities:
+            if entity >= 0 and entity < count:
+                uses[entity] += 1
+    return uses^
+
+
+def _entity_nodes(arena: JsonDocument, array: Int) -> List[Int]:
+    """Return the items of an `_entities` array."""
+    var out = List[Int]()
+    var item = arena.first(array)
+    while item != NO_NODE:
+        out.append(item)
+        item = arena.next(item)
+    return out^
+
+
+def _take_entities(mut arena: JsonDocument, data: Int, key: StringSlice) -> Int:
+    """Take an entity array off the response data, as upstream
+    `take_entities_by_key`; `NO_NODE` when it is absent or not a list."""
+    if data == NO_NODE:
+        return NO_NODE
+    var member = take_member(arena, data, key)
+    if member == NO_NODE or arena.kind(member) != JsonKind.ARRAY:
+        return NO_NODE
+    return member
+
+
+def _merge_flatten(
+    mut ctx: ExecutionContext,
+    store: Store,
+    plan: QueryPlan,
+    metadata: SchemaMetadata,
+    job: Job,
+    var response: SubgraphResponse,
+    affected: String,
+):
+    """Merge the entities of a flatten fetch, as upstream does for
+    `ExecutionJob::FlattenFetch`."""
+    var array = _take_entities(ctx.arena, response.data, "_entities")
+    if array == NO_NODE:
+        ctx.handle_errors(
+            job.subgraph,
+            affected,
+            True,
+            response.errors.copy(),
+            False,
+            List[Int](),
+            List[ErrorPath](),
+        )
+        return
+    ref fetch = plan.fetches[job.fetch]
+    var sources = _entity_nodes(ctx.arena, array)
+    for rewrite in fetch.output_rewrites:
+        for source in sources:
+            apply_rewrite(
+                store, metadata.possible_types, rewrite, ctx.arena, source
+            )
+    var all = List[List[Int]]()
+    all.append(job.entities.copy())
+    var uses = _count_uses(all, len(sources))
+    var indexes = List[Int]()
+    var paths = List[ErrorPath]()
+    _merge_entities(
+        ctx,
+        store,
+        metadata,
+        plan.nodes[job.plan_node].path,
+        job.targets,
+        job.entities,
+        sources,
+        uses,
+        response.has_errors,
+        indexes,
+        paths,
+    )
+    ctx.handle_errors(
+        job.subgraph,
+        affected,
+        True,
+        response.errors.copy(),
+        response.has_errors,
+        indexes,
+        paths,
+    )
+
+
+def _alias_of(
+    store: Store, batch_aliases: List[Int], error: GraphQLError
+) -> Int:
+    """Return the alias an error belongs to, by the first step of its
+    path, or -1."""
+    if not error.has_path or len(error.path.segments) == 0:
+        return -1
+    ref first = error.path.segments[0]
+    if first.kind != ErrorSegmentKind.FIELD:
+        return -1
+    var index = 0
+    while index < len(batch_aliases):
+        if store.name(batch_aliases[index]) == first.field:
+            return index
+        index += 1
+    return -1
+
+
+def _merge_batch(
+    mut ctx: ExecutionContext,
+    store: Store,
+    plan: QueryPlan,
+    metadata: SchemaMetadata,
+    job: Job,
+    var response: SubgraphResponse,
+):
+    """Merge each alias of a batch fetch, as upstream does for
+    `ExecutionJob::BatchFetch`."""
+    ref batch = plan.batches[job.fetch]
+    var alias_names = List[Int]()
+    for alias in batch.aliases:
+        alias_names.append(alias.alias)
+    # Split the errors by alias, as upstream `partition_batch_errors_by_alias`.
+    var by_alias = List[List[GraphQLError]]()
+    var has_alias_errors = List[Bool]()
+    for _ in alias_names:
+        by_alias.append(List[GraphQLError]())
+        has_alias_errors.append(False)
+    var unmatched = List[GraphQLError]()
+    for error in response.errors:
+        var found = _alias_of(store, alias_names, error)
+        if found < 0:
+            unmatched.append(error.copy())
+            continue
+        var moved = error.copy()
+        moved.path.segments[0].field = "_entities"
+        by_alias[found].append(moved^)
+        has_alias_errors[found] = True
+    # Take each alias's entities, as `collect_batched_entities_by_alias`.
+    var arrays = List[Int]()
+    for name in alias_names:
+        arrays.append(
+            _take_entities(ctx.arena, response.data, store.name(name))
+        )
+    for state in job.aliases:
+        var a = state.alias
+        ref alias = batch.aliases[a]
+        var collect = has_alias_errors[a]
+        var indexes = List[Int]()
+        var paths = List[ErrorPath]()
+        if arrays[a] != NO_NODE:
+            var sources = _entity_nodes(ctx.arena, arrays[a])
+            for rewrite in alias.output_rewrites:
+                for source in sources:
+                    apply_rewrite(
+                        store,
+                        metadata.possible_types,
+                        rewrite,
+                        ctx.arena,
+                        source,
+                    )
+            if state.count > 0:
+                var uses = _count_uses(state.path_entities, len(sources))
+                var p = 0
+                while p < len(alias.merge_paths):
+                    _merge_entities(
+                        ctx,
+                        store,
+                        metadata,
+                        alias.merge_paths[p],
+                        state.path_targets[p],
+                        state.path_entities[p],
+                        sources,
+                        uses,
+                        collect,
+                        indexes,
+                        paths,
+                    )
+                    p += 1
+        var affected = String()
+        if len(alias.merge_paths) == 1:
+            affected = alias.merge_paths[0].text(store)
+        ctx.handle_errors(
+            job.subgraph,
+            affected,
+            len(alias.merge_paths) == 1,
+            by_alias[a].copy(),
+            collect,
+            indexes,
+            paths,
+        )
+    if len(unmatched) > 0:
+        ctx.handle_errors(
+            job.subgraph,
+            String(),
+            False,
+            unmatched^,
+            False,
+            List[Int](),
+            List[ErrorPath](),
+        )

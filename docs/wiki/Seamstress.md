@@ -81,7 +81,9 @@ Each module docstring lists its differences in full.
 
 ## Tests
 
-The tests are in `tests/gql_seamstress/`. They port the tests of `apollo-federation-types` `src/config`, of the Rover compose output and of the introspection runner. The introspection suites run against a stub endpoint, and the output must equal what the Rover 1.0.0 program prints for the same endpoint. The compose suite composes the Hive fixtures from files, and the result must equal the Hive `composeServices` result.
+The tests are in `tests/gql_seamstress/`. They port the tests of `apollo-federation-types` `src/config`, of the Rover compose output, of the federation version selection, of `rover-graphql` and of the introspection runner. `test_introspection_fixtures.mojo` ports the encoder and introspection JSON tests of `crates/rover-client/src/operations/graph/introspect/`, with the upstream SWAPI fixtures.
+
+The fixtures are in `tests/gql_seamstress/fixtures/`, and `_fixture_data.mojo` holds them as Mojo code, because `make coverage` copies only Mojo files. After a change in `fixtures/`, run `.venv/bin/mojo run -I . tests/gql_seamstress/_embed.mojo`. The introspection suites run against a stub endpoint, and the output must equal what the Rover 1.0.0 program prints for the same endpoint. The compose suite composes the Hive fixtures from files, and the result must equal the Hive `composeServices` result.
 
 ## Benchmarks
 

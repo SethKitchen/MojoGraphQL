@@ -9,7 +9,8 @@ Ports the tests of `src/hpack/huffman/mod.rs`, `encode.rs` and `decode.rs`
 of hyperium/h2 v0.4.20. The random inputs come from a fixed xorshift
 generator, in place of the seeded `StdRng` of h2. The reference decoder
 reads one bit at a time, in place of the string prefix search of h2; it
-gives the same results.
+gives the same results. The long random tests are split in parts, so each
+part takes under 5 seconds under the coverage probes.
 """
 
 from std.builtin.globals import global_constant
@@ -18,6 +19,11 @@ from std.testing import TestSuite, assert_equal, assert_false, assert_true
 from gql_http2.huffman import (
     HuffmanDecoder,
     _CODES,
+    _FAST,
+    _FIRST,
+    _LIMIT,
+    _OFFSET,
+    _SYMBOLS,
     _LENGTHS,
     huffman_decode,
     huffman_encode,
@@ -163,14 +169,33 @@ def test_encode_decode_max_expansion() raises:
         source.append(48)
 
 
-def test_encode_decode_random() raises:
-    var random = _Random(0x123456789ABCDEF)
+def _random_lengths(seed: UInt64, first: Int, end: Int) raises:
+    var random = _Random(seed)
     var decoder = HuffmanDecoder()
-    for length in range(600):
+    for length in range(first, end):
         var source = List[UInt8](capacity=length)
         for _ in range(length):
             source.append(random.byte())
         _round_trip(decoder, source)
+
+
+# h2 round-trips random strings of every length below 600 in one test. The
+# lengths are split in four parts of about the same bytes, so each part
+# takes under 5 seconds under the coverage probes too.
+def test_encode_decode_random_0() raises:
+    _random_lengths(0x123456789ABCDEF, 0, 300)
+
+
+def test_encode_decode_random_1() raises:
+    _random_lengths(0x123456789ABCDF0, 300, 424)
+
+
+def test_encode_decode_random_2() raises:
+    _random_lengths(0x123456789ABCDF1, 424, 519)
+
+
+def test_encode_decode_random_3() raises:
+    _random_lengths(0x123456789ABCDF2, 519, 600)
 
 
 def test_encode_single_byte() raises:
@@ -242,22 +267,35 @@ def _check_reference(decoder: HuffmanDecoder, data: List[UInt8]) raises:
         assert_true(actual == expected)
 
 
-def test_matches_reference_on_arbitrary_bytes() raises:
-    var random = _Random(0xDEADBEEFCAFE)
+def _arbitrary(seed: UInt64, high: UInt8) raises:
+    var random = _Random(seed)
     var decoder = HuffmanDecoder()
-    for _ in range(10_000):
+    for _ in range(5_000):
         var length = random.below(40)
         var source = List[UInt8](capacity=length)
         for _ in range(length):
-            source.append(random.byte())
+            source.append(random.byte() | high)
         _check_reference(decoder, source)
+
+
+# h2 checks 10,000 random strings and 10,000 strings of high bytes in one
+# test; here each set is two tests of 5,000, for the 5-second limit under
+# the coverage probes.
+def test_matches_reference_on_arbitrary_bytes_0() raises:
+    _arbitrary(0xDEADBEEFCAFE, 0)
+
+
+def test_matches_reference_on_arbitrary_bytes_1() raises:
+    _arbitrary(0xDEADBEEFCAFF, 0)
+
+
+def test_matches_reference_on_high_bytes_0() raises:
     # Bias toward high bytes, for long codes and EOS prefixes.
-    for _ in range(10_000):
-        var length = random.below(40)
-        var source = List[UInt8](capacity=length)
-        for _ in range(length):
-            source.append(random.byte() | 0xE0)
-        _check_reference(decoder, source)
+    _arbitrary(0xFEEDFACE0001, 0xE0)
+
+
+def test_matches_reference_on_high_bytes_1() raises:
+    _arbitrary(0xFEEDFACE0002, 0xE0)
 
 
 def test_rejects_eos_and_invalid_padding() raises:
@@ -272,6 +310,69 @@ def test_rejects_eos_and_invalid_padding() raises:
     # 24 one bits: a prefix of a long code, cut off.
     assert_false(_try(decoder, [0xFF, 0xFF, 0xFF], out))
     assert_equal(len(out), 0)
+
+
+def test_tables_match_the_code() raises:
+    # Build the decoder tables from the code, as h2's `build_fast_table`
+    # does, and compare them with the constants of the module.
+    var codes = global_constant[_CODES]().unsafe_ptr()
+    var lengths = global_constant[_LENGTHS]().unsafe_ptr()
+    var fast = List[UInt32](length=4096, fill=0)
+    for a in range(256):
+        var len1 = Int(lengths[unsafe_offset=a])
+        if len1 <= 12:
+            var rem = 12 - len1
+            var base = Int(codes[unsafe_offset=a]) << rem
+            for i in range(1 << rem):
+                fast[base + i] = UInt32((1 << 16) | (len1 << 24) | a)
+    for a in range(256):
+        var len1 = Int(lengths[unsafe_offset=a])
+        if len1 + 5 > 12:
+            continue
+        var rem = 12 - len1
+        for b in range(256):
+            var len2 = Int(lengths[unsafe_offset=b])
+            if len2 > rem:
+                continue
+            var rem2 = rem - len2
+            var base = (Int(codes[unsafe_offset=a]) << rem) | (
+                Int(codes[unsafe_offset=b]) << rem2
+            )
+            var pair = (2 << 16) | ((len1 + len2) << 24) | (b << 8) | a
+            for i in range(1 << rem2):
+                fast[base + i] = UInt32(pair)
+    var table = global_constant[_FAST]().unsafe_ptr()
+    for i in range(4096):
+        assert_equal(table[unsafe_offset=i], fast[i], String(i))
+    # The canonical tables: the codes of one length are consecutive.
+    var counts = List[Int](length=31, fill=0)
+    counts[30] = 1
+    for symbol in range(256):
+        counts[Int(lengths[unsafe_offset=symbol])] += 1
+    var next_code = 0
+    var position = 0
+    var symbols = List[Int](length=257, fill=-1)
+    symbols[256] = 256
+    for length in range(1, 31):
+        var first = global_constant[_FIRST]().unsafe_ptr()[unsafe_offset=length]
+        var offset = global_constant[_OFFSET]().unsafe_ptr()[
+            unsafe_offset=length
+        ]
+        var limit = global_constant[_LIMIT]().unsafe_ptr()[unsafe_offset=length]
+        assert_equal(Int(first), next_code)
+        assert_equal(Int(offset), position)
+        assert_equal(Int(limit), (next_code + counts[length]) << (32 - length))
+        for symbol in range(256):
+            if Int(lengths[unsafe_offset=symbol]) == length:
+                var code = Int(codes[unsafe_offset=symbol])
+                assert_true(code >= next_code)
+                assert_true(code < next_code + counts[length])
+                symbols[position + code - next_code] = symbol
+        next_code = (next_code + counts[length]) << 1
+        position += counts[length]
+    var known = global_constant[_SYMBOLS]().unsafe_ptr()
+    for slot in range(257):
+        assert_equal(Int(known[unsafe_offset=slot]), symbols[slot])
 
 
 def test_decoder_copy() raises:

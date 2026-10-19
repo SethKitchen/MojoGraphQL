@@ -434,7 +434,9 @@ struct Settings(Copyable, Movable):
         self.max_header_list_size = -1
         self.enable_connect_protocol = False
 
-    def set(mut self, id: SettingId, value: Int, from_server: Bool) raises H2Error:
+    def set(
+        mut self, id: SettingId, value: Int, from_server: Bool
+    ) raises H2Error:
         """Set one parameter from the wire, and check its value.
 
         Args:
@@ -481,7 +483,11 @@ struct Settings(Copyable, Movable):
             self.enable_connect_protocol = value == 1
 
     def apply(
-        mut self, p: Pointer[UInt8, _], start: Int, length: Int, from_server: Bool
+        mut self,
+        p: Pointer[UInt8, _],
+        start: Int,
+        length: Int,
+        from_server: Bool,
     ) raises H2Error:
         """Apply the parameters of a `SETTINGS` payload, in order.
 
@@ -496,7 +502,9 @@ struct Settings(Copyable, Movable):
         """
         var at = start
         while at < start + length:
-            var id = (Int(p[unsafe_offset=at]) << 8) | Int(p[unsafe_offset=at + 1])
+            var id = (Int(p[unsafe_offset=at]) << 8) | Int(
+                p[unsafe_offset=at + 1]
+            )
             self.set(SettingId(id), read_u32(p, at + 2), from_server)
             at += 6
 
@@ -553,9 +561,7 @@ def check_settings(head: FrameHead) raises H2Error:
             size that is not a multiple of 6.
     """
     if head.stream_id != 0:
-        raise H2Error.connection(
-            Reason.PROTOCOL_ERROR, "SETTINGS on a stream"
-        )
+        raise H2Error.connection(Reason.PROTOCOL_ERROR, "SETTINGS on a stream")
     if head.has(ACK) and head.length != 0:
         raise H2Error.connection(
             Reason.FRAME_SIZE_ERROR, "SETTINGS ACK with a payload"
@@ -636,7 +642,9 @@ def check_window_update(head: FrameHead) raises H2Error:
         )
 
 
-def check_priority(head: FrameHead, p: Pointer[UInt8, _], at: Int) raises H2Error:
+def check_priority(
+    head: FrameHead, p: Pointer[UInt8, _], at: Int
+) raises H2Error:
     """Check a `PRIORITY` frame (RFC 9113 section 6.3).
 
     Args:
@@ -702,9 +710,13 @@ def data_payload(
 
 def headers_payload(
     head: FrameHead, p: Pointer[UInt8, _], at: Int
-) raises H2Error -> Tuple[Int, Int]:
+) raises H2Error -> Tuple[Int, Int, Int]:
     """Return the header block fragment of a `HEADERS` frame (RFC 9113
-    section 6.2), without padding and priority.
+    section 6.2), without padding and priority, and its dependency.
+
+    A stream that depends on itself is a stream error `PROTOCOL_ERROR`.
+    The caller raises it after it decodes the block, so that the HPACK state
+    stays in step.
 
     Args:
         head: The head.
@@ -712,22 +724,18 @@ def headers_payload(
         at: The offset of the payload.
 
     Returns:
-        The start and end offsets of the fragment.
+        The start and end offsets of the fragment, and the stream that the
+        stream depends on, or -1 without a priority.
 
     Raises:
         H2Error: A connection error for bad padding, or `FRAME_SIZE_ERROR`
-            for a priority that does not fit; a stream error
-            `PROTOCOL_ERROR` for a stream that depends on itself.
+            for a priority that does not fit.
     """
     var bounds = _strip_padding(head, p, at)
     if not head.has(PRIORITY_FLAG):
-        return bounds
+        return (bounds[0], bounds[1], -1)
     if bounds[1] - bounds[0] < 5:
         raise H2Error.connection(
             Reason.FRAME_SIZE_ERROR, "HEADERS priority does not fit"
         )
-    if read_u31(p, bounds[0]) == head.stream_id:
-        raise H2Error.stream(
-            head.stream_id, Reason.PROTOCOL_ERROR, "stream depends on itself"
-        )
-    return (bounds[0] + 5, bounds[1])
+    return (bounds[0] + 5, bounds[1], read_u31(p, bounds[0]))

@@ -12,7 +12,9 @@ response data, as the `project` helper of `projection/response.rs`.
 """
 
 from gql_json.parser import parse as parse_json
-from gql_json.value import JsonDocument
+from gql_json.value import NO_NODE, JsonDocument
+from gql_router.exec_http import CannedTransport
+from gql_router.pipeline import Router, RouterSchema
 from gql_language.parser import parse
 from gql_router.exec_projection import project_by_operation
 from gql_router.exec_projection_plan import ProjectionPlan
@@ -20,6 +22,46 @@ from gql_router.exec_variables import CoerceVariablesPayload
 from gql_router.graphql_error import GraphQLError
 from gql_router.planner import Planner
 from gql_router.schema_metadata import SchemaMetadata, schema_metadata
+
+
+def run_router(
+    sdl: String,
+    var transport: CannedTransport,
+    query: String,
+    variables: String = "",
+    is_get: Bool = False,
+    prefer_ok: Bool = True,
+    operation_name: Optional[String] = None,
+) raises -> String:
+    """Run one request through a router with canned subgraphs.
+
+    Args:
+        sdl: The supergraph SDL.
+        transport: The canned subgraph responses.
+        query: The operation.
+        variables: The variables JSON object, or empty.
+        is_get: Whether the request is a `GET`.
+        prefer_ok: Whether the response type is `application/json`.
+        operation_name: The operation to run.
+
+    Returns:
+        The status, a space, and the body.
+
+    Raises:
+        Error: When the supergraph does not load.
+    """
+    var router = Router(RouterSchema(sdl), transport^)
+    var document = JsonDocument()
+    var root = NO_NODE
+    if variables.byte_length() > 0:
+        document = parse_json(variables)
+        root = document.root
+    var response = router.execute(
+        query, operation_name, document^, root, is_get, prefer_ok
+    )
+    return String(response.status) + " " + String(
+        unsafe_from_utf8=response.body^
+    )
 
 
 def metadata_of(sdl: String) raises -> SchemaMetadata:

@@ -67,7 +67,13 @@ struct PrefixInt(ImplicitlyCopyable, Writable):
             writer: The destination.
         """
         writer.write(
-            self.status, " flags ", self.flags, " ", self.value, " at ", self.end
+            self.status,
+            " flags ",
+            self.flags,
+            " ",
+            self.value,
+            " at ",
+            self.end,
         )
 
 

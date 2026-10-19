@@ -174,8 +174,7 @@ struct TlsContext(Movable):
         _ = self.openssl.ctx_ctrl(
             self.ctx,
             SSL_CTRL_MODE,
-            SSL_MODE_ENABLE_PARTIAL_WRITE
-            | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER,
+            SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER,
         )
 
     @staticmethod

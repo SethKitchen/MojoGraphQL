@@ -137,7 +137,9 @@ struct FieldList(Copyable, Movable, Sized, Writable):
         Returns:
             The bytes of the value.
         """
-        return Span(self.data)[self._ends[index * 2] : self._ends[index * 2 + 1]]
+        return Span(self.data)[
+            self._ends[index * 2] : self._ends[index * 2 + 1]
+        ]
 
     def name_text(self, index: Int) -> StringSlice[origin_of(self.data)]:
         """Return the name of a field as text.

@@ -7,8 +7,16 @@
 loopback clients, for a bounded number of turns. Faults in `Server.sys`
 reach the error paths. The tests that block signals run in a child."""
 
-from _harness import BIG, Echo, config, connect, receive, send_text
-from gql_http.server import Handler, Server, listen
+from _harness import (
+    BIG,
+    Echo,
+    config,
+    connect,
+    loopback_pair,
+    receive,
+    send_text,
+)
+from gql_http.server import Handler, Server, detached, listen
 from gql_http.socket import (
     EAGAIN,
     EBADF,
@@ -462,6 +470,48 @@ def test_signals() raises:
     except e:
         failed = e.message == "signalfd failed: errno 24"
     assert_true(failed)
+
+
+def test_adopt() raises:
+    # A server without a listening socket serves the connections that
+    # another loop gives it, with the bytes that loop read already.
+    var sys = Sys()
+    var c = config()
+    c.max_connections = 1
+    var server = detached(Echo(0), c)
+    assert_true(server.epoll_fd() >= 0)
+    var pair = loopback_pair(sys)
+    server.adopt(pair.server, StaticString("GET / HT").as_bytes())
+    assert_equal(server.open_connections, 1)
+    send_text(sys, pair.client, "TP/1.1\r\nHost: x\r\n\r\n")
+    var text = receive(server, sys, pair.client)
+    assert_true(text.startswith("HTTP/1.1 200 OK\r\n"), text)
+    assert_true(text.endswith("GET / "), text)
+    # A full loop closes what it cannot take.
+    var other = loopback_pair(sys)
+    server.adopt(other.server, StaticString(REQUEST).as_bytes())
+    assert_equal(server.open_connections, 1)
+    assert_true(_closed(server, sys, other.client))
+    sys.close(other.client)
+    sys.close(other.listener)
+    # So does a loop that cannot watch the socket.
+    server.config.max_connections = 10
+    var third = loopback_pair(sys)
+    server.sys.faults = Faults(SysCall.EPOLL_CTL, 24, 0, 1)
+    server.adopt(third.server, StaticString(REQUEST).as_bytes())
+    assert_equal(server.open_connections, 1)
+    assert_true(_closed(server, sys, third.client))
+    sys.close(third.client)
+    sys.close(third.listener)
+    # And a loop that drains.
+    server.begin_shutdown()
+    var fourth = loopback_pair(sys)
+    server.adopt(fourth.server, StaticString(REQUEST).as_bytes())
+    assert_true(_closed(server, sys, fourth.client))
+    sys.close(fourth.client)
+    sys.close(fourth.listener)
+    sys.close(pair.client)
+    sys.close(pair.listener)
 
 
 def main() raises:

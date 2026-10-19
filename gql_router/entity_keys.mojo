@@ -28,12 +28,33 @@ struct KeysByType(Copyable, Movable):
     """The keys of each entity type in one subgraph, as upstream
     `KeysByType`."""
 
-    var keys: Dict[String, List[List[String]]]
-    """The keys of each type; each key is its list of field names."""
+    var types: List[String]
+    """The entity types, in first-seen order."""
+    var keys: List[List[List[String]]]
+    """The keys of each type, parallel to `types`; each key is its list of
+    field names."""
 
     def __init__(out self):
         """Start with no types."""
-        self.keys = Dict[String, List[List[String]]]()
+        self.types = List[String]()
+        self.keys = List[List[List[String]]]()
+
+    def index_of(self, type_name: StringSlice) -> Int:
+        """Return the position of a type, with no copy of the name.
+
+        Args:
+            type_name: The entity type.
+
+        Returns:
+            The index in `keys`, or -1 when the type is not an entity of
+            the subgraph.
+        """
+        var index = 0
+        while index < len(self.types):
+            if self.types[index] == type_name:
+                return index
+            index += 1
+        return -1
 
     def get(self, type_name: String) -> Optional[List[List[String]]]:
         """Return the keys of a type.
@@ -45,7 +66,10 @@ struct KeysByType(Copyable, Movable):
             The keys, or None when the type is not an entity of the
             subgraph.
         """
-        return self.keys.get(type_name)
+        var index = self.index_of(type_name)
+        if index < 0:
+            return None
+        return self.keys[index].copy()
 
     def add(mut self, type_name: String, var fields: List[String]):
         """Add one key of a type.
@@ -54,23 +78,45 @@ struct KeysByType(Copyable, Movable):
             type_name: The entity type.
             fields: The top-level fields of the key.
         """
-        var found = self.keys.get(type_name)
-        var list = List[List[String]]()
-        if found:
-            list = found.value().copy()
-        list.append(fields^)
-        self.keys[type_name] = list^
+        var index = self.index_of(type_name)
+        if index < 0:
+            self.types.append(type_name)
+            self.keys.append(List[List[String]]())
+            index = len(self.types) - 1
+        self.keys[index].append(fields^)
 
 
 struct EntityKeys(Copyable, Movable):
     """The resolvable keys of every subgraph, as upstream `EntityKeys`."""
 
-    var subgraphs: Dict[String, KeysByType]
-    """The keys of each subgraph, by subgraph name."""
+    var names: List[String]
+    """The subgraphs that have entities, after an empty name at index 0."""
+    var subgraphs: List[KeysByType]
+    """The keys of each subgraph, parallel to `names`; index 0 holds no
+    keys, for a subgraph without entities."""
 
     def __init__(out self):
         """Start with no subgraphs, as upstream `EntityKeys::default`."""
-        self.subgraphs = Dict[String, KeysByType]()
+        self.names = [""]
+        self.subgraphs = List[KeysByType]()
+        self.subgraphs.append(KeysByType())
+
+    def index_of(self, subgraph: StringSlice) -> Int:
+        """Return the position of a subgraph.
+
+        Args:
+            subgraph: The subgraph name.
+
+        Returns:
+            The index in `subgraphs`, or 0, the entry with no keys, when
+            the subgraph has no entity.
+        """
+        var index = 1
+        while index < len(self.names):
+            if self.names[index] == subgraph:
+                return index
+            index += 1
+        return 0
 
     @staticmethod
     def new(mut store: Store, state: SupergraphState) raises -> EntityKeys:
@@ -114,12 +160,12 @@ struct EntityKeys(Copyable, Movable):
                         fields.append(String(store.name(item.name)))
                     child = item.next
                 var name = String(store.name(subgraph.value()))
-                var keys = out.subgraphs.get(name)
-                var by_type = KeysByType()
-                if keys:
-                    by_type = keys.value().copy()
-                by_type.add(type_name, fields^)
-                out.subgraphs[name] = by_type^
+                var index = out.index_of(name)
+                if index == 0:
+                    out.names.append(name)
+                    out.subgraphs.append(KeysByType())
+                    index = len(out.names) - 1
+                out.subgraphs[index].add(type_name, fields^)
         return out^
 
     def of_subgraph(self, subgraph: String) -> Optional[KeysByType]:
@@ -131,4 +177,7 @@ struct EntityKeys(Copyable, Movable):
         Returns:
             Its keys by type, or None when it has no entity.
         """
-        return self.subgraphs.get(subgraph)
+        var index = self.index_of(subgraph)
+        if index == 0:
+            return None
+        return self.subgraphs[index].copy()

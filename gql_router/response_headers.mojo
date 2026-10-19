@@ -134,7 +134,7 @@ struct ResponseAggregator(Movable):
                 continue
             names.append(String(self.names[index]))
             strategies.append(self.strategies[index])
-            values.append(_copy_strings(self.values[index])^)
+            values.append(_copy_strings(self.values[index]))
         self.names = names^
         self.strategies = strategies^
         self.values = values^
@@ -336,13 +336,7 @@ def _put_values(
         slot: The header to replace.
         next: The new values.
     """
-    var replaced = List[List[String]]()
-    for index in range(len(groups)):
-        if index == slot:
-            replaced.append(next^)
-        else:
-            replaced.append(_copy_strings(groups[index])^)
-    groups = replaced^
+    groups[slot] = next^
 
 
 def _copy_strings(values: List[String]) -> List[String]:

@@ -3,4 +3,4 @@
 # Noncommercial use is free; commercial use requires a paid license.
 # See LICENSE, LICENSE-COMMERCIAL.md and THIRD-PARTY-NOTICES.md.
 
-"""gql_tls: TLS 1.3 and ALPN through the system OpenSSL, loaded at run time."""
+"""TLS 1.3 and ALPN through the system OpenSSL, loaded at run time."""

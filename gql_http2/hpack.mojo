@@ -37,11 +37,10 @@ connection checks them (RFC 9113 section 8.2), so h2's `InvalidUtf8`,
 `InvalidStatusCode` and `InvalidPseudoheader` errors are not here. The
 decoder marks a never-indexed field as sensitive, which h2 leaves as a
 TODO. The encoder honors the sensitive flag of a pseudo-header too; h2
-has no flag for them. The encoder writes the length of a Huffman string
-before the string, from `huffman_encoded_length`, in place of h2's move
-of the string; the bytes are the same. The decoder, like h2, does not
-require a size update after `queue_size_update`; it refuses an update
-above the queued size.
+has no flag for them. h2's encoder can take a field without a name, which
+reuses the name of the field before; this encoder takes a name with each
+field. The decoder, like h2, does not require a size update after
+`queue_size_update`; it refuses an update above the queued size.
 """
 
 from std.collections import Optional
@@ -51,6 +50,7 @@ from gql_http2.hpack_table import (
     ENTRY_OVERHEAD,
     STATIC_TABLE_LENGTH,
     StaticIndex,
+    append_pair,
     name_hash,
     static_name,
     static_value,
@@ -58,7 +58,6 @@ from gql_http2.hpack_table import (
 from gql_http2.huffman import (
     HuffmanDecoder,
     huffman_encode,
-    huffman_encoded_length,
 )
 
 comptime DEFAULT_TABLE_SIZE = 4096
@@ -218,8 +217,7 @@ struct HeaderList(Copyable, Movable):
         self.fields.append(
             HeaderField(len(self.data), len(name), len(value), sensitive)
         )
-        self.data.extend(name)
-        self.data.extend(value)
+        append_pair(self.data, name, value)
         self._size += len(name) + len(value) + ENTRY_OVERHEAD
 
     def add_text(
@@ -256,8 +254,11 @@ struct HeaderList(Copyable, Movable):
         Returns:
             The bytes of the name.
         """
-        var field = self.fields[index]
-        return Span(self.data)[field.start : field.start + field.name_length]
+        var field = self.fields.unsafe_ptr()[unsafe_offset=index]
+        return Span[UInt8, origin_of(self.data)](
+            unsafe_ptr=self.data.unsafe_ptr().unsafe_offset(field.start),
+            length=field.name_length,
+        )
 
     @always_inline
     def value(self, index: Int) -> Span[UInt8, origin_of(self.data)]:
@@ -269,9 +270,12 @@ struct HeaderList(Copyable, Movable):
         Returns:
             The bytes of the value.
         """
-        var field = self.fields[index]
+        var field = self.fields.unsafe_ptr()[unsafe_offset=index]
         var start = field.start + field.name_length
-        return Span(self.data)[start : start + field.value_length]
+        return Span[UInt8, origin_of(self.data)](
+            unsafe_ptr=self.data.unsafe_ptr().unsafe_offset(start),
+            length=field.value_length,
+        )
 
     def name_text(self, index: Int) -> StringSlice[origin_of(self.data)]:
         """Return the name of a field as text, unchecked.
@@ -308,7 +312,7 @@ struct HeaderList(Copyable, Movable):
         Returns:
             The flag.
         """
-        return self.fields[index].sensitive
+        return self.fields.unsafe_ptr()[unsafe_offset=index].sensitive
 
     @always_inline
     def list_size(self) -> Int:
@@ -320,6 +324,7 @@ struct HeaderList(Copyable, Movable):
         return self._size
 
 
+@always_inline
 def encode_integer(
     value: Int, prefix_bits: Int, first_byte: UInt8, mut out: List[UInt8]
 ):
@@ -493,7 +498,7 @@ struct Decoder(Movable):
         """
         self.table = DynamicTable(max_table_size, False)
         self._huffman = HuffmanDecoder()
-        self._scratch = List[UInt8]()
+        self._scratch = List[UInt8](capacity=256)
         self._max_size_update = None
         self._last_max_update = max_table_size
 
@@ -591,6 +596,7 @@ struct Decoder(Movable):
                     out,
                 )
 
+    @always_inline
     def _lookup(self, index: Int) raises HpackError -> _Entry:
         """Return the static or dynamic entry at an index."""
         if index == 0:
@@ -629,6 +635,7 @@ struct Decoder(Movable):
             True,
         )
 
+    @always_inline
     def _read_string(
         mut self, data: Pointer[UInt8, _], mut position: Int, end: Int
     ) raises HpackError -> _Text:
@@ -671,6 +678,7 @@ struct Decoder(Movable):
             )
         return text.pointer
 
+    @always_inline
     def _literal(
         mut self,
         data: Pointer[UInt8, _],
@@ -729,12 +737,33 @@ struct Decoder(Movable):
 
 @always_inline
 def _encode_string(value: Span[UInt8, _], mut out: List[UInt8]):
-    """Append a string literal: Huffman coded, or one 0 byte when empty."""
+    """Append a string literal: Huffman coded, or one 0 byte when empty.
+
+    As h2 does, this writes a one-byte length, then the code, and moves
+    the code right when its length needs more bytes."""
     if len(value) == 0:
         out.append(0)
         return
-    encode_integer(huffman_encoded_length(value), 7, 0x80, out)
+    var at = len(out)
+    out.append(0)
     huffman_encode(value, out)
+    var length = len(out) - at - 1
+    if length < 127:
+        out[at] = UInt8(0x80 | length)
+        return
+    var head = List[UInt8]()
+    encode_integer(length, 7, 0x80, head)
+    var extra = len(head) - 1
+    out.resize(len(out) + extra, 0)
+    var data = out.unsafe_ptr()
+    var index = len(out) - 1
+    while index >= at + len(head):
+        data[unsafe_offset=index] = data[unsafe_offset=index - extra]
+        index -= 1
+    index = 0
+    while index < len(head):
+        data[unsafe_offset=at + index] = head[index]
+        index += 1
 
 
 @always_inline

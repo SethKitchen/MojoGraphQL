@@ -22,7 +22,7 @@ indices stay valid while the data grows.
 """
 
 from gql_json.value import NO_NODE, JsonDocument, JsonKind
-from gql_router.exec_value import object_get, string_text, typename_node
+from gql_router.exec_value import object_get, type_satisfies, typename_node
 from gql_router.graphql_error import (
     ErrorPath,
     ErrorSegment,
@@ -55,11 +55,20 @@ struct TraverseTargets(Movable):
         self.paths = List[ErrorPath]()
         self.collect_paths = collect_paths
 
+    def take_nodes(deinit self) -> List[Int]:
+        """Return the values.
+
+        Returns:
+            The values, in walk order.
+        """
+        return self.nodes^
+
 
 def satisfies_any(
     store: Store,
     possible_types: PossibleTypes,
-    type_name: StringSlice,
+    document: JsonDocument,
+    type_node: Int,
     types: Int,
 ) -> Bool:
     """Return True if a type satisfies one type of an interned type set,
@@ -68,16 +77,15 @@ def satisfies_any(
     Args:
         store: The store with the type set.
         possible_types: The possible types of each abstract type.
-        type_name: The type of the object.
+        document: The response data.
+        type_node: The `__typename` string of the object.
         types: The interned type set.
 
     Returns:
         Whether one condition holds.
     """
     for name in store.type_sets[types]:
-        if possible_types.entity_satisfies_type_condition(
-            type_name, store.name(name)
-        ):
+        if type_satisfies(possible_types, document, type_node, store.name(name)):
             return True
     return False
 
@@ -101,92 +109,148 @@ def traverse(
         targets: Where the values go.
     """
     var current = List[ErrorSegment]()
-    _walk(document, start, path, 0, store, possible_types, current, targets)
+    var walker = _Walker(
+        document,
+        path,
+        store,
+        possible_types,
+        Pointer(to=targets).unsafe_origin_cast[MutUntrackedOrigin](),
+        Pointer(to=current).unsafe_origin_cast[MutUntrackedOrigin](),
+    )
+    walker.walk(start, 0)
+    _ = current^
 
 
-def _record(mut targets: TraverseTargets, node: Int, current: List[ErrorSegment]):
-    """Add one value and, when asked, its path."""
-    targets.nodes.append(node)
-    if targets.collect_paths:
-        targets.paths.append(ErrorPath(current.copy()))
+@fieldwise_init
+struct _Walker[
+    d: Origin[mut=False],
+    p: Origin[mut=False],
+    s: Origin[mut=False],
+    t: Origin[mut=False],
+](ImplicitlyCopyable):
+    """The inputs of one walk and pointers to its outputs.
 
+    The recursive walk takes this handle of six pointers, so that each call
+    does not get the fields of every input as arguments.
+    """
 
-def _push(mut current: List[ErrorSegment], collect: Bool, var segment: ErrorSegment):
-    """Add a step to the walk path when paths are collected."""
-    if collect:
-        current.append(segment^)
+    var document: Pointer[JsonDocument, Self.d]
+    """The response data."""
+    var path: Pointer[FlattenNodePath, Self.p]
+    """The flatten path."""
+    var store: Pointer[Store, Self.s]
+    """The store with the path names."""
+    var possible_types: Pointer[PossibleTypes, Self.t]
+    """The possible types of each abstract type."""
+    var targets: Pointer[TraverseTargets, MutUntrackedOrigin]
+    """Where the values go."""
+    var current: Pointer[List[ErrorSegment], MutUntrackedOrigin]
+    """The response path of the value being walked, when paths are
+    collected."""
 
+    def __init__(
+        out self,
+        ref[Self.d] document: JsonDocument,
+        ref[Self.p] path: FlattenNodePath,
+        ref[Self.s] store: Store,
+        ref[Self.t] possible_types: PossibleTypes,
+        targets: Pointer[TraverseTargets, MutUntrackedOrigin],
+        current: Pointer[List[ErrorSegment], MutUntrackedOrigin],
+    ):
+        """Start a walk.
 
-def _pop(mut current: List[ErrorSegment], collect: Bool):
-    """Remove the last step of the walk path."""
-    if collect:
-        _ = current.pop()
+        Args:
+            document: The response data.
+            path: The flatten path.
+            store: The store with the path names.
+            possible_types: The possible types of each abstract type.
+            targets: Where the values go.
+            current: The walk path.
+        """
+        self.document = Pointer(to=document)
+        self.path = Pointer(to=path)
+        self.store = Pointer(to=store)
+        self.possible_types = Pointer(to=possible_types)
+        self.targets = targets
+        self.current = current
 
+    def record(self, node: Int):
+        """Add one value and, when asked, its path.
 
-def _walk(
-    document: JsonDocument,
-    node: Int,
-    path: FlattenNodePath,
-    at: Int,
-    store: Store,
-    possible_types: PossibleTypes,
-    mut current: List[ErrorSegment],
-    mut targets: TraverseTargets,
-):
-    """Walk the rest of a path from one value."""
-    var kind = document.kind(node)
-    var collect = targets.collect_paths
-    if at == len(path.segments):
-        if kind != JsonKind.ARRAY:
-            _record(targets, node, current)
-            return
-        var item = document.first(node)
+        Args:
+            node: The value.
+        """
+        self.targets[].nodes.append(node)
+        if self.targets[].collect_paths:
+            self.targets[].paths.append(ErrorPath(self.current[].copy()))
+
+    def items(self, node: Int, at: Int, last: Bool):
+        """Walk each item of a list.
+
+        Args:
+            node: The list.
+            at: The path segment the items continue at.
+            last: Whether the items are the values.
+        """
+        var collect = self.targets[].collect_paths
+        var item = self.document[].first(node)
         var index = 0
         while item != NO_NODE:
-            _push(current, collect, index_segment(index))
-            _record(targets, item, current)
-            _pop(current, collect)
-            item = document.next(item)
+            if collect:
+                self.current[].append(index_segment(index))
+            if last:
+                self.record(item)
+            else:
+                self.walk(item, at)
+            if collect:
+                _ = self.current[].pop()
+            item = self.document[].next(item)
             index += 1
-        return
-    var segment = path.segments[at]
-    if segment.kind == PathSegmentKind.LIST:
-        if kind != JsonKind.ARRAY:
+
+    def walk(self, node: Int, at: Int):
+        """Walk the rest of a path from one value.
+
+        Args:
+            node: The value.
+            at: The path segment to take next.
+        """
+        ref document = self.document[]
+        var kind = document.kind(node)
+        if at == len(self.path[].segments):
+            if kind != JsonKind.ARRAY:
+                self.record(node)
+                return
+            self.items(node, at, True)
             return
-        var item = document.first(node)
-        var index = 0
-        while item != NO_NODE:
-            _push(current, collect, index_segment(index))
-            _walk(document, item, path, at + 1, store, possible_types, current, targets)
-            _pop(current, collect)
-            item = document.next(item)
-            index += 1
-        return
-    if segment.kind == PathSegmentKind.FIELD:
-        if kind != JsonKind.OBJECT:
+        ref segment = self.path[].segments[at]
+        if segment.kind == PathSegmentKind.LIST:
+            if kind == JsonKind.ARRAY:
+                self.items(node, at + 1, False)
             return
-        var name = store.name(segment.name)
-        var found = object_get(document, node, name)
-        if found == NO_NODE:
+        if segment.kind == PathSegmentKind.FIELD:
+            if kind != JsonKind.OBJECT:
+                return
+            var name = self.store[].name(segment.name)
+            var found = object_get(document, node, name)
+            if found == NO_NODE:
+                return
+            var collect = self.targets[].collect_paths
+            if collect:
+                self.current[].append(field_segment(String(name)))
+            self.walk(found, at + 1)
+            if collect:
+                _ = self.current[].pop()
             return
-        _push(current, collect, field_segment(name))
-        _walk(document, found, path, at + 1, store, possible_types, current, targets)
-        _pop(current, collect)
-        return
-    if kind == JsonKind.OBJECT:
-        var type_node = typename_node(document, node)
-        if type_node == NO_NODE or satisfies_any(
-            store, possible_types, string_text(document, type_node), segment.types
-        ):
-            _walk(document, node, path, at + 1, store, possible_types, current, targets)
-        return
-    if kind != JsonKind.ARRAY:
-        return
-    var item = document.first(node)
-    var index = 0
-    while item != NO_NODE:
-        _push(current, collect, index_segment(index))
-        _walk(document, item, path, at, store, possible_types, current, targets)
-        _pop(current, collect)
-        item = document.next(item)
-        index += 1
+        if kind == JsonKind.OBJECT:
+            var type_node = typename_node(document, node)
+            if type_node == NO_NODE or satisfies_any(
+                self.store[],
+                self.possible_types[],
+                document,
+                type_node,
+                segment.types,
+            ):
+                self.walk(node, at + 1)
+            return
+        if kind == JsonKind.ARRAY:
+            self.items(node, at, False)

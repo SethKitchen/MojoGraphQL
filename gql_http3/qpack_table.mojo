@@ -238,7 +238,11 @@ struct DynamicTable(Movable, Writable):
         while self.size > capacity:
             self.evict_oldest()
 
-    def insert(mut self, name: Span[UInt8, _], value: Span[UInt8, _]):
+    def insert(
+        mut self,
+        name: Span[mut=False, UInt8, _],
+        value: Span[mut=False, UInt8, _],
+    ):
         """Insert an entry; evict the oldest entries to make room.
 
         The spans must not point into this table. Copy the name of an entry

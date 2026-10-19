@@ -22,7 +22,7 @@ number and of each string, escapes included, and writes it unchanged. So a
 response keeps the digits and the escapes that the subgraph sent.
 `deep_merge` moves the source into the target, so a source must not be
 used again; `copy_value` makes a copy first, where upstream clones.
-`to_hash` uses FNV-1a with a final mix, not XXH3, so the hash values
+`to_hash` folds eight bytes per multiply, not XXH3, so the hash values
 differ; equal representations still have equal hashes.
 """
 
@@ -38,7 +38,10 @@ from gql_json.value import (
     JsonNode,
     decode_string,
 )
+from std.memory import unsafe_memcpy
+
 from gql_json.writer import write_string
+from gql_router.schema_metadata import PossibleTypes
 
 comptime KEY_FLAGS: UInt8 = FLAG_KEY_ESCAPED | FLAG_KEY_DECODED
 """The bits of `JsonNode.flags` that describe the key of a member."""
@@ -105,9 +108,98 @@ def key_is(document: JsonDocument, node: Int, key: StringSlice) -> Bool:
     Returns:
         Whether the keys are equal.
     """
-    if node_at(document, node).flags & FLAG_KEY_ESCAPED == 0:
-        return raw_key_bytes(document, node) == key.as_bytes()
-    return document.key(node) == key
+    var member = document.nodes.unsafe_ptr().unsafe_offset(node)
+    if member[].flags & FLAG_KEY_ESCAPED != 0:
+        return document.key(node) == key
+    var start = Int(member[].key_start)
+    var length = Int(member[].key_end) - start
+    if length != key.byte_length():
+        return False
+    return bytes_equal(
+        document.bytes.unsafe_ptr().unsafe_offset(start), key.unsafe_ptr(), length
+    )
+
+
+@always_inline
+def append_bytes(
+    mut out: List[UInt8], source: Pointer[UInt8, _], count: Int
+):
+    """Copy bytes to the end of a buffer.
+
+    `List.extend` copies one byte at a time; this copies a short run with a
+    loop and a long run with `memcpy`.
+
+    Args:
+        out: The buffer.
+        source: The first byte to copy.
+        count: How many bytes to copy.
+    """
+    var length = len(out)
+    if length + count > out.capacity():
+        out.reserve(max(out.capacity() * 2, length + count))
+    var target = out.unsafe_ptr().unsafe_offset(length)
+    if count > 16:
+        unsafe_memcpy(dest=target, src=source, count=count)
+    else:
+        var index = 0
+        while index < count:
+            target[unsafe_offset=index] = source[unsafe_offset=index]
+            index += 1
+    out._len = length + count
+
+
+@always_inline
+def append_text(mut out: List[UInt8], text: StringSlice):
+    """Copy the bytes of a text to the end of a buffer.
+
+    Args:
+        out: The buffer.
+        text: The text.
+    """
+    append_bytes(out, text.unsafe_ptr(), text.byte_length())
+
+
+@always_inline
+def append_span(mut out: List[UInt8], bytes: Span[UInt8, _]):
+    """Copy a run of bytes to the end of a buffer.
+
+    Args:
+        out: The buffer.
+        bytes: The bytes.
+    """
+    append_bytes(out, bytes.unsafe_ptr(), len(bytes))
+
+
+@always_inline
+def bytes_equal(
+    a: Pointer[UInt8, _], b: Pointer[UInt8, _], length: Int
+) -> Bool:
+    """Return True if two runs of bytes are equal.
+
+    Args:
+        a: The first run.
+        b: The second run.
+        length: The number of bytes in each run.
+
+    Returns:
+        Whether every byte is equal.
+    """
+    var index = 0
+    while index + 8 <= length:
+        var left = a.unsafe_offset(index).unsafe_bitcast[UInt64]().unsafe_load[
+            alignment=1
+        ]()
+        var right = b.unsafe_offset(index).unsafe_bitcast[
+            UInt64
+        ]().unsafe_load[alignment=1]()
+        if left != right:
+            return False
+        index += 8
+    while index < length:
+        if a[unsafe_offset=index] != b[unsafe_offset=index]:
+            return False
+        index += 1
+    return True
 
 
 def keys_equal(document: JsonDocument, a: Int, b: Int) -> Bool:
@@ -121,10 +213,20 @@ def keys_equal(document: JsonDocument, a: Int, b: Int) -> Bool:
     Returns:
         Whether the decoded keys are equal.
     """
-    var escaped = node_at(document, a).flags | node_at(document, b).flags
-    if escaped & FLAG_KEY_ESCAPED == 0:
-        return raw_key_bytes(document, a) == raw_key_bytes(document, b)
-    return document.key(a) == document.key(b)
+    var nodes = document.nodes.unsafe_ptr()
+    var left = nodes.unsafe_offset(a)
+    var right = nodes.unsafe_offset(b)
+    if (left[].flags | right[].flags) & FLAG_KEY_ESCAPED != 0:
+        return document.key(a) == document.key(b)
+    var start = Int(left[].key_start)
+    var length = Int(left[].key_end) - start
+    var other = Int(right[].key_start)
+    if Int(right[].key_end) - other != length:
+        return False
+    var bytes = document.bytes.unsafe_ptr()
+    return bytes_equal(
+        bytes.unsafe_offset(start), bytes.unsafe_offset(other), length
+    )
 
 
 def object_get(document: JsonDocument, object: Int, key: StringSlice) -> Int:
@@ -231,6 +333,65 @@ def string_text(document: JsonDocument, node: Int) -> String:
     return document.string_value(node)
 
 
+@always_inline
+def raw_string(
+    document: JsonDocument, node: Int
+) -> StringSlice[origin_of(document.bytes)]:
+    """Return the text of a string node, escapes not decoded, with no copy.
+
+    Args:
+        document: The document.
+        node: A string node.
+
+    Returns:
+        A view of the text; it equals the value when the string has no
+        escapes.
+    """
+    return StringSlice(unsafe_from_utf8=raw_text_bytes(document, node))
+
+
+@always_inline
+def is_plain_string(document: JsonDocument, node: Int) -> Bool:
+    """Return True if a string node has no escapes, so its raw text is its
+    value.
+
+    Args:
+        document: The document.
+        node: A string node.
+
+    Returns:
+        Whether `raw_string` gives the value.
+    """
+    return node_at(document, node).flags & FLAG_ESCAPED == 0
+
+
+def type_satisfies(
+    possible_types: PossibleTypes,
+    document: JsonDocument,
+    type_node: Int,
+    condition: StringSlice,
+) -> Bool:
+    """Return True if the type in a `__typename` string satisfies a type
+    condition, with no copy of the type name.
+
+    Args:
+        possible_types: The possible types of each abstract type.
+        document: The document.
+        type_node: The `__typename` string node.
+        condition: The type condition.
+
+    Returns:
+        Whether the type is the condition or one of its possible types.
+    """
+    if is_plain_string(document, type_node):
+        return possible_types.entity_satisfies_type_condition(
+            raw_string(document, type_node), condition
+        )
+    return possible_types.entity_satisfies_type_condition(
+        string_text(document, type_node), condition
+    )
+
+
 def take_member(
     mut document: JsonDocument, object: Int, key: StringSlice
 ) -> Int:
@@ -274,14 +435,15 @@ def append_child(mut document: JsonDocument, parent: Int, child: Int):
         parent: The array or the object.
         child: The node; its `next` link is cleared.
     """
-    document.nodes[child].next = Int32(NO_NODE)
-    var last = Int(document.nodes[parent].end)
-    if document.nodes[parent].count == 0:
-        document.nodes[parent].start = Int32(child)
+    var nodes = document.nodes.unsafe_ptr()
+    nodes[unsafe_offset=child].next = Int32(NO_NODE)
+    var container = nodes.unsafe_offset(parent)
+    if container[].count == 0:
+        container[].start = Int32(child)
     else:
-        document.nodes[last].next = Int32(child)
-    document.nodes[parent].end = Int32(child)
-    document.nodes[parent].count += 1
+        nodes[unsafe_offset = Int(container[].end)].next = Int32(child)
+    container[].end = Int32(child)
+    container[].count += 1
 
 
 def replace_value(mut document: JsonDocument, target: Int, source: Int):
@@ -385,15 +547,16 @@ def copy_value(mut document: JsonDocument, node: Int) -> Int:
         The copy; it is in no container.
     """
     var found = node_at(document, node)
-    document.nodes.append(found)
-    var copy = len(document.nodes) - 1
-    document.nodes[copy].next = Int32(NO_NODE)
+    var copy = len(document.nodes)
+    found.next = Int32(NO_NODE)
     if found.kind.value < JsonKind.ARRAY.value or found.count == 0:
+        document.nodes.append(found)
         return copy
-    document.nodes[copy].start = Int32(NO_NODE)
-    document.nodes[copy].end = Int32(NO_NODE)
-    document.nodes[copy].count = 0
     var child = Int(found.start)
+    found.start = Int32(NO_NODE)
+    found.end = Int32(NO_NODE)
+    found.count = 0
+    document.nodes.append(found)
     while child != NO_NODE:
         var child_copy = copy_value(document, child)
         append_child(document, copy, child_copy)
@@ -414,7 +577,7 @@ def import_document(mut document: JsonDocument, other: JsonDocument) -> Int:
     """
     var node_offset = Int32(len(document.nodes))
     var byte_offset = Int32(len(document.bytes))
-    document.bytes.extend(Span(other.bytes))
+    append_span(document.bytes, Span(other.bytes))
     var count = len(other.nodes)
     document.nodes.reserve(len(document.nodes) + count)
     var source = other.nodes.unsafe_ptr()
@@ -448,7 +611,7 @@ def set_key(mut document: JsonDocument, node: Int, key: StringSlice):
         key: The decoded key.
     """
     var start = len(document.bytes)
-    document.bytes.extend(key.as_bytes())
+    append_text(document.bytes, key)
     ref member = document.nodes[node]
     member.key_start = Int32(start)
     member.key_end = Int32(len(document.bytes))
@@ -464,7 +627,7 @@ def set_string(mut document: JsonDocument, node: Int, text: StringSlice):
         text: The decoded value.
     """
     var start = len(document.bytes)
-    document.bytes.extend(text.as_bytes())
+    append_text(document.bytes, text)
     ref target = document.nodes[node]
     target.kind = JsonKind.STRING
     target.flags = FLAG_DECODED | (target.flags & KEY_FLAGS)
@@ -485,7 +648,7 @@ def write_key(document: JsonDocument, node: Int, mut out: List[UInt8]):
         write_string(out, raw_key_bytes(document, node))
         return
     out.append(UInt8(ord('"')))
-    out.extend(raw_key_bytes(document, node))
+    append_span(out, raw_key_bytes(document, node))
     out.append(UInt8(ord('"')))
 
 
@@ -505,10 +668,10 @@ def write_value(document: JsonDocument, node: Int, mut out: List[UInt8]):
             write_string(out, raw_text_bytes(document, node))
         else:
             out.append(UInt8(ord('"')))
-            out.extend(raw_text_bytes(document, node))
+            append_span(out, raw_text_bytes(document, node))
             out.append(UInt8(ord('"')))
     elif kind == JsonKind.NUMBER:
-        out.extend(raw_text_bytes(document, node))
+        append_span(out, raw_text_bytes(document, node))
     elif kind == JsonKind.OBJECT:
         out.append(UInt8(ord("{")))
         var child = Int(found.start) if found.count > 0 else NO_NODE
@@ -535,11 +698,11 @@ def write_value(document: JsonDocument, node: Int, mut out: List[UInt8]):
         out.append(UInt8(ord("]")))
     elif kind == JsonKind.BOOLEAN:
         if found.flags & FLAG_TRUE != 0:
-            out.extend("true".as_bytes())
+            append_text(out, "true")
         else:
-            out.extend("false".as_bytes())
+            append_text(out, "false")
     else:
-        out.extend("null".as_bytes())
+        append_text(out, "null")
 
 
 comptime FNV_OFFSET: UInt64 = 0xCBF29CE484222325
@@ -550,7 +713,11 @@ comptime FNV_PRIME: UInt64 = 0x100000001B3
 
 @always_inline
 def hash_bytes(state: UInt64, bytes: Span[UInt8, _]) -> UInt64:
-    """Fold bytes into a hash state with FNV-1a.
+    """Fold bytes into a hash state, eight bytes at a time.
+
+    Each word is mixed with one multiply, so a short string costs a few
+    multiplies and not one per byte. The length is folded in last, so runs
+    that differ only in trailing zero bytes differ.
 
     Args:
         state: The state.
@@ -563,10 +730,28 @@ def hash_bytes(state: UInt64, bytes: Span[UInt8, _]) -> UInt64:
     var data = bytes.unsafe_ptr()
     var index = 0
     var length = len(bytes)
-    while index < length:
-        hash = (hash ^ UInt64(data[unsafe_offset=index])) * FNV_PRIME
-        index += 1
-    return hash
+    while index + 8 <= length:
+        var word = data.unsafe_offset(index).unsafe_bitcast[UInt64]().unsafe_load[
+            alignment=1
+        ]()
+        hash = _mix(hash ^ word)
+        index += 8
+    if index < length:
+        var word: UInt64 = 0
+        var shift: UInt64 = 0
+        while index < length:
+            word |= UInt64(data[unsafe_offset=index]) << shift
+            shift += 8
+            index += 1
+        hash = _mix(hash ^ word)
+    return _mix(hash ^ UInt64(length))
+
+
+@always_inline
+def _mix(value: UInt64) -> UInt64:
+    """Mix one word into a hash state with a multiply and a shift."""
+    var z = value * 0x9E3779B97F4A7C15
+    return z ^ (z >> 29)
 
 
 @always_inline

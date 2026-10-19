@@ -270,6 +270,11 @@ def test_flush() raises:
     var rest = len(writer.out)
     assert_true(rest > 0 and rest < big)
     assert_equal(Int(writer.out[0]), (big - rest) % 251)
+    # A writer without a connection keeps its output for its owner.
+    var unbound = ResponseWriter()
+    unbound.out.extend(StaticString("kept").as_bytes())
+    unbound.flush()
+    assert_equal(len(unbound.out), 4)
     pair.close(sys)
 
 

@@ -159,7 +159,7 @@ struct QpackDecoder(Movable):
         Args:
             out: The destination; the bytes are appended.
         """
-        out.extend(self._out)
+        out.extend(Span(self._out))
         self._out.clear()
 
     def cancel_stream(mut self, stream_id: UInt64):
@@ -191,7 +191,10 @@ struct QpackDecoder(Movable):
         return absolute
 
     def decode(
-        mut self, stream_id: UInt64, block: Span[UInt8, _], mut fields: FieldList
+        mut self,
+        stream_id: UInt64,
+        block: Span[UInt8, _],
+        mut fields: FieldList,
     ) raises H3Error -> Bool:
         """Decode a field section: the payload of a HEADERS frame.
 
@@ -214,7 +217,9 @@ struct QpackDecoder(Movable):
         fields.clear()
         var prefix = HeaderPrefix(0, False, 0)
         var at = decode_header_prefix(block, prefix)
-        var counts = prefix.get(self.table.insert_count(), self.max_table_capacity)
+        var counts = prefix.get(
+            self.table.insert_count(), self.max_table_capacity
+        )
         var required = counts[0]
         var base = counts[1]
         self.required_insert_count = required
@@ -252,14 +257,18 @@ struct QpackDecoder(Movable):
                 if not head.complete():
                     raise _truncated()
                 at = head.end
-                var a = self._dynamic(base, to_index(head.value), required, True)
+                var a = self._dynamic(
+                    base, to_index(head.value), required, True
+                )
                 fields.add(self.table.name(a), self.table.value(a))
             elif kind == FieldLineKind.LITERAL:
                 var name = decode_prefix_string(4, block, at, fields.data)
                 if not name.complete():
                     raise _truncated()
                 fields._end_name()
-                var value = decode_prefix_string(8, block, name.end, fields.data)
+                var value = decode_prefix_string(
+                    8, block, name.end, fields.data
+                )
                 if not value.complete():
                     raise _truncated()
                 fields._end_value()
@@ -279,7 +288,9 @@ struct QpackDecoder(Movable):
                     )
                     fields.data.extend(self.table.name(a))
                 fields._end_name()
-                var value = decode_prefix_string(8, block, head.end, fields.data)
+                var value = decode_prefix_string(
+                    8, block, head.end, fields.data
+                )
                 if not value.complete():
                     raise _truncated()
                 fields._end_value()

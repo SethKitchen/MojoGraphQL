@@ -145,6 +145,8 @@ struct H2ErrorKind(Equatable, ImplicitlyCopyable, Writable):
     """The transport failed or closed."""
     comptime USAGE = H2ErrorKind(5)
     """The caller gave a value that the function does not accept."""
+    comptime TIMEOUT = H2ErrorKind(6)
+    """An operation did not complete before its deadline."""
 
     def is_valid(self) -> Bool:
         """Return True if the value names one of the kinds.
@@ -152,7 +154,7 @@ struct H2ErrorKind(Equatable, ImplicitlyCopyable, Writable):
         Returns:
             Whether the value is in range.
         """
-        return self.value <= 5
+        return self.value <= 6
 
     def text(self) -> StaticString:
         """Return the name of the kind.
@@ -160,13 +162,14 @@ struct H2ErrorKind(Equatable, ImplicitlyCopyable, Writable):
         Returns:
             The name, such as `stream`, or `invalid` for a bad value.
         """
-        comptime names: Array[StaticString, 6] = [
+        comptime names: Array[StaticString, 7] = [
             "connection",
             "stream",
             "remote reset",
             "remote goaway",
             "io",
             "usage",
+            "timeout",
         ]
         if not self.is_valid():
             return "invalid"

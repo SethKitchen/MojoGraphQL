@@ -317,8 +317,12 @@ struct HeaderPrefix(Equatable, ImplicitlyCopyable, Writable):
             writer: The destination.
         """
         writer.write(
-            "prefix ", self.encoded_insert_count, " ", self.sign_negative,
-            " ", self.delta_base,
+            "prefix ",
+            self.encoded_insert_count,
+            " ",
+            self.sign_negative,
+            " ",
+            self.delta_base,
         )
 
 

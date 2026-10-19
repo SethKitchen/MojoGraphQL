@@ -27,7 +27,7 @@ from gql_http.headers import Headers
 from gql_http.status import Method
 from gql_json.value import JsonDocument
 from gql_json.writer import write_string
-from gql_router.exec_value import write_value
+from gql_router.exec_value import append_span, append_text, write_value
 
 
 @fieldwise_init
@@ -73,7 +73,9 @@ struct SubgraphHttpResponse(Movable):
     var body: List[UInt8]
     """The response body."""
 
-    def __init__(out self, status: Int, content_type: String, var body: List[UInt8]):
+    def __init__(
+        out self, status: Int, content_type: String, var body: List[UInt8]
+    ):
         """Make a response.
 
         Args:
@@ -87,6 +89,14 @@ struct SubgraphHttpResponse(Movable):
         self.content_type = content_type
         self.has_content_type = True
         self.body = body^
+
+    def take_body(deinit self) -> List[UInt8]:
+        """Return the body.
+
+        Returns:
+            The response body.
+        """
+        return self.body^
 
     @staticmethod
     def failed(failure: SubgraphFailure, text: String) -> SubgraphHttpResponse:
@@ -106,15 +116,18 @@ struct SubgraphHttpResponse(Movable):
         return out^
 
 
-trait SubgraphTransport(Movable):
+trait SubgraphTransport(Deinitable, Movable):
     """What the executor sends each subgraph request through, as upstream
     `SubgraphExecutor`."""
 
-    def send(mut self, subgraph: String, var body: List[UInt8]) -> SubgraphHttpResponse:
+    def send(
+        mut self, subgraph: String, query: String, body: List[UInt8]
+    ) -> SubgraphHttpResponse:
         """Send one GraphQL request to a subgraph.
 
         Args:
             subgraph: The subgraph name.
+            query: The operation text that the body holds.
             body: The JSON request body.
 
         Returns:
@@ -147,32 +160,32 @@ def build_request_body(
         there are none.
     """
     var body = List[UInt8](capacity=query.byte_length() + 64)
-    body.extend('{"query":'.as_bytes())
+    append_text(body, '{"query":')
     write_string(body, query.as_bytes())
     var first = True
     var index = 0
     while index < len(variable_names):
         if first:
-            body.extend(',"variables":{'.as_bytes())
+            append_text(body, ',"variables":{')
         else:
             body.append(UInt8(ord(",")))
         first = False
         body.append(UInt8(ord('"')))
-        body.extend(variable_names[index].as_bytes())
-        body.extend('":'.as_bytes())
+        append_text(body, variable_names[index])
+        append_text(body, '":')
         write_value(variables, variable_nodes[index], body)
         index += 1
     index = 0
     while index < len(raw_names):
         if first:
-            body.extend(',"variables":{'.as_bytes())
+            append_text(body, ',"variables":{')
         else:
             body.append(UInt8(ord(",")))
         first = False
         body.append(UInt8(ord('"')))
-        body.extend(raw_names[index].as_bytes())
-        body.extend('":'.as_bytes())
-        body.extend(Span(raw_values[index]))
+        append_text(body, raw_names[index])
+        append_text(body, '":')
+        append_span(body, Span(raw_values[index]))
         index += 1
     if not first:
         body.append(UInt8(ord("}")))
@@ -253,11 +266,14 @@ struct HttpTransport(SubgraphTransport):
             self.endpoints.append(self.client.endpoint(urls[index]))
             index += 1
 
-    def send(mut self, subgraph: String, var body: List[UInt8]) -> SubgraphHttpResponse:
+    def send(
+        mut self, subgraph: String, query: String, body: List[UInt8]
+    ) -> SubgraphHttpResponse:
         """Send one request, as upstream `HTTPSubgraphExecutor::execute`.
 
         Args:
             subgraph: The subgraph name.
+            query: The operation text that the body holds.
             body: The JSON request body.
 
         Returns:
@@ -292,3 +308,113 @@ struct HttpTransport(SubgraphTransport):
             return out^
         except error:
             return SubgraphHttpResponse.failed(failure_of(error), error.message)
+
+
+struct CannedTransport(SubgraphTransport):
+    """Answer subgraph requests in the same process with fixed responses.
+
+    Each response is for one subgraph and one query. The first unused
+    response that matches is sent; when every match is used, the first
+    match is sent again. `reset` makes every response unused.
+    """
+
+    var subgraphs: List[String]
+    """The subgraph of each response."""
+    var queries: List[String]
+    """The query of each response."""
+    var statuses: List[Int]
+    """The HTTP status of each response."""
+    var content_types: List[String]
+    """The `Content-Type` of each response."""
+    var bodies: List[List[UInt8]]
+    """The body of each response."""
+    var used: List[Bool]
+    """Whether each response was sent since the last `reset`."""
+    var requests: List[String]
+    """Every request body, in the order they came, when `record` is set."""
+    var record: Bool
+    """Whether to keep the request bodies."""
+
+    def __init__(out self, record: Bool = False):
+        """Start with no responses.
+
+        Args:
+            record: Whether to keep each request body.
+        """
+        self.subgraphs = List[String]()
+        self.queries = List[String]()
+        self.statuses = List[Int]()
+        self.content_types = List[String]()
+        self.bodies = List[List[UInt8]]()
+        self.used = List[Bool]()
+        self.requests = List[String]()
+        self.record = record
+
+    def add(
+        mut self,
+        subgraph: String,
+        query: String,
+        body: String,
+        status: Int = 200,
+        content_type: String = "application/json",
+    ):
+        """Add one response.
+
+        Args:
+            subgraph: The subgraph that answers.
+            query: The query it answers.
+            body: The response body.
+            status: The HTTP status.
+            content_type: The `Content-Type` value.
+        """
+        self.subgraphs.append(subgraph)
+        self.queries.append(query)
+        self.statuses.append(status)
+        self.content_types.append(content_type)
+        self.bodies.append(List[UInt8](body.as_bytes()))
+        self.used.append(False)
+
+    def reset(mut self):
+        """Make every response unused, and forget the requests."""
+        var index = 0
+        while index < len(self.used):
+            self.used[index] = False
+            index += 1
+        self.requests.clear()
+
+    def send(
+        mut self, subgraph: String, query: String, body: List[UInt8]
+    ) -> SubgraphHttpResponse:
+        """Answer one request with its fixed response.
+
+        Args:
+            subgraph: The subgraph name.
+            query: The operation text that the body holds.
+            body: The JSON request body.
+
+        Returns:
+            The response, or a `REQUEST_FAILURE` when none matches.
+        """
+        if self.record:
+            self.requests.append(String(unsafe_from_utf8=Span(body)))
+        var first = -1
+        var index = 0
+        while index < len(self.subgraphs):
+            if self.subgraphs[index] == subgraph and self.queries[index] == query:
+                if not self.used[index]:
+                    first = index
+                    break
+                if first < 0:
+                    first = index
+            index += 1
+        if first < 0:
+            return SubgraphHttpResponse.failed(
+                SubgraphFailure.REQUEST_FAILURE,
+                "no canned response for subgraph " + subgraph,
+            )
+        self.used[first] = True
+        var out = SubgraphHttpResponse(
+            self.statuses[first], self.content_types[first], self.bodies[first].copy()
+        )
+        out.has_content_type = self.content_types[first].byte_length() > 0
+        return out^

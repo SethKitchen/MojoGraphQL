@@ -18,14 +18,15 @@ connection:
   `gql_tls` does not import HTTP/2; the package that joins TLS and HTTP/2
   implements `TlsProtocol`.
 
-The loop is level-triggered. A readable connection is read until OpenSSL
-has no more decrypted bytes, because epoll does not see the bytes that
-OpenSSL holds. The response of a request goes out with one `SSL_write`.
+The loop is level-triggered. OpenSSL reads ahead: one `recv` takes every
+byte that the socket has. A readable connection is read until OpenSSL holds
+no more bytes, because epoll does not see the bytes that OpenSSL holds; the
+bytes that the socket still has make the next turn see it again. The
+response of a request goes out with one `SSL_write`.
 A response that does not fit in the socket waits for `EPOLLOUT`.
 
-A handler that calls `ResponseWriter.flush` raises an `OS` error: the
-writer has no plain socket here. Streamed content goes out after the
-handler returns.
+The writer has no plain socket here, so `ResponseWriter.flush` keeps the
+bytes. Streamed content goes out after the handler returns.
 
 Graceful shutdown works as in `gql_http.server`. A closing connection
 sends `close_notify` before the socket closes.
@@ -60,7 +61,7 @@ from gql_tls.stream import IoWant, TlsStream
 comptime _CONTINUE = "HTTP/1.1 100 Continue\r\n\r\n"
 
 
-trait TlsProtocol(Movable):
+trait TlsProtocol(Deinitable, Movable):
     """A protocol other than HTTP/1.1 that a `TlsServer` runs after ALPN.
 
     The server calls it with the decrypted bytes of each connection that
@@ -129,7 +130,7 @@ struct NoProtocol(TlsProtocol):
         """
         return String()
 
-    def open(mut self, conn: Int, mut out: List[UInt8]) raises:
+    def open(mut self, conn: Int, mut out: List[UInt8]):
         """Do nothing; the server never calls it.
 
         Args:
@@ -140,7 +141,7 @@ struct NoProtocol(TlsProtocol):
 
     def receive(
         mut self, conn: Int, data: List[UInt8], mut out: List[UInt8]
-    ) raises -> Bool:
+    ) -> Bool:
         """Refuse the bytes; the server never calls it.
 
         Args:
@@ -356,8 +357,7 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
             _ = self.poll(-1)
 
     def begin_shutdown(mut self):
-        """Stop accepting, close idle connections, and let busy ones finish.
-        """
+        """Stop accepting, close idle connections, and let busy ones finish."""
         if self.draining:
             return
         self.draining = True
@@ -427,9 +427,6 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
             index += 1
             if fd == self._listen_fd:
                 self._accept()
-            elif self._conns[fd].fd < 0:
-                # The connection closed earlier in this turn.
-                continue
             elif flags & EPOLLOUT != 0:
                 self._writable(fd)
             else:
@@ -483,11 +480,14 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
             self.open_connections += 1
 
     def _close(mut self, fd: Int):
-        """Free the TLS state of a connection, close it, and free its slot.
-        """
+        """Free the TLS state of a connection, close it, and free its slot."""
         if self._conns[fd].mode == ConnectionMode.OTHER:
             self.other.close(fd)
         self._conns[fd].stream = TlsStream(self.context.openssl)
+        # A copy of the descriptor, such as one that a child process
+        # inherited, would keep the registration alive after `close`
+        # (epoll(7)), and its events would come for a closed slot.
+        _ = self.sys.epoll_ctl(self._epoll_fd, EPOLL_CTL_DEL, fd, 0)
         self.sys.close(fd)
         ref conn = self._conns[fd]
         conn.fd = -1
@@ -510,8 +510,7 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
         return True
 
     def _wait(mut self, fd: Int, want: IoWant) -> Bool:
-        """Watch the event that a TLS operation wants; False after closing.
-        """
+        """Watch the event that a TLS operation wants; False after closing."""
         return self._watch(fd, EPOLLOUT if want == IoWant.WRITE else EPOLLIN)
 
     def _readable(mut self, fd: Int):
@@ -589,7 +588,11 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
             if http1:
                 self._conns[fd].reader.commit(n)
                 got = True
-                continue
+                if self._conns[fd].stream.has_pending():
+                    continue
+                # The socket is level-triggered: what it still has comes
+                # back in the next turn, without a read that finds nothing.
+                break
             self._input.resize(n, 0)
             var keep: Bool
             try:
@@ -603,6 +606,8 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
             self._flush(fd)
             if self._conns[fd].fd < 0 or len(self._conns[fd].pending) > 0:
                 return
+            if not self._conns[fd].stream.has_pending():
+                break
         if got:
             self._process(fd)
 
@@ -662,8 +667,7 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
             self._end(fd)
 
     def _writable(mut self, fd: Int):
-        """Go on with the handshake, a read that needs a write, or a send.
-        """
+        """Go on with the handshake, a read that needs a write, or a send."""
         if self._conns[fd].mode == ConnectionMode.HANDSHAKE:
             self._handshake(fd)
             return
@@ -692,10 +696,8 @@ struct TlsServer[H: Handler, P: TlsProtocol = NoProtocol](Movable):
         self._conns[fd].read_wants_write = False
         if not self._wait(fd, IoWant.READ):
             return
-        if self._conns[fd].mode == ConnectionMode.HTTP1:
-            self._process(fd)
-            if self._conns[fd].fd < 0 or len(self._conns[fd].pending) > 0:
-                return
+        # `_process` answered every complete request before the send
+        # waited, so only new bytes can hold a request.
         self._read_more(fd)
 
     def _end(mut self, fd: Int):
@@ -739,9 +741,7 @@ def listen_tls[
         )
     except e:
         raise TlsError.from_http(e)
-    return TlsServer[H, P](
-        handler^, other^, context^, config, listener, sys^
-    )
+    return TlsServer[H, P](handler^, other^, context^, config, listener, sys^)
 
 
 def listen_https[
