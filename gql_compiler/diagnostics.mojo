@@ -698,6 +698,11 @@ struct DiagnosticList(Copyable, Movable, Sized, Writable):
         var column = 1
         var at = 0
         var length = document.source.length
+        # Ariadne starts no line after a final line terminator: the end of
+        # such a text is on the last line, and the terminator counts as
+        # characters of that line.
+        var end_line = 0
+        var end_column = 0
         var i = 0
         while i < len(self.diagnostics):
             if self.diagnostics[i].file == file:
@@ -705,6 +710,14 @@ struct DiagnosticList(Copyable, Movable, Sized, Writable):
                 while at < target:
                     var byte = document.source.bytes[at]
                     if byte == 10:
+                        end_line = line
+                        end_column = (
+                            column
+                            + 1
+                            + Int(
+                                at > 0 and document.source.bytes[at - 1] == 13
+                            )
+                        )
                         line += 1
                         column = 1
                     elif byte == 13:
@@ -714,13 +727,19 @@ struct DiagnosticList(Copyable, Movable, Sized, Writable):
                         ):
                             pass
                         else:
+                            end_line = line
+                            end_column = column + 1
                             line += 1
                             column = 1
                     elif (byte & 0xC0) != 0x80:
                         column += 1
                     at += 1
-                self.diagnostics[i].line = line
-                self.diagnostics[i].column = column
+                if target == length and column == 1 and end_line > 0:
+                    self.diagnostics[i].line = end_line
+                    self.diagnostics[i].column = end_column
+                else:
+                    self.diagnostics[i].line = line
+                    self.diagnostics[i].column = column
             i += 1
 
     def write_to(self, mut writer: Some[Writer]):

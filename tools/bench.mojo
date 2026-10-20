@@ -144,6 +144,14 @@ def baselines() -> List[Baseline]:
     )
     out.append(
         Baseline(
+            "graphql-go-tools 9ef6e24 (Go), astnormalization and astminify",
+            "bench/baselines/go-normalization",
+            "go build -o bench-normalization-go .",
+            "./bench-normalization-go",
+        )
+    )
+    out.append(
+        Baseline(
             "JSON.parse and JSON.stringify (Node.js)",
             "bench/baselines/js-json",
             "true",
@@ -765,6 +773,35 @@ def upstream() -> List[Upstream]:
             "apollo-parser-supergraph.graphql",
         )
     )
+    # The same parse benchmarks, against the recovering parser of
+    # gql_compiler instead of the gql_language parser.
+    out.append(
+        Upstream(
+            PARSER,
+            "benches/query.rs",
+            "query_parser",
+            "apollo-parser-recovering/query_parser",
+            "apollo-parser-query.graphql",
+        )
+    )
+    out.append(
+        Upstream(
+            PARSER,
+            "benches/query.rs",
+            "many_aliases",
+            "apollo-parser-recovering/many_aliases",
+            "apollo-parser-alias.graphql",
+        )
+    )
+    out.append(
+        Upstream(
+            PARSER,
+            "benches/supergraph.rs",
+            "supergraph_parser",
+            "apollo-parser-recovering/supergraph_parser",
+            "apollo-parser-supergraph.graphql",
+        )
+    )
     out.append(
         Upstream(
             COMPILER,
@@ -859,6 +896,24 @@ def upstream() -> List[Upstream]:
             "BenchmarkLexer",
             "go-tools/Lexer",
             "go-tools-introspection-query.graphql",
+        )
+    )
+    out.append(
+        Upstream(
+            GO,
+            "v2/pkg/astnormalization/astnormalization_test.go",
+            "BenchmarkAstNormalization",
+            "go-tools/AstNormalization",
+            "testDefinition and testOperation, in the benchmark source",
+        )
+    )
+    out.append(
+        Upstream(
+            GO,
+            "v2/pkg/astminify/minify_test.go",
+            "BenchmarkMinify",
+            "go-tools/Minify",
+            "go-tools-minify-operation1.graphql",
         )
     )
     out.append(
@@ -1012,11 +1067,11 @@ def pending() -> List[String]:
         " gql_schema schema validation |"
     )
     out.append(
-        "| graphql-go-tools | `v2/pkg/astvisitor`, `v2/pkg/astminify`,"
-        " `v2/pkg/astnormalization`, `v2/pkg/astvalidation`,"
-        " `v2/pkg/introspection`, `v2/pkg/middleware/operation_complexity` |"
-        " 10 benchmarks | a visitor, normalization, gql_validation and"
-        " gql_schema |"
+        "| graphql-go-tools | `v2/pkg/astvisitor`, `v2/pkg/astvalidation`,"
+        " `v2/pkg/introspection`, `v2/pkg/middleware/operation_complexity`,"
+        " `BenchmarkFragmentSpreadDepthCalc_Get` of `v2/pkg/astnormalization` |"
+        " 9 benchmarks | a visitor, gql_validation, gql_schema and the"
+        " fragment spread depth calculator |"
     )
     return out^
 

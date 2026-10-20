@@ -338,7 +338,8 @@ def test_diagnostic_list_sort_and_locate() raises:
             "Error: syntax error: tie\n╭─[ one.graphql:1:2 ]\n"
             "Error: syntax error: late\n╭─[ one.graphql:3:4 ]\n"
             "Error: syntax error: x\n╭─[ two.graphql:1:3 ]\n"
-            "Error: syntax error: end\n╭─[ three.graphql:2:1 ]\n"
+            # Ariadne starts no line after the final `\r`.
+            "Error: syntax error: end\n╭─[ three.graphql:1:4 ]\n"
         ),
     )
 

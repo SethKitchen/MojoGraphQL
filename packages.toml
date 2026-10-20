@@ -65,6 +65,11 @@ summary = "Validation of executable documents against a schema: TypeInfo and eve
 depends = ["gql_language", "gql_schema"]
 upstream = ["graphql-js 16.14.2 src/validation and src/utilities/TypeInfo.ts (MIT)"]
 
+[packages.gql_normalization]
+summary = "Operation normalization, minification and variables validation of graphql-go-tools v2"
+depends = ["gql_language", "gql_schema", "gql_json"]
+upstream = ["graphql-go-tools v2 (9ef6e24, 2026-10-14) v2/pkg/astnormalization (the operation stages and passes), v2/pkg/astminify, the executable document part of v2/pkg/astprinter and v2/pkg/variablesvalidation, and their tests (MIT); sjson v1.0.4 and jsonparser JSON edits as upstream writes them"]
+
 [packages.gql_execution]
 summary = "Execution of operations with resolvers, and introspection"
 depends = ["gql_language", "gql_schema", "gql_json"]
@@ -114,4 +119,4 @@ upstream = ["Apollo Rover 1.0.0 (39a041a) MIT parts: src/command/supergraph/comp
 [packages.gql_compiler]
 summary = "apollo-compiler: the Schema model built from AST documents, without copies"
 depends = ["gql_language"]
-upstream = ["apollo-compiler 1.33.0 (apollo-rs b7eee5c) crates/apollo-compiler/src: schema/mod.rs, schema/component.rs, schema/from_ast.rs, built_in_types.graphql (the MIT arm of MIT OR Apache-2.0)"]
+upstream = ["apollo-compiler 1.33.0 (apollo-rs b7eee5c) crates/apollo-compiler/src: schema/mod.rs, schema/component.rs, schema/from_ast.rs, built_in_types.graphql (the MIT arm of MIT OR Apache-2.0)", "apollo-parser 0.8.6 (apollo-rs b7eee5c) crates/apollo-parser/src: lexer/, error.rs, limit.rs, parser/mod.rs, parser/grammar/ (the MIT arm of MIT OR Apache-2.0)"]

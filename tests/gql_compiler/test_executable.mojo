@@ -745,13 +745,21 @@ def test_anonymous_operation() raises:
     assert_false(doc[0].is_introspection(op))
 
 
-def test_parse_raises_on_syntax_error() raises:
+def test_parse_records_syntax_errors() raises:
     var schema = _schema()
-    with assert_raises():
-        _ = ExecutableDocument.parse(schema, "{")
+    var result = ExecutableDocument.parse(schema, "{")
+    assert_equal(len(result[2]), 2)
+    assert_equal(
+        result[2][0].message,
+        "expected at least one Selection in Selection Set",
+    )
+    assert_equal(result[2][1].message, "expected R_CURLY, got EOF")
+    assert_equal(len(result[0].operations), 1)
     var builder = ExecutableDocumentBuilder()
-    with assert_raises():
-        builder.parse(schema, "query {")
+    builder.parse(schema, "query {", "q.graphql")
+    assert_equal(len(builder.syntax_errors), 2)
+    assert_equal(builder.syntax_errors[0].source, 0)
+    assert_equal(builder.syntax_errors[1].error.index, 7)
 
 
 def test_kinds() raises:

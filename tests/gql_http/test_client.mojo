@@ -337,9 +337,12 @@ def test_recv_faults() raises:
     var client = Client()
     client.sys.faults = Faults(SysCall.RECV, EINTR, 0, 1)
     assert_equal(client.get(_url(peer)).text(), "ok")
-    # The pool's peek at the closed idle connection is the first RECV
-    # call; the fault hits the recv on the new connection.
-    client.sys.faults = Faults(SysCall.RECV, ECONNRESET, 1, 1)
+    # Drop the idle connection first. Otherwise the pool peeks at it, and
+    # when the peer's close has not arrived yet, the request reuses it and
+    # retries the fault away on a new connection. With no idle connection,
+    # the fault hits the first recv of the new connection.
+    client.close_idle()
+    client.sys.faults = Faults(SysCall.RECV, ECONNRESET, 0, 1)
     assert_equal(_error(client, _url(peer)), "closed: recv failed: errno 104")
     _ = peer.finish()
 

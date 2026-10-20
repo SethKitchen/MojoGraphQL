@@ -75,7 +75,18 @@ the values of the public OpenSSL headers. A program that does not import
   `validation` in `tests/snapshot_tests.rs`.
   `tests/gql_compiler/validation_fixtures/` copies the `.graphql` files of
   `test_data/ok/`, and the `.graphql` and `.txt` files of
-  `test_data/diagnostics/`.
+  `test_data/diagnostics/`. The recovering parser of `gql_compiler` ports
+  these files of `crates/apollo-parser` at `b7eee5c` (apollo-parser
+  0.8.6): `src/lexer/mod.rs`, `src/lexer/cursor.rs`, `src/lexer/lookup.rs`,
+  `src/lexer/token_kind.rs`, `src/error.rs`, `src/limit.rs`,
+  `src/parser/mod.rs` and every file of `src/parser/grammar/`, with the
+  rules of apollo-compiler `src/ast/from_cst.rs`. It ports the tests of
+  `src/tests.rs`, `src/lexer/mod.rs` and `src/parser/mod.rs`.
+  `tests/gql_compiler/parser_fixtures/` copies the `.graphql` and `.txt`
+  files of `test_data/lexer/err/` and `test_data/parser/err/`. The concrete
+  syntax tree files (`src/cst/`, `src/parser/generated/`,
+  `src/parser/syntax_tree.rs`, `src/parser/language.rs` and
+  `src/parser/token_text.rs`) are not ported.
 - **Apollo Kotlin.** These files are Apache-2.0 licensed and are not ported:
   - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonReader.kt`
   - `libraries/apollo-api/src/commonMain/kotlin/com/apollographql/apollo/api/json/JsonWriter.kt`
@@ -200,6 +211,27 @@ the values of the public OpenSSL headers. A program that does not import
   `min_max.rs` is based on BSD licensed Google code), the rustls and ring
   providers, the hashed connection ID generator, Retry tokens, path
   migration, MTU discovery, or the Windows and Apple code of quinn-udp.
+- **graphql-go-tools (gql_normalization).** `gql_normalization` ports files
+  of `v2/pkg` at `9ef6e24` (2026-10-14), with their tests. It ports
+  the operation stages of `astnormalization/astnormalization.go` and these
+  passes: `directive_include_skip.go`,
+  `fragment_spread_inlining.go`, `inline_selections_from_inline_fragments.go`,
+  `inline_fragment_selection_merging.go`, `field_deduplication.go`,
+  `remove_self_aliasing.go`, `fragment_definition_removal.go`,
+  `operation_definition_removal.go`, `variables_extraction.go`,
+  `variables_default_value_extraction.go`, `variables_unused_deletion.go`,
+  `inject_input_default_values.go` and `input_coercion_for_list.go`.
+  It ports `astminify/minify.go` with its fixtures and goldens, and the
+  executable document part of `astprinter/astprinter.go`. It ports
+  `variablesvalidation/variablesvalidation.go`. It also ports
+  `MergeFieldsDefer`, `ValueToJSON` and the type relations of `ast`. These
+  parts are not ported: the definition normalization (`definition_normalization.go`, the
+  `*_type_extending.go` files, `extends_directive.go`,
+  `implicit_*.go`, `remove_type_extensions.go`,
+  `subgraph_sdl_normalization.go`), and the `@defer` stages (`defer_*.go`).
+  These files are not ported too: `inline_arguments.go`,
+  `abstract_field_normalizer.go`, `fragmentspread_depth.go`,
+  `variables_mapper.go`, `variables_mapping.go` and `uploads/`.
 
 ## Benchmark baselines and fixtures
 
@@ -266,6 +298,17 @@ the values of the public OpenSSL headers. A program that does not import
   compiles the `src/hpack` and `src/ext.rs` files of the h2 `0.4.20` crate
   from the cargo registry into the program. No h2 file is copied into the
   repository. It runs only as the benchmark baseline of `gql_http2`.
+- `bench/baselines/go-normalization/` runs graphql-go-tools v2 at `9ef6e24`
+  (MIT), with sjson pinned to `v1.0.4` (MIT) as the `go.work` of
+  graphql-go-tools pins it. It runs only as the benchmark baseline of
+  `gql_normalization`. `bench/gql_normalization/normalization.mojo` and
+  its `fixtures.go` copy `testDefinition` and `testOperation` of
+  `v2/pkg/astnormalization/astnormalization_test.go`.
+  `bench/fixtures/go-tools-minify-operation1.graphql` and
+  `bench/fixtures/go-tools-minify-simpleschema.graphql` are copies of
+  `v2/pkg/astminify/operation1.graphql` and `simpleschema.graphql`. They
+  are MIT licensed, Copyright (c) 2022 WunderGraph UG
+  (haftungsbeschränkt).
 
 ## Test fixtures
 
@@ -305,6 +348,16 @@ the values of the public OpenSSL headers. A program that does not import
   program only, and no MojoGraphQL package contains them. `ftv1.test.ts`,
   the router, the `users` and `inventory` subgraphs and the Docker and
   `rover` tooling are not ported.
+- `tests/gql_normalization/` ports the tests of graphql-go-tools v2 at
+  `9ef6e24`: the `*_test.go` files of `v2/pkg/astnormalization` that the
+  ported passes have, `v2/pkg/astminify/minify_test.go` and
+  `v2/pkg/variablesvalidation/variablesvalidation_test.go`.
+  `_norm_fixtures.mojo` and `_minify_fixtures.mojo` embed their schemas,
+  operations and `.min.graphql.golden` files. Two schemas change: the
+  duplicate `ComplexInput` of `variablesDefaultValueExtractionDefinition` is
+  left out, and `sameVariableExtraction` gets the `FooInput` that it uses.
+  They are MIT licensed, Copyright (c) 2022 WunderGraph UG
+  (haftungsbeschränkt). The files are test data only.
 
 ## MIT License
 

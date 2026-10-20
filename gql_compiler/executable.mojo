@@ -44,7 +44,8 @@ comes after its children in `selection_sets`.
 
 from gql_language.ast import Document, Kind, NO_NODE, OperationType, Role
 from gql_language.names import NOT_FOUND, NameTable
-from gql_language.parser import parse
+from gql_compiler.parser import SourceSyntaxError, parse_recovering
+from gql_compiler.parser_lexer import SyntaxError
 from gql_compiler.schema import Component, DEFINITION_ORIGIN, Schema, TypeKind
 
 comptime NO_SELECTION_SET = Int32(-1)
@@ -476,22 +477,31 @@ struct ExecutableDocument(Copyable, Movable):
 
     @staticmethod
     def parse(
-        schema: Schema, text: StringSlice
-    ) raises -> Tuple[ExecutableDocument, List[BuildError]]:
-        """Parse and build a document: upstream `parse`.
+        schema: Schema, text: StringSlice, name: String = "GraphQL request"
+    ) -> Tuple[ExecutableDocument, List[BuildError], List[SyntaxError]]:
+        """Parse with the recovering parser and build a document: upstream
+        `parse`.
 
         Args:
             schema: The schema to build against.
             text: The executable document text.
+            name: The file name of the document, for diagnostics.
 
         Returns:
-            The document, and the errors of the build.
-
-        Raises:
-            GraphQLError: If the text is not a valid document. Upstream
-                records syntax errors in the diagnostics instead.
+            The document built from the recovered AST, the errors of the
+            build, and the syntax errors.
         """
-        return ExecutableDocument.from_ast(schema, parse(text))
+        var builder = ExecutableDocumentBuilder()
+        builder.parse(schema, text, name)
+        var syntax = List[SyntaxError](capacity=len(builder.syntax_errors))
+        for ref error in builder.syntax_errors:
+            syntax.append(error.error.copy())
+        var built = builder^.build()
+        var document = ExecutableDocument()
+        swap(document, built[0])
+        var errors = List[BuildError]()
+        swap(errors, built[1])
+        return (document^, errors^, syntax^)
 
     def node_name(
         self, source: Int, node: Int
@@ -756,6 +766,8 @@ struct ExecutableDocumentBuilder(Movable):
     """The document being built."""
     var errors: List[BuildError]
     """The errors so far: upstream `DiagnosticList`."""
+    var syntax_errors: List[SourceSyntaxError]
+    """The syntax errors of the documents that `parse` added."""
     var multiple_anonymous: Bool
     """Whether a second anonymous operation was seen."""
     var _stack: List[Selection]
@@ -776,23 +788,34 @@ struct ExecutableDocumentBuilder(Movable):
         """
         self.document = ExecutableDocument()
         self.errors = List[BuildError]()
+        self.syntax_errors = List[SourceSyntaxError]()
         self.multiple_anonymous = False
         self._stack = List[Selection]()
         self._query_type = NOT_FOUND
         self.standalone = standalone
 
-    def parse(mut self, schema: Schema, text: StringSlice) raises:
-        """Parse a document and add it: upstream `parse`.
+    def parse(
+        mut self,
+        schema: Schema,
+        text: StringSlice,
+        name: String = "GraphQL request",
+    ):
+        """Parse a document with the recovering parser and add it:
+        upstream `parse`.
+
+        A syntax error does not stop the parse. It is kept in
+        `syntax_errors`, and the recovered document is added.
 
         Args:
             schema: The schema to build against.
             text: The executable document text.
-
-        Raises:
-            GraphQLError: If the text is not a valid document. Upstream
-                records syntax errors in the diagnostics instead.
+            name: The file name of the document, for diagnostics.
         """
-        self.add_ast(schema, parse(text))
+        var tree = parse_recovering(text, name)
+        var source = len(self.document.sources)
+        for ref error in tree.errors:
+            self.syntax_errors.append(SourceSyntaxError(source, error.copy()))
+        self.add_ast(schema, tree.take_document())
 
     def add_ast(
         mut self,

@@ -81,19 +81,9 @@ def _check(start: Int, end: Int, known: List[String]) raises -> Int:
 
 
 def known_failures() -> List[String]:
-    """Return the cases that cannot pass, as Compiler.md lists them."""
-    var out: List[String] = [
-        # gql_language raises at the first syntax error. apollo-parser
-        # recovers, reports each error with its own message, and the
-        # document is still built and validated.
-        "diagnostics/0011_syntactic_errors_from_parser.graphql",
-        "diagnostics/0017_schema_with_unspecified_scalar.graphql",
-        "diagnostics/0018_schema_with_specified_scalar_missing_values.graphql",
-        "diagnostics/0020_enum_values_with_uncapitalised_values.graphql",
-        "diagnostics/0062_root_operation_with_list.graphql",
-        "diagnostics/0111_const_value.graphql",
-    ]
-    return out^
+    """Return the cases that cannot pass, as Compiler.md lists them. Every
+    case passes."""
+    return List[String]()
 
 
 def test_validation_fixtures_0() raises:

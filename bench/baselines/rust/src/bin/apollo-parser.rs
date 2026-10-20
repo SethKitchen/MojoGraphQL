@@ -101,6 +101,14 @@ fn main() {
     measure("apollo-parser/many_aliases", || parse_query(&aliases));
     measure("apollo-parser/supergraph_parser", || parse_schema(&supergraph));
     measure("apollo-parser/supergraph_lexer", || lex(&supergraph));
+    // The same closures, against the recovering parser of gql_compiler.
+    measure("apollo-parser-recovering/query_parser", || parse_query(&query));
+    measure("apollo-parser-recovering/many_aliases", || {
+        parse_query(&aliases)
+    });
+    measure("apollo-parser-recovering/supergraph_parser", || {
+        parse_schema(&supergraph)
+    });
     let schema = fixture("apollo-compiler-simple-schema.graphql");
     let simple = fixture("apollo-compiler-simple-query.graphql");
     measure("apollo-compiler/simple_query-parse_ast", || {

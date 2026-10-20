@@ -24,16 +24,14 @@ valid: upstream returns `Valid<T>`.
 - A `Valid<Schema>` upstream drops the built-in scalars that no field
   uses, and adds the ones that are used but not defined. The schema is
   not changed here.
-- A syntax error raises a `GraphQLError`, as `SchemaBuilder.parse` does.
-  apollo-parser reports it and goes on.
 - `parse_mixed_validate` copies the parsed document: one copy for the
   schema and one for the executable document. Upstream shares it.
 """
 
-from gql_language.ast import Role
-from gql_language.parser import parse
-from gql_language.source import Source
+from gql_language.ast import Document, Role
 from gql_compiler.diagnostics import Diagnostic, DiagnosticKind, DiagnosticList
+from gql_compiler.parser import SourceSyntaxError, parse_recovering
+from gql_compiler.parser_lexer import SyntaxError
 from gql_compiler.executable import BuildError as ExecutableBuildError
 from gql_compiler.executable import BuildErrorKind as ExecutableBuildErrorKind
 from gql_compiler.executable import (
@@ -84,6 +82,41 @@ def executable_files(
         ranks.append(list.file(document.sources[i].source.name))
         i += 1
     return ranks^
+
+
+def add_syntax_errors(
+    errors: List[SyntaxError], file: Int, mut list: DiagnosticList
+):
+    """Add the errors of a parse: upstream `Details::SyntaxError` and
+    `Details::ParserLimit`.
+
+    Args:
+        errors: The lexer and parser errors, in order.
+        file: The rank of the parsed file in the list.
+        list: The list to add to.
+    """
+    for ref error in errors:
+        var kind = DiagnosticKind.SYNTAX_ERROR
+        if error.is_limit():
+            kind = DiagnosticKind.PARSER_LIMIT
+        list.push(Diagnostic(kind, file, error.index, error.message))
+
+
+def add_source_syntax_errors(
+    sources: List[Document],
+    errors: List[SourceSyntaxError],
+    mut list: DiagnosticList,
+):
+    """Add the syntax errors that a builder kept for its documents.
+
+    Args:
+        sources: The documents of the schema or the executable document.
+        errors: The errors, each with the index of its document.
+        list: The list to add to.
+    """
+    for ref error in errors:
+        var file = list.file(sources[error.source].source.name)
+        add_syntax_errors([error.error.copy()], file, list)
 
 
 def add_schema_build_errors(
@@ -230,17 +263,20 @@ def parse_and_validate_schema(
         name: The file name of the diagnostics.
 
     Returns:
-        The schema, and the build errors and the validation diagnostics,
-        sorted.
+        The schema, and the syntax errors, the build errors and the
+        validation diagnostics, sorted.
 
     Raises:
-        GraphQLError: If the text is not a valid document.
+        GraphQLError: Never in practice; see `SchemaBuilder`. A syntax
+            error is a diagnostic.
     """
     var builder = SchemaBuilder()
-    builder.add_ast(parse(Source(text, name)))
+    builder.parse(text, name)
+    var syntax = builder.syntax_errors.copy()
     var built = builder^.build_inner()
     var list = DiagnosticList()
     var ranks = schema_files(built[0], list)
+    add_source_syntax_errors(built[0].sources, syntax, list)
     add_schema_build_errors(built[0], built[1], list)
     validate_schema_into(built[0], ranks, list)
     finish(list, built[0], ranks, ExecutableDocument())
@@ -263,18 +299,22 @@ def parse_mixed_validate(
         The schema, the executable document, and every diagnostic, sorted.
 
     Raises:
-        GraphQLError: If the text is not a valid document.
+        GraphQLError: Never in practice; see `SchemaBuilder`. A syntax
+            error is a diagnostic.
     """
-    var ast = parse(Source(text, name))
+    var tree = parse_recovering(text, name)
     var builder = SchemaBuilder()
-    builder.add_ast(ast.copy(), executable_definitions_are_errors=False)
+    builder.add_ast(
+        tree.document.copy(), executable_definitions_are_errors=False
+    )
     var built = builder^.build_inner()
     var list = DiagnosticList()
     var ranks = schema_files(built[0], list)
+    add_syntax_errors(tree.errors, list.file(name), list)
     add_schema_build_errors(built[0], built[1], list)
     var executable_builder = ExecutableDocumentBuilder()
     executable_builder.add_ast(
-        built[0], ast^, type_system_definitions_are_errors=False
+        built[0], tree.take_document(), type_system_definitions_are_errors=False
     )
     var executable = executable_builder^.build()
     add_executable_build_errors(executable[0], executable[1], list)
@@ -291,7 +331,7 @@ def parse_mixed_validate(
 
 def validate_standalone_executable(
     text: StringSlice, name: String
-) raises -> DiagnosticList:
+) -> DiagnosticList:
     """Parse, build and validate an executable document with no schema:
     upstream `ast::Document::validate_standalone_executable`.
 
@@ -305,14 +345,12 @@ def validate_standalone_executable(
         name: The file name of the diagnostics.
 
     Returns:
-        The diagnostics, sorted.
-
-    Raises:
-        GraphQLError: If the text is not a valid document.
+        The syntax errors and the other diagnostics, sorted.
     """
     var schema = Schema()
     var builder = ExecutableDocumentBuilder(standalone=True)
-    builder.add_ast(schema, parse(Source(text, name)))
+    builder.parse(schema, text, name)
+    var syntax = builder.syntax_errors.copy()
     var built = builder^.build()
     var kept = List[ExecutableBuildError]()
     for ref error in built[1]:
@@ -322,8 +360,9 @@ def validate_standalone_executable(
         ):
             kept.append(error.copy())
     var list = DiagnosticList()
-    add_executable_build_errors(built[0], kept, list)
     var ranks = executable_files(built[0], list)
+    add_source_syntax_errors(built[0].sources, syntax, list)
+    add_executable_build_errors(built[0], kept, list)
     validate_executable_into(schema, built[0], ranks, list, standalone=True)
     finish(list, schema, List[Int](), built[0])
     return list^
@@ -331,7 +370,7 @@ def validate_standalone_executable(
 
 def parse_and_validate_executable(
     schema: Schema, text: StringSlice, name: String
-) raises -> Tuple[ExecutableDocument, DiagnosticList]:
+) -> Tuple[ExecutableDocument, DiagnosticList]:
     """Parse, build and validate an executable document: upstream
     `ExecutableDocument::parse_and_validate`.
 
@@ -341,19 +380,18 @@ def parse_and_validate_executable(
         name: The file name of the diagnostics.
 
     Returns:
-        The document, and the build errors and the validation diagnostics,
-        sorted.
-
-    Raises:
-        GraphQLError: If the text is not a valid document.
+        The document, and the syntax errors, the build errors and the
+        validation diagnostics, sorted.
     """
     var builder = ExecutableDocumentBuilder(standalone=True)
-    builder.add_ast(schema, parse(Source(text, name)))
+    builder.parse(schema, text, name)
+    var syntax = builder.syntax_errors.copy()
     var built = builder^.build()
     var list = DiagnosticList()
     var ranks = schema_files(schema, list)
-    add_executable_build_errors(built[0], built[1], list)
     var executable_ranks = executable_files(built[0], list)
+    add_source_syntax_errors(built[0].sources, syntax, list)
+    add_executable_build_errors(built[0], built[1], list)
     validate_executable_into(schema, built[0], executable_ranks, list)
     finish(list, schema, ranks, built[0])
     var document = ExecutableDocument()

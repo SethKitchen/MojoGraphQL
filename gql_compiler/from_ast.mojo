@@ -18,6 +18,7 @@ from gql_language.ast import Document, Kind, NO_NODE, OperationType, Role
 from gql_language.names import NOT_FOUND
 from gql_language.parser import parse
 from gql_compiler.built_in import BUILT_IN_TYPES
+from gql_compiler.parser import SourceSyntaxError, parse_recovering
 from gql_compiler.schema import (
     BuildError,
     BuildErrorKind,
@@ -89,6 +90,8 @@ struct SchemaBuilder(Copyable, Movable):
     """The name of each entry of `orphans`."""
     var errors: List[BuildError]
     """The errors so far: upstream `DiagnosticList`."""
+    var syntax_errors: List[SourceSyntaxError]
+    """The syntax errors of the documents that `parse` added."""
 
     def __init__(out self) raises:
         """Make a builder that has the built-in types: upstream `new`.
@@ -112,6 +115,7 @@ struct SchemaBuilder(Copyable, Movable):
         self.orphans = List[List[Component]]()
         self.orphan_names = List[String]()
         self.errors = List[BuildError]()
+        self.syntax_errors = List[SourceSyntaxError]()
 
     @staticmethod
     def built_in() raises -> SchemaBuilder:
@@ -170,17 +174,22 @@ struct SchemaBuilder(Copyable, Movable):
             )
         )
 
-    def parse(mut self, text: StringSlice) raises:
-        """Parse a document and add it: upstream `parse`.
+    def parse(mut self, text: StringSlice, name: String = "GraphQL request"):
+        """Parse a document with the recovering parser and add it:
+        upstream `parse`.
+
+        A syntax error does not stop the parse. It is kept in
+        `syntax_errors`, and the recovered document is added.
 
         Args:
             text: The schema text.
-
-        Raises:
-            GraphQLError: If the text is not a valid document. Upstream
-                records syntax errors in the diagnostics instead.
+            name: The file name of the document, for diagnostics.
         """
-        self.add_ast(parse(text))
+        var tree = parse_recovering(text, name)
+        var source = len(self.schema.sources)
+        for ref error in tree.errors:
+            self.syntax_errors.append(SourceSyntaxError(source, error.copy()))
+        self.add_ast(tree.take_document())
 
     def add_ast(
         mut self,
@@ -552,19 +561,20 @@ struct SchemaBuilder(Copyable, Movable):
             The schema.
 
         Raises:
-            Error: With the messages of the build errors, one per line,
-                when there is any.
+            Error: With the messages of the syntax errors and of the build
+                errors, one per line, when there is any.
         """
         self._finish()
-        if len(self.errors) > 0:
-            var text = String()
-            var index = 0
-            while index < len(self.errors):
-                if index > 0:
-                    text += "\n"
-                text += self.errors[index].message()
-                index += 1
-            raise Error(text)
+        if len(self.errors) > 0 or len(self.syntax_errors) > 0:
+            var lines = List[String]()
+            for ref syntax in self.syntax_errors:
+                if syntax.error.is_limit():
+                    lines.append(syntax.error.message.copy())
+                else:
+                    lines.append(String("syntax error: ", syntax.error.message))
+            for ref error in self.errors:
+                lines.append(error.message())
+            raise Error("\n".join(lines))
         var schema = Schema()
         swap(schema, self.schema)
         return schema^

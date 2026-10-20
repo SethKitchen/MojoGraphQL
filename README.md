@@ -12,7 +12,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project is new. Today it has twenty finished packages, and more are in progress.
+The project is new. Today it has twenty-one finished packages, and more are in progress.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
@@ -124,7 +124,8 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_router`](https://github.com/SethKitchen/MojoGraphQL/wiki/Router): a port of Hive Router. It plans a federated operation with the [query planner](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#planner), runs the plan against the subgraphs, and serves the supergraph over HTTP. It has the operation cache, [authorization](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#authorization) and [null bubbling](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#null-bubbling).
 - [x] [`gql_client`](https://github.com/SethKitchen/MojoGraphQL/wiki/Client): a port of the Apollo Client normalized cache, `InMemoryCache` with type and field policies.
 - [x] [`gql_codegen`](https://github.com/SethKitchen/MojoGraphQL/wiki/Codegen): code generation in the style of Apollo Kotlin. It writes Mojo models for operations.
-- [x] [`gql_compiler`](https://github.com/SethKitchen/MojoGraphQL/wiki/Compiler): a port of apollo-compiler from apollo-rs: the schema and executable document models, the schema printer and validation, with the upstream diagnostics.
+- [x] [`gql_compiler`](https://github.com/SethKitchen/MojoGraphQL/wiki/Compiler): a port of apollo-compiler and apollo-parser from apollo-rs. It has the schema and executable document models, the schema printer and validation. Its parser recovers from syntax errors.
+- [x] [`gql_normalization`](https://github.com/SethKitchen/MojoGraphQL/wiki/Normalization): a port of the operation tooling of graphql-go-tools: operation normalization, minification and variables validation.
 - [x] [`gql_mcp`](https://github.com/SethKitchen/MojoGraphQL/wiki/Mcp): a port of Apollo MCP Server.
 - [x] [`gql_seamstress`](https://github.com/SethKitchen/MojoGraphQL/wiki/Seamstress): `seamstress`, a port of the MIT parts of the Rover CLI: `supergraph compose`, `subgraph introspect` and `graph introspect`.
 - [x] [Compatibility](https://github.com/SethKitchen/MojoGraphQL/wiki/Compatibility): the Apollo Federation subgraph compatibility suite, as tests of `gql_subgraph`. Every check passes, federated tracing (`ftv1`) included.
@@ -162,7 +163,8 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_router` | Done | `gql_language`, `gql_json`, `gql_http` | Hive Router `1a29df9` query planner, executor and pipeline |
 | `gql_client` | Done, except optimistic layers | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache` |
 | `gql_codegen` | Done, `operationBased` models only | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
-| `gql_compiler` | Done, except syntax error recovery | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
+| `gql_compiler` | Done | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
+| `gql_normalization` | Done, operations only | `gql_schema`, `gql_json` | graphql-go-tools v2 `astnormalization`, `astminify`, `variablesvalidation` |
 | `gql_mcp` | Done | `gql_validation`, `gql_http` | Apollo MCP Server 2.0.0 |
 | `gql_seamstress` | Done, offline commands only | `gql_composition`, `gql_execution`, `gql_http` | Rover 1.0.0, MIT parts |
 
@@ -199,6 +201,10 @@ Mojo is faster than every baseline on every workload. Each package with a hot pa
 | `gql_compiler` | Print the GitHub schema, as apollo-compiler `Schema::to_string` | 470 µs | apollo-compiler, 780 µs | 1.66x |
 | `gql_compiler` | Validate `many_arguments` (apollo-compiler benchmark) | 1.81 ms | apollo-compiler, 4.01 ms | 2.2x |
 | `gql_compiler` | Validate `big_schema_many_fragments` (apollo-compiler benchmark) | 1.17 ms | apollo-compiler, 2.81 ms | 2.4x |
+| `gql_compiler` | Parse with syntax error recovery: `many_aliases` (apollo-parser benchmark) | 476 µs | apollo-parser, 2.56 ms | 5.4x |
+| `gql_compiler` | Parse with syntax error recovery: the supergraph (apollo-parser benchmark) | 50.9 µs | apollo-parser, 263 µs | 5.2x |
+| `gql_normalization` | Normalize an operation (graphql-go-tools benchmark) | 729 ns | graphql-go-tools, 872 ns | 1.20x |
+| `gql_normalization` | Minify an operation (graphql-go-tools benchmark) | 12.6 µs | graphql-go-tools, 35.0 µs | 2.78x |
 | `gql_validation` | Validate the introspection query (graphql-js benchmark) | 40.2 µs | graphql-js, 409 µs | 10.2x |
 | `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 694 µs | apollo-compiler, 2.13 ms | 3.1x |
 | `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 418 µs | apollo-compiler, 3.03 ms | 7.2x |

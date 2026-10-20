@@ -26,6 +26,7 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Quic](Quic): the `gql_quic` package, which is the QUIC transport.
 - [Http3](Http3): the `gql_http3` package, which is HTTP/3 and QPACK over the `gql_quic` transport, `Alt-Svc`, and the client fallback chain.
 - [Validation](Validation): the `gql_validation` package, which checks an executable document against a schema.
+- [Normalization](Normalization): the `gql_normalization` package, which normalizes and minifies operations and validates their variables, as graphql-go-tools does.
 - [Client](Client): the `gql_client` package, which is the normalized cache of a GraphQL client.
 - [Composition](Composition): the `gql_composition` package, which validates Apollo Federation subgraphs.
 - [Router](Router): the `gql_router` package, which ports the Hive Router query planner.
