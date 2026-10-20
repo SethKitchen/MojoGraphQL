@@ -98,8 +98,8 @@ upstream = ["@apollo/subgraph 2.14.4 (b95c124) subgraph-js/src: buildSubgraphSch
 
 [packages.gql_router]
 summary = "Hive Router: the query planner, the executor, the request pipeline and an HTTP server"
-depends = ["gql_language", "gql_json", "gql_http"]
-upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, consumer_schema, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, pipeline (mod.rs, parser.rs, normalize.rs, coerce_variables.rs, query_plan.rs, execution.rs, error.rs, execution_request.rs, header.rs, authorization), executor (execution, projection, variables, response, utils/traverse.rs, introspection, executors/http.rs, operation_filter.rs, and their tests); tests/generated.rs, the executor plugins, extensions, header propagation, error masking, operation name forwarding, subscriptions and apollo-router-workspace are excluded"]
+depends = ["gql_language", "gql_json", "gql_http", "gql_schema", "gql_validation"]
+upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, consumer_schema, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, http_utils/probes.rs, pipeline (mod.rs, parser.rs, validation/mod.rs, normalize.rs, coerce_variables.rs, query_plan.rs, execution.rs, error.rs, execution_request.rs, header.rs, authorization), executor (execution, projection, variables, response, utils/traverse.rs, introspection, executors/http.rs, operation_filter.rs, and their tests), and lib/graphql-tools src/validation (the default rule list, the error codes, messages and locations); tests/generated.rs, the executor plugins, extensions, header propagation, error masking, operation name forwarding, subscriptions and apollo-router-workspace are excluded"]
 
 [packages.gql_server]
 summary = "GraphQL server: the Apollo Server request pipeline, HTTP handling and a standalone server"

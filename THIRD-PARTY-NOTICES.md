@@ -140,7 +140,13 @@ the values of the public OpenSSL headers. A program that does not import
   `query_planner/consumer_schema/`, and these files of
   `bin/router/src/pipeline/`: `mod.rs`, `parser.rs`, `normalize.rs`,
   `coerce_variables.rs`, `query_plan.rs`, `execution.rs`, `error.rs`,
-  `execution_request.rs` and `header.rs`. The executor plugins,
+  `execution_request.rs`, `header.rs` and `validation/mod.rs`; and
+  `http_utils/probes.rs`. From the MIT crate `lib/graphql-tools/` it
+  ports the rule list of `src/validation/rules/defaults.rs`, and the
+  error codes, messages and locations of the rules in
+  `src/validation/rules/`; the checks are those of `gql_validation`. The
+  rules `max_depth`, `max_directives` and `max_aliases` of
+  `pipeline/validation/` are not ported. The executor plugins,
   extensions, header propagation, error masking, operation name
   forwarding, subscriptions, SSE, WebSocket and multipart transports are
   not ported. Of the planner tests, `generated.rs`

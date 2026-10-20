@@ -7,7 +7,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 The `products` subgraph of MojoGraphQL passes every check of the Apollo Federation subgraph compatibility suite. The suite is [apollographql/apollo-federation-subgraph-compatibility](https://github.com/apollographql/apollo-federation-subgraph-compatibility) at `f9520a4` (MIT).
 
-`gql_subgraph` builds the subgraph, and `gql_server` serves it. The Mojo port of the checks is the gate. It is `tests/gql_subgraph/test_compatibility.mojo`, and `make test PKG=gql_subgraph` runs it.
+`gql_subgraph` builds the subgraph, and `gql_server` serves it. The official jest tests also pass against a full MojoGraphQL stack, with `gql_router` as the router. [The official suite](#the-official-suite) gives the result and tells how to run it. The Mojo port of the checks is the gate. It is `tests/gql_subgraph/test_compatibility.mojo`, and `make test PKG=gql_subgraph` runs it.
 
 ## Checks
 
@@ -72,13 +72,74 @@ The `ftv1` tests import `gql_server`. `packages.toml` lists `gql_server` in the 
 
 The schema, the data and the resolvers are in `tests/gql_subgraph/_products.mojo`. The tests and the server use the same module.
 
-The server is a `gql_server` standalone server with a plugin. The plugin calls `SubgraphSchema.attach` in `execution_did_start`, so `_service` and `_entities` resolve in the server.
+The server is a `gql_server` standalone server with a plugin, from `bench/compat/_serve.mojo`. The plugin calls `SubgraphSchema.attach` in `execution_did_start`, so `_service` and `_entities` resolve in the server.
 
 ## The official suite
 
-The official suite cannot run against the Mojo server in this project. Its runner starts a supergraph in one of two ways:
+A MojoGraphQL stack passes all 15 checks of the official suite, and all 25 jest tests. The stack has no Docker, no Rover and no Apollo Router. Each program is in `bench/compat/`:
 
-- `docker compose`, with the Apollo Router image.
-- `pm2`, with `rover dev`, which downloads and runs the Apollo Router.
+| Program | Role | URL |
+| --- | --- | --- |
+| `products.mojo` | The `products` subgraph, from `tests/gql_subgraph/_products.mojo` | `http://localhost:4001/` |
+| `users.mojo` | The `users` subgraph of `packages/subgraphs/users` | `http://localhost:4002/` |
+| `inventory.mojo` | The `inventory` subgraph of `packages/subgraphs/inventory` | `http://localhost:4003/` |
+| `router.mojo` | `gql_seamstress` composes the supergraph, and `gql_router` serves it | `http://localhost:4000/` |
 
-The Apollo Router has the Elastic License 2.0, which this project does not use. `gql_router` cannot serve a supergraph yet. Thus the Mojo port of the checks is the gate.
+`_serve.mojo` holds the server code of the three subgraphs. The subgraphs use `gql_subgraph` and `gql_server`. `router.mojo` composes the `supergraph.yaml` of `run_official.sh` with `run_seamstress`, as `seamstress supergraph compose` does. That file is the `supergraph-dev-config.yaml.template` of the suite. `products` is read by introspection, and `users` and `inventory` are read from their SDL files.
+
+### Result
+
+The run of 2026-10-20 at suite commit `f9520a4`, with composition version `=2.15.1`:
+
+| Column of the suite | Jest test | Required | Result |
+| --- | --- | --- | --- |
+| `_service` | `introspection` | Yes | Pass |
+| `@key (single)` | `@key single` | Yes | Pass |
+| `@key (multi)` | `@key multiple` | No | Pass |
+| `@key (composite)` | `@key composite` | No | Pass |
+| `repeatable @key` | `repeatable @key` | No | Pass |
+| `@requires` | `@requires` | No | Pass |
+| `@provides` | `@provides` | No | Pass |
+| `federated tracing` | `ftv1` | No | Pass |
+| `@link` | `@link` | Yes | Pass |
+| `@shareable` | `@shareable` | No | Pass |
+| `@tag` | `@tag` | No | Pass |
+| `@override` | `@override` | No | Pass |
+| `@inaccessible` | `@inaccessible` | No | Pass |
+| `@composeDirective` | `@composeDirective` | No | Pass |
+| `@interfaceObject` | `@interfaceObject` | No | Pass |
+
+The four router tests go through `gql_router`. The router plans and runs each operation of the table in [How the Mojo tests differ from the jest tests](#how-the-mojo-tests-differ-from-the-jest-tests). For example, `averageProductsCreatedPerYear` is 134. That is the value of the Apollo Router: `totalProductsCreated` is 1337 from the `@provides` of `products`, and `yearsOfEmployment` is 10 from `users`.
+
+### Run the official suite
+
+You must have the suite clone, and Node 24 or later on the `PATH`. Run the script in Linux or WSL:
+
+```bash
+bench/compat/run_official.sh
+```
+
+The script does these steps:
+
+1. It builds the four programs into `$WORK/bin`. It builds a program again only when a Mojo file is newer than the program.
+2. It starts the three subgraphs. It waits until each one answers `query { __typename }`.
+3. It writes `$WORK/supergraph.yaml`, and starts the router. The router writes the supergraph SDL to `$WORK/supergraph.graphql`. The script waits until `/health` and `/readiness` of the router answer `200`.
+4. It installs the npm packages of the suite with `--ignore-scripts`. Thus the `@apollo/rover` package does not download Rover.
+5. It copies `implementations/_template_library_/products.graphql` into `packages/compatibility/`, as the `package` script of the suite does.
+6. It runs the jest tests of `packages/compatibility/src/tests`, as `testRunner.ts` does, and prints the table.
+
+The script stops the four programs when it ends. The exit code is 0 only when every check passes. A check with no jest result fails.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `SUITE` | `~/mgql-upstream/apollographql_apollo-federation-subgraph-compatibility` | The suite clone |
+| `WORK` | `~/compat_official` | The programs, the logs, `supergraph.yaml` and `jest.json` |
+
+### Differences from the suite runner
+
+- The script runs jest directly. The runner of the suite starts the supergraph with `docker compose` or with `pm2` and `rover dev`. Both start the Apollo Router, which has the Elastic License 2.0.
+- The router serves the Hive Router probes `/health` and `/readiness` on its own port, 4000. The runner of the suite reads `http://localhost:8088/health`, the health check of the Apollo Router. The script waits for both probes of the router before it runs the tests. The jest tests do not read a health check.
+
+`gql_router` validates each operation against the consumer schema, as Hive Router does. A query for the `@inaccessible` field `ProductDimension.unit` gets the error `Cannot query field "unit" on type "ProductDimension".` with the code `FieldsOnCorrectType`, and status `400`. The Apollo Router also refuses the query. No check of the suite sends this query.
+
+The Mojo port of the checks stays the gate of `make test`, because the official suite needs Node and the suite clone.

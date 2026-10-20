@@ -294,6 +294,18 @@ def test_the_router_serves_http_with_http_subgraphs() raises:
     assert_equal(answer.text(), ANSWER)
     var missing = client.get(url + "/other")
     assert_equal(missing.status, Status(404))
+    # Upstream `health_check_handler` and `readiness_check_handler`. The
+    # loaded case of `e2e/src/probes.rs` sends `POST`; any method works.
+    var posted = client.post(url + "/health", "text/plain", "")
+    assert_equal(posted.status, Status(200))
+    posted = client.post(url + "/readiness", "text/plain", "")
+    assert_equal(posted.status, Status(200))
+    var health = client.get(url + "/health")
+    assert_equal(health.status, Status(200))
+    assert_equal(health.text(), "")
+    var ready = client.get(url + "/readiness")
+    assert_equal(ready.status, Status(200))
+    assert_equal(ready.text(), "")
     client.close_idle()
     assert_equal(front.stop(), 0)
     assert_equal(subgraphs.stop(), 0)

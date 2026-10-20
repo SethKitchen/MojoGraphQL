@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Router
 
-`gql_router` ports the query planner of Hive Router commit `1a29df9` (MIT), its executor, its request pipeline, and some other parts of the router. It depends on `gql_language`, `gql_json` and `gql_http`. `apollo-router-workspace/` is excluded.
+`gql_router` ports the query planner of Hive Router commit `1a29df9` (MIT), its executor, its request pipeline, and some other parts of the router. It depends on `gql_language`, `gql_json`, `gql_http`, `gql_schema` and `gql_validation`. `apollo-router-workspace/` is excluded.
 
 ## Modules
 
@@ -31,7 +31,8 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_router.auth_filter` | `authorize_fields` |
 | `gql_router.null_bubble` | `bubble_null_removals` |
 | `gql_router.graphql_error` | `GraphQLError`, `error_json`, `http_status_error`, `normalize_entity_error` |
-| `gql_router.pipeline` | `RouterSchema`, `Router`, `RouterResponse`, `PipelineError`, `PipelineErrorKind` |
+| `gql_router.pipeline` | `RouterSchema`, `Router`, `RouterResponse`, `PipelineError`, `PipelineErrorKind`, `validation_error` |
+| `gql_router.validation` | `validation_schema`, `validate_operation`, `default_rules_validation_plan`, `rule_error_code`, `hive_message`, `location_policy`, `LocationPolicy`, `errors_json` |
 | `gql_router.router_server` | `RouterHandler`, `serve_graphql`, `HttpAnswer`, `GraphQLParams`, `read_get_params`, `read_post_params` |
 | `gql_router.exec_plan` | `Executor`, `PlanExecutionOutput`, `select_fetch_variables`, `condition_target` |
 | `gql_router.exec_http` | `SubgraphTransport`, `HttpTransport`, `CannedTransport`, `build_request_body` |
@@ -139,7 +140,9 @@ The tests in `tests/gql_router/test_plan_*.mojo` port the snapshot tests of upst
 
 The executor tests port the unit tests of upstream `bin/router/src/executor/`. The `test_exec_variables_*.mojo` suites port `variables/tests/`. The projection suites port `projection/`. `test_exec_value.mojo` and `test_exec_subgraph_response.mojo` port `response/`. `test_exec_traverse.mojo` ports `utils/traverse.rs`. `test_exec_requires.mojo` and `test_exec_plan.mojo` port `execution/plan.rs`.
 
-`test_pipeline.mojo` runs the upstream benchmark operation through `Router.execute` with the canned responses of the `hive-router/execute` benchmark. The response must equal the upstream `expected_response.json` byte for byte. `test_router_server.mojo` serves the router and two subgraphs over HTTP on the loopback interface.
+`test_pipeline.mojo` runs the upstream benchmark operation through `Router.execute` with the canned responses of the `hive-router/execute` benchmark. The response must equal the upstream `expected_response.json` byte for byte. `test_router_server.mojo` serves the router and two subgraphs over HTTP on the loopback interface. It also sends the probe requests of upstream `e2e/src/probes.rs`.
+
+`test_validation.mojo` checks the code, the message and the locations of each rule. It also sends an `@inaccessible` field, an unknown field and an invalid operation through the router, and checks the validation cache. Upstream has no unit test of the validation step. The expected body of an unknown field follows the snapshot in `plugin_examples/feature_flags/src/test.rs`.
 
 ## Operation cache
 
@@ -177,7 +180,13 @@ A non-null field at the operation root is removed. It does not reject the whole 
 3. Make the router: `var router = Router(schema^, transport^)`.
 4. Serve it: `start_workers(RouterHandler(router^), config)`, with a `gql_http.server.ServerConfig`.
 
-The handler answers `/graphql`. Give a second argument to `RouterHandler` to use another path. Each other path answers `404`.
+The handler answers `/graphql`. Give a second argument to `RouterHandler` to use another path. Each other path answers `404`, except the probes.
+
+## Health probes
+
+The handler answers `/health` and `/readiness` with `200` and no content, for any method, as upstream `http_utils/probes.rs`. Use `/health` to check that the server runs. Use `/readiness` to check that the router has its supergraph.
+
+Upstream answers `503` on `/readiness` before it loads a supergraph. A `RouterHandler` gets its supergraph before it starts, so `/readiness` always answers `200`.
 
 ## Pipeline
 
@@ -185,7 +194,7 @@ The handler answers `/graphql`. Give a second argument to `RouterHandler` to use
 
 The steps are these:
 
-1. `prepare` parses and normalizes the operation, and builds its projection plan. It also splits off the introspection part.
+1. `prepare` parses, validates and normalizes the operation, and builds its projection plan. It also splits off the introspection part. [Validation](#validation) tells how the operation is validated.
 2. A subscription answers `415`. A mutation over `GET` answers `405`.
 3. `collect_variables` coerces the variables. A bad value answers `BAD_USER_INPUT`.
 4. The planner plans the downstream part. This occurs once for each cached operation.
@@ -193,6 +202,32 @@ The steps are these:
 6. `Executor.execute` runs the plan and projects the response.
 
 The operation cache keeps the normalized operation, its projection plan and its query plan. The key is the operation name and the document. `CacheLimits` sets the size and the lifetimes.
+
+## Validation
+
+The router validates each operation against the consumer schema before it normalizes the operation, as upstream `validate_operation_with_cache`. An operation with an error gets no plan and sends no request.
+
+`RouterSchema` builds the validation schema once, with `validation_schema`. The schema is the supergraph without its `@inaccessible` elements and without the federation internals. Thus a query for an `@inaccessible` field gets the same error as a query for an unknown field. A request does not check the schema again.
+
+`validate_operation` checks the document with the 25 rules of upstream `default_rules_validation_plan`. These are the graphql-js rules without `ExecutableDefinitions` and `MaxIntrospectionDepth`. `gql_validation` does the checks. Each error gets the code of its `graphql_tools` rule in `extensions.code`, and the `graphql_tools` message and locations:
+
+```json
+{"errors":[{"message":"Cannot query field \"unit\" on type \"ProductDimension\".","locations":[{"line":1,"column":35}],"extensions":{"code":"FieldsOnCorrectType"}}]}
+```
+
+The status is `400`. It is `200` when the response type is `application/json`, as for a parse error. The pipeline error code is `GRAPHQL_VALIDATION_FAILED`.
+
+The router keeps the result of each document text in a second `OperationCache`, as upstream `validate_cache`. The key is the document text, so two operations of one document share one result.
+
+### Differences from upstream in the validation
+
+- Upstream checks the document with the `graphql_tools` rules. This port checks it with the graphql-js rules of `gql_validation`, and rewrites each error into the `graphql_tools` form. The module docstring of `gql_router.validation` lists each rewrite.
+- The "Did you mean" suggestions of graphql-js are removed, except the suggestion of `LeafFieldSelections`.
+- Some locations, and the order of the errors, are those of graphql-js. For example, upstream reports `KnownTypeNames` at the start of the fragment or variable definition. This port reports the type name. Upstream reports `UniqueOperationNames` after the other errors.
+- The rules `max_depth`, `max_directives` and `max_aliases` are not ported. Upstream adds them only when the `limits` configuration sets them.
+- There are no validation plugin hooks.
+
+## Pipeline errors
 
 A `PipelineError` gives the status and the body of a failed request, as upstream `PipelineError`. A client error keeps its message. An internal error shows `Internal server error`. When `prefer_ok` is set, a parse error and a coercion error answer `200`, because the response type is `application/json`.
 
@@ -253,7 +288,6 @@ The projection builds a table for the plan once per request: the `"key":` bytes 
 - One operation cache keeps the parse, normalization and plan results. Upstream keeps three caches.
 - A parallel node merges its responses in plan order. Upstream merges each response when it arrives. So the errors are in plan order.
 - A transport has no tasks. `start` sends a request, and `finish` reads the oldest response.
-- Operations are not validated against the schema.
 - There are no plugins, coprocessors, persisted documents, demand control, CSRF prevention, CORS, request decompression, subscriptions, SSE, WebSocket or multipart responses.
 - Header propagation, error masking and operation name forwarding are not ported.
 - The representation hash folds eight bytes per multiply. Upstream uses XXH3. Equal representations still have equal hashes.

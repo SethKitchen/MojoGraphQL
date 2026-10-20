@@ -8,10 +8,13 @@
 Port of the request decoding of Hive Router `1a29df9`
 `bin/router/src/pipeline/execution_request.rs` (`decode_get`,
 `decode_post`, `GraphQLPostBodySeed`) and of the response type choice of
-`bin/router/src/pipeline/header.rs`.
+`bin/router/src/pipeline/header.rs`, with the probes of
+`bin/router/src/http_utils/probes.rs`.
 
 `RouterHandler` is a `gql_http.server.Handler`. It answers the GraphQL
-path, by default `/graphql`. A `GET` reads `query`, `operationName` and
+path, by default `/graphql`, and the probes `/health` and `/readiness`
+with `200` and no content, for any method. Each other path answers `404`.
+A `GET` reads `query`, `operationName` and
 `variables` from the query string. A `POST` must have a JSON
 `Content-Type`, and reads the same members from a JSON body. Then
 `Router.execute` runs the request. `serve_graphql` does the same work on
@@ -23,6 +26,9 @@ transport. `extensions` is read and ignored. The response type is
 `application/graphql-response+json` when the `Accept` header names it
 before `application/json` or `*/*`; otherwise it is `application/json`.
 Upstream also answers `406` for an `Accept` header with no supported type.
+Upstream answers `503` on `/readiness` before a supergraph is loaded, or
+after it is retired. A `RouterHandler` holds its supergraph from the
+start and never reloads it, so `/readiness` always answers `200`.
 """
 
 from gql_http.error import HttpError
@@ -45,6 +51,10 @@ comptime JSON_TYPE = "application/json"
 """The legacy GraphQL over HTTP response type."""
 comptime GRAPHQL_RESPONSE_TYPE = "application/graphql-response+json"
 """The GraphQL over HTTP response type."""
+comptime HEALTH_PATH = "/health"
+"""The health check path, as upstream `RouterPaths.health`."""
+comptime READINESS_PATH = "/readiness"
+"""The readiness check path, as upstream `RouterPaths.readiness`."""
 
 
 struct GraphQLParams(Movable):
@@ -349,6 +359,15 @@ struct RouterHandler[T: SubgraphTransport](Handler):
             HttpError: When the response cannot be written.
         """
         if request.path() != self.path:
+            if (
+                request.path() == HEALTH_PATH
+                or request.path() == READINESS_PATH
+            ):
+                # Upstream `health_check_handler` and
+                # `readiness_check_handler`. The handler holds a loaded
+                # supergraph, so it is always ready.
+                response.set_status(Status(200))
+                return
             response.error(Status(404))
             return
         var answer = serve_graphql(

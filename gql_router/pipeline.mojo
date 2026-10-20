@@ -8,20 +8,24 @@
 Port of `execute_pipeline` of Hive Router `1a29df9`
 `bin/router/src/pipeline/mod.rs`, with the steps of `parser.rs`,
 `normalize.rs`, `coerce_variables.rs`, `query_plan.rs` and
-`execution.rs`, and the error responses of `error.rs`.
+`execution.rs`, the validation step of `validation/mod.rs`, and the error
+responses of `error.rs`.
 
 `RouterSchema` reads a supergraph once: the planner, the consumer schema,
-its metadata and the entity keys. `Router.execute` parses the operation,
-normalizes it, splits off the introspection part, coerces the variables,
+its metadata, the validation schema and the entity keys. `Router.execute`
+parses the operation, validates it, normalizes it, splits off the
+introspection part, coerces the variables,
 plans the downstream part, resolves the introspection part, runs the plan
 and projects the response. The normalized operation, its projection plan
 and its query plan are kept in an operation cache, by operation name and
-document.
+document. A second cache keeps the validation result of each document
+text, as upstream `validate_cache`.
 
 **Differences from upstream.** Upstream keeps separate caches for
 parsing, normalization and query plans. This port keeps one cache with the
 three results, keyed by the operation name and the document text.
-Operations are not validated against the schema. There are no plugins,
+`gql_router.validation` gives the differences of the validation step.
+There are no plugins,
 coprocessors, persisted documents, authorization, progressive override
 labels, demand control, CSRF prevention, or subscriptions. A parse error
 message is the `gql_language` text.
@@ -49,6 +53,14 @@ from gql_router.operation import OperationDefinition
 from gql_router.plan_nodes import QueryPlan
 from gql_router.planner import Planner
 from gql_router.schema_metadata import SchemaMetadata, schema_metadata
+from gql_router.validation import (
+    default_rules_validation_plan,
+    errors_json,
+    validate_operation,
+    validation_schema,
+)
+from gql_schema.definition import Schema
+from gql_validation.rules import ValidationRule
 
 
 @fieldwise_init
@@ -87,6 +99,9 @@ struct PipelineError(Copyable, Movable, Writable):
     """The GraphQL error code, as upstream `graphql_error_code`."""
     var status: Int
     """The HTTP status when the status is not 200."""
+    var validation_body: String
+    """The body of a validation failure, as upstream `ValidationErrors`;
+    empty for every other error."""
 
     def client_message(self) -> String:
         """Return the message the client sees, as upstream
@@ -117,8 +132,11 @@ struct PipelineError(Copyable, Movable, Writable):
         """Return the response body, as upstream `FailedExecutionResult`.
 
         Returns:
-            `{"errors":[{"message":...,"extensions":{"code":...}}]}`.
+            `{"errors":[{"message":...,"extensions":{"code":...}}]}`, or
+            each validation error.
         """
+        if self.validation_body.byte_length() > 0:
+            return self.validation_body
         return (
             '{"errors":['
             + error_json(error_with_code(self.client_message(), self.code))
@@ -147,7 +165,29 @@ def client_error(
     Returns:
         The error.
     """
-    return PipelineError(PipelineErrorKind.CLIENT, message, code, status)
+    return PipelineError(
+        PipelineErrorKind.CLIENT, message, code, status, String()
+    )
+
+
+def validation_error(body: String) -> PipelineError:
+    """Make the error of a failed validation, as upstream
+    `ClientPipelineError::ValidationErrors`.
+
+    Args:
+        body: The response body, from `errors_json`.
+
+    Returns:
+        The error, with the code `GRAPHQL_VALIDATION_FAILED`; status 400,
+        or 200 for `application/json`.
+    """
+    return PipelineError(
+        PipelineErrorKind.CLIENT_PREFER_OK,
+        "Validation errors",
+        "GRAPHQL_VALIDATION_FAILED",
+        400,
+        body,
+    )
 
 
 def client_error_prefer_ok(message: String, code: String) -> PipelineError:
@@ -160,7 +200,9 @@ def client_error_prefer_ok(message: String, code: String) -> PipelineError:
     Returns:
         The error, with status 400 otherwise.
     """
-    return PipelineError(PipelineErrorKind.CLIENT_PREFER_OK, message, code, 400)
+    return PipelineError(
+        PipelineErrorKind.CLIENT_PREFER_OK, message, code, 400, String()
+    )
 
 
 def internal_error(message: String, code: String) -> PipelineError:
@@ -173,7 +215,9 @@ def internal_error(message: String, code: String) -> PipelineError:
     Returns:
         The error, with status 500.
     """
-    return PipelineError(PipelineErrorKind.INTERNAL, message, code, 500)
+    return PipelineError(
+        PipelineErrorKind.INTERNAL, message, code, 500, String()
+    )
 
 
 struct RouterSchema(Movable):
@@ -187,6 +231,10 @@ struct RouterSchema(Movable):
     """The metadata of the consumer schema."""
     var keys: EntityKeys
     """The entity keys of each subgraph."""
+    var validation: Schema
+    """The consumer schema that operations are validated against."""
+    var rules: List[ValidationRule]
+    """The validation rules, as upstream `validation_plan`."""
     var subgraph_names: List[String]
     """The subgraph names, sorted."""
     var subgraph_urls: List[String]
@@ -202,7 +250,10 @@ struct RouterSchema(Movable):
             Error: When the SDL does not parse or plan.
         """
         self.planner = Planner(sdl)
-        self.consumer = ConsumerSchema.new_from_supergraph(parse(sdl))
+        var supergraph = parse(sdl)
+        self.consumer = ConsumerSchema.new_from_supergraph(supergraph)
+        self.validation = validation_schema(supergraph)
+        self.rules = default_rules_validation_plan()
         self.metadata = schema_metadata(self.consumer.document)
         self.keys = EntityKeys.new(self.planner.store, self.planner.state)
         self.subgraph_names = List[String]()
@@ -327,6 +378,9 @@ struct Router[T: SubgraphTransport](Movable):
     """The cached operations."""
     var slot_keys: List[String]
     """The cache key of each slot."""
+    var validated: OperationCache
+    """The validation result of each document text, as upstream
+    `validate_cache`: empty for a valid document, else the error body."""
 
     def __init__(
         out self,
@@ -346,6 +400,38 @@ struct Router[T: SubgraphTransport](Movable):
         self.cache = OperationCache(limits)
         self.slots = List[CachedOperation]()
         self.slot_keys = List[String]()
+        self.validated = OperationCache(limits)
+
+    def validate(
+        mut self, query: String, document: Document, now: Int
+    ) raises PipelineError:
+        """Validate a parsed document, or find its result in the cache, as
+        upstream `validate_operation_with_cache`.
+
+        Args:
+            query: The document text: the cache key.
+            document: The parsed document.
+            now: The time in milliseconds.
+
+        Raises:
+            PipelineError: `GRAPHQL_VALIDATION_FAILED`, with each error.
+        """
+        var body: String
+        var cached = self.validated.get(query, now)
+        if cached:
+            body = cached.value()
+        else:
+            var errors: List[GraphQLError]
+            try:
+                errors = validate_operation(
+                    self.schema.validation, document, self.schema.rules
+                )
+            except e:
+                raise client_error(String(e), "GRAPHQL_VALIDATION_FAILED")
+            body = errors_json(errors) if len(errors) > 0 else String()
+            self.validated.insert(query, body, now)
+        if body.byte_length() > 0:
+            raise validation_error(body)
 
     def prepare(
         mut self, query: String, operation_name: Optional[String]
@@ -383,6 +469,7 @@ struct Router[T: SubgraphTransport](Movable):
                 "Failed to parse GraphQL operation: " + String(e),
                 "GRAPHQL_PARSE_FAILED",
             )
+        self.validate(query, document, now)
         var operation: OperationDefinition
         try:
             operation = normalize_operation(
