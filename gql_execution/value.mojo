@@ -24,6 +24,12 @@ kinds stand in for JavaScript objects that are not plain data:
 - **An error** is a JavaScript `Error` instance that a resolver returns,
   not raises. Execution raises it when it completes the value, as
   graphql-js does.
+- **An event stream** is a handle with the tag `STREAM_TAG`. The arena
+  holds the `gql_stream` stream that `add_stream` gave it, as a
+  JavaScript `AsyncIterable`. A `subscribe` function returns one.
+
+`mark` and `release` drop the values of one subscription event, when no
+older value links to them.
 
 Port of the value model of graphql-js 16.14.2 `jsutils/inspect.ts` and of
 the JavaScript values that `execution/execute.ts` reads.
@@ -41,6 +47,7 @@ from std.memory import bitcast
 from gql_json.value import JsonDocument, JsonKind
 from gql_language.error import quote_json_string
 from gql_schema.values import js_number_to_string
+from gql_stream.stream import AnyStream
 
 
 @fieldwise_init
@@ -109,6 +116,9 @@ struct ValueKind(Equatable, ImplicitlyCopyable, Writable):
 
 comptime UNDEFINED = -1
 """The index that stands for `undefined`."""
+comptime STREAM_TAG = -7
+"""The tag of a handle to an event stream that `Values.add_stream` holds.
+The introspection tags are -1 to -6."""
 
 
 @fieldwise_init
@@ -150,11 +160,14 @@ struct Values(Movable):
     """Every value."""
     var bytes: List[UInt8]
     """The text of the strings, the error messages and the keys."""
+    var streams: List[Optional[AnyStream]]
+    """The event streams that `add_stream` holds, by handle id."""
 
     def __init__(out self):
         """Start an empty arena."""
         self.nodes = List[ValueNode](capacity=64)
         self.bytes = List[UInt8](capacity=256)
+        self.streams = List[Optional[AnyStream]]()
 
     def __init__(out self, *, capacity: Int):
         """Start an empty arena with room for some values.
@@ -165,6 +178,7 @@ struct Values(Movable):
         """
         self.nodes = List[ValueNode](capacity=capacity)
         self.bytes = List[UInt8](capacity=capacity * 4)
+        self.streams = List[Optional[AnyStream]]()
 
     # --- building -------------------------------------------------------
 
@@ -657,6 +671,93 @@ struct Values(Movable):
             The number.
         """
         return Int(self.node(value).end)
+
+    # --- event streams --------------------------------------------------
+
+    def add_stream(mut self, var stream: AnyStream) -> Int:
+        """Hold an event stream, and add a handle to it.
+
+        A `subscribe` function returns this value: the source event stream
+        of a subscription, as a JavaScript `AsyncIterable`.
+
+        Args:
+            stream: The stream; the arena owns it until `take_stream`.
+
+        Returns:
+            A handle with the tag `STREAM_TAG`.
+        """
+        self.streams.append(Optional(stream^))
+        return self.add_handle(STREAM_TAG, len(self.streams) - 1)
+
+    def is_stream(self, value: Int) -> Bool:
+        """Return True for a handle that `add_stream` made, whose stream is
+        still in the arena.
+
+        Args:
+            value: A value's index, or `UNDEFINED`.
+
+        Returns:
+            Whether the value is an event stream.
+        """
+        if self.kind(value) != ValueKind.HANDLE or self.tag(value) != (
+            STREAM_TAG
+        ):
+            return False
+        var id = self.id(value)
+        return id < len(self.streams) and Bool(self.streams[id])
+
+    def take_stream(mut self, value: Int) raises -> AnyStream:
+        """Take an event stream out of the arena.
+
+        Args:
+            value: A value that `is_stream` accepts.
+
+        Returns:
+            The stream.
+
+        Raises:
+            Error: When the value is not an event stream.
+        """
+        if not self.is_stream(value):
+            raise Error("The value is not an event stream.")
+        return self.streams[self.id(value)].take()
+
+    def mark(self) -> Tuple[Int, Int]:
+        """Return the sizes of the arena, for `release`.
+
+        Returns:
+            The counts of nodes and of bytes.
+        """
+        return (len(self.nodes), len(self.bytes))
+
+    def release(mut self, mark: Tuple[Int, Int]) -> Bool:
+        """Drop each value that was added after a mark, when no older value
+        links to one of them or to their text.
+
+        Args:
+            mark: What `mark` returned.
+
+        Returns:
+            Whether the values were dropped. An older container that holds
+            a newer value keeps them all.
+        """
+        var count = mark[0]
+        var index = 0
+        while index < count:
+            ref node = self.nodes[index]
+            index += 1
+            if Int(node.next) >= count:
+                return False
+            var kind = node.kind
+            if kind == ValueKind.LIST or kind == ValueKind.OBJECT:
+                if Int(node.start) >= count or Int(node.end) >= count:
+                    return False
+            elif kind == ValueKind.STRING or kind == ValueKind.ERROR:
+                if Int(node.end) > mark[1]:
+                    return False
+        self.nodes.shrink(count)
+        self.bytes.shrink(mark[1])
+        return True
 
 
 def inspect(values: Values, value: Int) -> String:

@@ -73,6 +73,16 @@ comptime MCP_DRIVER_BUILD = (
 """The shell command that builds the gql_mcp stdio driver, from a baseline
 directory."""
 
+comptime WS_LOAD_BUILD = (
+    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
+    " .cache/bin/ws_load bench/gql_ws/_wsload.mojo > /dev/null)"
+)
+"""The shell command that builds the gql_ws load generator, from a baseline
+directory."""
+
+comptime WS_LOAD = "../../../.cache/bin/ws_load"
+"""The gql_ws load generator; the workload and the server command follow."""
+
 comptime MCP_DRIVER = "../../../.cache/bin/mcp_driver --root ../../.."
 """The stdio driver of the MCP servers; the server command follows."""
 
@@ -155,6 +165,17 @@ def baselines() -> List[Baseline]:
             "JSON.parse and JSON.stringify (Node.js)",
             "bench/baselines/js-json",
             "true",
+            "node bench.mjs",
+        )
+    )
+    out.append(
+        Baseline(
+            (
+                "graphql-js 16.14.2 subscribe, graphql-subscriptions 3.0.0"
+                " (Node.js)"
+            ),
+            "bench/baselines/js-stream",
+            "[ -d node_modules ] || npm ci --no-audit --no-fund",
             "node bench.mjs",
         )
     )
@@ -343,6 +364,31 @@ def baselines() -> List[Baseline]:
             ),
         )
     )
+    # The WebSocket servers run under the Mojo load generator of gql_ws, so
+    # that only the server differs from the Mojo benchmark.
+    out.append(
+        Baseline(
+            "tungstenite 0.30.0 and tokio-tungstenite 0.30.0 (Rust)",
+            "bench/baselines/rust-ws",
+            "cargo build --release --locked --quiet && " + WS_LOAD_BUILD,
+            WS_LOAD
+            + " ws/echo-roundtrip ./target/release/ws-echo-server"
+            " && ./target/release/ws-frames",
+        )
+    )
+    out.append(
+        Baseline(
+            "ws 8.18.3 and graphql-ws 6.4.1 (Node.js)",
+            "bench/baselines/js-ws",
+            "([ -d node_modules ] || npm ci --no-audit --no-fund) && "
+            + WS_LOAD_BUILD,
+            WS_LOAD
+            + " ws/echo-roundtrip node bench.mjs server && "
+            + WS_LOAD
+            + " graphql-ws/subscribe-1000-next node bench.mjs gql"
+            " && node bench.mjs frames",
+        )
+    )
     return out^
 
 
@@ -358,9 +404,15 @@ directories without a dash run graphql-js, apollo-rs and graphql-go-tools,
 which hold all five."""
 
 
-comptime ALSO_SERVES: Array[StaticString, 2] = ["rust-tls", "gql_https2"]
+comptime ALSO_SERVES: Array[StaticString, 4] = [
+    "rust-tls",
+    "gql_https2",
+    "js-stream",
+    "gql_execution",
+]
 """Baseline directories that also measure another package, as pairs of the
-directory name and the package. `rust-tls` runs HTTP/2 over TLS too."""
+directory name and the package. `rust-tls` runs HTTP/2 over TLS too, and
+`js-stream` runs graphql-js `subscribe` too."""
 
 
 def serves(baseline: Baseline, packages: List[String]) -> Bool:
@@ -918,6 +970,15 @@ def upstream() -> List[Upstream]:
     )
     out.append(
         Upstream(
+            GO,
+            "v2/pkg/astnormalization/fragmentspread_depth_test.go",
+            "BenchmarkFragmentSpreadDepthCalc_Get",
+            "go-tools/FragmentSpreadDepth",
+            "the nested operation, in the benchmark source",
+        )
+    )
+    out.append(
+        Upstream(
             JS,
             "benchmark/validateSDL-benchmark.js",
             "Validate SDL Document",
@@ -1068,10 +1129,8 @@ def pending() -> List[String]:
     )
     out.append(
         "| graphql-go-tools | `v2/pkg/astvisitor`, `v2/pkg/astvalidation`,"
-        " `v2/pkg/introspection`, `v2/pkg/middleware/operation_complexity`,"
-        " `BenchmarkFragmentSpreadDepthCalc_Get` of `v2/pkg/astnormalization` |"
-        " 9 benchmarks | a visitor, gql_validation, gql_schema and the"
-        " fragment spread depth calculator |"
+        " `v2/pkg/introspection`, `v2/pkg/middleware/operation_complexity` |"
+        " 8 benchmarks | a visitor, gql_validation and gql_schema |"
     )
     return out^
 

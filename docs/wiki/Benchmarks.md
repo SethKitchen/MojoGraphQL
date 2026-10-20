@@ -32,6 +32,7 @@ The baselines need Node.js and npm, Cargo, and Go. `tools/bench.mojo` looks for 
 | apollo-compiler 1.33.0, from apollo-rs | Rust, an AST | `bench/baselines/rust` |
 | graphql-go-tools 2.28.0 | Go | `bench/baselines/go` |
 | Apollo Client 4.3.3 `InMemoryCache`, for `gql_client` | JavaScript, on Node.js, the production build | `bench/baselines/js-client` |
+| graphql-js 16.14.2 `subscribe` and graphql-subscriptions 3.0.0 `PubSub`, for `gql_stream` and `gql_execution` | JavaScript, on Node.js | `bench/baselines/js-stream` |
 
 A baseline runs only the workloads that its library has. For example, apollo-parser has no printer, so it has no `print` workloads.
 

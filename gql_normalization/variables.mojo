@@ -7,7 +7,7 @@
 
 | Function | Upstream file |
 | --- | --- |
-| `extract_variables` | `variables_extraction.go` |
+| `extract_variables`, `extract_variables_with_uploads` | `variables_extraction.go` |
 | `input_coercion_for_list` | `input_coercion_for_list.go` |
 | `extract_variables_default_value` | `variables_default_value_extraction.go` |
 | `inject_input_field_defaults` | `inject_input_default_values.go` |
@@ -18,8 +18,9 @@ The variables are JSON text. The passes edit it as `sjson` and
 
 Differences from upstream:
 
-- File uploads (`uploads.UploadFinder` and the upload path mapping that
-  `NormalizeNamedOperationWithResult` returns) are not ported.
+- `extract_variables_with_uploads` returns the upload path mapping of
+  the extraction. Upstream keeps it on the visitor, and only
+  `VariablesNormalizer` returns it.
 - `inject_input_field_defaults` reads a variable value that is a JSON
   string with its quotes. Upstream reads it without them, which matters
   only for a string where an input object or a list must be.
@@ -29,6 +30,7 @@ from gql_language.ast import Document, Kind, NO_NODE, Role
 from gql_schema.definition import Schema, TypeKind, TypeRef
 
 from gql_normalization.edit import insert_after, previous_sibling, remove_child
+from gql_normalization.uploads import UploadFinder, UploadPathMapping
 from gql_normalization.schema_lookup import (
     NO_TYPE,
     field_definition,
@@ -148,10 +150,19 @@ struct _Extraction(Movable):
     """The names of the extracted variables."""
     var types: List[TypeRef]
     """The type of each extracted variable."""
+    var find_uploads: Bool
+    """Find the uploads of each argument."""
+    var finder: UploadFinder
+    """`uploadFinder`."""
+    var uploads: List[UploadPathMapping]
+    """`uploadsPath`."""
 
-    def __init__(out self):
+    def __init__(out self, find_uploads: Bool):
         self.names = List[String]()
         self.types = List[TypeRef]()
+        self.find_uploads = find_uploads
+        self.finder = UploadFinder()
+        self.uploads = List[UploadPathMapping]()
 
 
 def _existing(
@@ -208,8 +219,19 @@ def _extract_set(
                 )
                 if input < 0:
                     continue
+                var mapping = List[UploadPathMapping]()
+                if state.find_uploads:
+                    mapping = state.finder.find_uploads(
+                        document,
+                        schema,
+                        variables,
+                        argument,
+                        schema.input_values[input].type,
+                    )
+                    state.finder.reset()
                 var value = document.child(argument, Role.VALUE)
                 if document.kind(value) == Kind.VARIABLE:
+                    state.uploads.extend(mapping^)
                     continue
                 var json = value_to_json(document, value, variables)
                 var type = schema.input_values[input].type
@@ -219,6 +241,13 @@ def _extract_set(
                 if name.byte_length() == 0:
                     name = unused_variable_name(document, operation)
                     variables = set_raw(variables, name, json)
+                    for ref item in mapping:
+                        if item.new_upload_path != "":
+                            item.new_upload_path = (
+                                "variables." + name + "." + item.new_upload_path
+                            )
+                            item.variable_name = name
+                        state.uploads.append(item)
                     state.names.append(name)
                     state.types.append(type)
                     _set_value(document, argument, name)
@@ -271,7 +300,39 @@ def extract_variables(
     Raises:
         Error: `Unknown type "<name>".`, as the walker of upstream.
     """
-    var state = _Extraction()
+    _ = _extract(document, schema, variables, False)
+
+
+def extract_variables_with_uploads(
+    mut document: Document, schema: Schema, mut variables: String
+) raises -> List[UploadPathMapping]:
+    """Extract the argument literals as `extract_variables` does, and find
+    the file uploads of the arguments: `extractVariables` with its
+    `uploadsPath`.
+
+    Args:
+        document: The operation document.
+        schema: The schema.
+        variables: The variables JSON; it gets the extracted values.
+
+    Returns:
+        The uploads, with the path in an extracted variable for an upload
+        in an inline object.
+
+    Raises:
+        Error: `Unknown type "<name>".`, as the walker of upstream.
+    """
+    return _extract(document, schema, variables, True)
+
+
+def _extract(
+    mut document: Document,
+    schema: Schema,
+    mut variables: String,
+    find_uploads: Bool,
+) raises -> List[UploadPathMapping]:
+    """Run the extraction, and return the uploads that it found."""
+    var state = _Extraction(find_uploads)
     var pending_1 = document.first_child(document.root)
     while pending_1 != NO_NODE:
         var operation = pending_1
@@ -287,6 +348,7 @@ def extract_variables(
             document.child(operation, Role.SELECTION_SET),
             root_type(schema, document, operation),
         )
+    return state.uploads.copy()
 
 
 def _is_scalar_or_enum(schema: Schema, type: TypeRef) -> Bool:

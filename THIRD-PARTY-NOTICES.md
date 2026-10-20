@@ -19,6 +19,7 @@ the Elastic License 2.0. The exclusions are listed with each project.
 | Project | Repository | Pinned revision | License used | Copyright notice |
 | --- | --- | --- | --- | --- |
 | graphql-js | [graphql/graphql-js](https://github.com/graphql/graphql-js) | `v16.14.2` (`dca5b4d`) | MIT | Copyright (c) GraphQL Contributors |
+| graphql-subscriptions | [apollographql/graphql-subscriptions](https://github.com/apollographql/graphql-subscriptions) | `v3.0.0` (`d74107c`) | MIT | Copyright (c) 2015 - 2016 Meteor Development Group, Inc. |
 | apollo-rs | [apollographql/apollo-rs](https://github.com/apollographql/apollo-rs) | `b7eee5c` | MIT (dual MIT OR Apache-2.0) | Copyright 2021 Apollo Graph, Inc. |
 | @apollo/subgraph | [apollographql/federation](https://github.com/apollographql/federation), `subgraph-js/` only | `2.14.4` (`b95c124`) | MIT | Copyright (c) 2020- Apollo Graph, Inc.; Copyright (c) 2019-2020 Meteor Development Group, Inc. |
 | Apollo Server | [apollographql/apollo-server](https://github.com/apollographql/apollo-server) | `5.5.1` (`0c22029`) | MIT | Copyright (c) 2016-2020 Apollo Graph, Inc. (Formerly Meteor Development Group, Inc.) |
@@ -35,6 +36,8 @@ the Elastic License 2.0. The exclusions are listed with each project.
 | hyperium/h2 | [hyperium/h2](https://github.com/hyperium/h2), `src/hpack`, `src/frame`, `src/proto`, `src/server.rs`, `src/client.rs`, and the tests of `tests/h2-tests` and `src/hpack/test` | `v0.4.20` (`b0e8908`) | MIT | Copyright (c) 2017 h2 authors |
 | quinn | [quinn-rs/quinn](https://github.com/quinn-rs/quinn), `quinn-proto/` (crate `0.11.19`) and the drivers of `quinn/` (crate `0.11.12`) only | `quinn-proto-0.11.19` (`8192ed3`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2018 The quinn Developers |
 | quinn-udp | [quinn-rs/quinn](https://github.com/quinn-rs/quinn), `quinn-udp/` (crate `0.5.16`) only | `quinn-proto-0.11.19` (`8192ed3`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2018 The quinn Developers |
+| tungstenite | [snapview/tungstenite-rs](https://github.com/snapview/tungstenite-rs), `src/protocol`, `src/handshake`, `src/utf8.rs`, `src/error.rs`, `src/client.rs`, `src/server.rs` and `tests/` | `v0.30.0` (`7f4aeaf`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2017 Alexey Galakhov; Copyright (c) 2016 Jason Housley |
+| graphql-ws | [enisdenjo/graphql-ws](https://github.com/enisdenjo/graphql-ws), `src/common.ts`, `src/utils.ts`, `src/server.ts`, `src/use/ws.ts`, `src/client.ts` and `tests/` | `v6.4.1` (`7281f1b`) | MIT | Copyright (c) 2020 Denis Badurina |
 
 ## Libraries loaded at run time
 
@@ -230,14 +233,28 @@ the values of the public OpenSSL headers. A program that does not import
   It ports `astminify/minify.go` with its fixtures and goldens, and the
   executable document part of `astprinter/astprinter.go`. It ports
   `variablesvalidation/variablesvalidation.go`. It also ports
-  `MergeFieldsDefer`, `ValueToJSON` and the type relations of `ast`. These
-  parts are not ported: the definition normalization (`definition_normalization.go`, the
-  `*_type_extending.go` files, `extends_directive.go`,
-  `implicit_*.go`, `remove_type_extensions.go`,
-  `subgraph_sdl_normalization.go`), and the `@defer` stages (`defer_*.go`).
-  These files are not ported too: `inline_arguments.go`,
-  `abstract_field_normalizer.go`, `fragmentspread_depth.go`,
-  `variables_mapper.go`, `variables_mapping.go` and `uploads/`.
+  `MergeFieldsDefer`, `ValueToJSON` and the type relations of `ast`. It
+  ports the definition normalization (`definition_normalization.go`, the
+  `*_type_extending.go` files, `extends_directive.go`, `implicit_*.go`,
+  `remove_type_extensions.go`, `subgraph_sdl_normalization.go`), the
+  `@defer` stages (`defer_*.go`), the prevalidation rules,
+  `inline_arguments.go`, `fragmentspread_depth.go`, `uploads/`,
+  `abstract_field_normalizer.go`, `variables_mapper.go` and
+  `variables_mapping.go`.
+  The parser, the printer for SDL, the validation (`astvalidation`) and
+  the `engine` of graphql-go-tools are not ported: `gql_language`,
+  `gql_validation` and `gql_router` do that work.
+- **tungstenite (gql_ws).** The project is dual licensed MIT OR
+  Apache-2.0. MojoGraphQL uses it under the MIT License only. `src/tls.rs`,
+  `src/stream.rs`, `src/buffer.rs`, the `url` feature, `autobahn/`,
+  `benches/`, `examples/` and `fuzz/` are not ported. The Autobahn
+  testsuite needs Docker or Python 2; its cases of sections 1 to 7 are tests
+  in `tests/gql_ws/`.
+- **graphql-ws (gql_ws, gql_ws_execution).** The adapters of `src/use/`
+  other than `ws.ts` (`bun`, `deno`, `fastify-websocket`, `uWebSockets`,
+  `crossws`), the deprecated `subscriptions-transport-ws` protocol, the
+  JSON reviver and replacer, and the lazy and retrying parts of
+  `src/client.ts` are not ported.
 
 ## Benchmark baselines and fixtures
 
@@ -250,6 +267,18 @@ the values of the public OpenSSL headers. A program that does not import
 - `bench/baselines/js/` installs the `graphql` npm package, version
   `16.14.2`, which is graphql-js. It runs only as a benchmark baseline and is
   not part of any MojoGraphQL package.
+- `bench/baselines/js-stream/` installs the npm packages `graphql`
+  `16.14.2` (MIT) and `graphql-subscriptions` `3.0.0` (MIT). They run only
+  as the benchmark baseline of `gql_stream` and of the subscriptions of
+  `gql_execution`, and are not part of any MojoGraphQL package.
+- `bench/baselines/js-ws/` installs the npm packages `ws` `8.18.3` (MIT),
+  `graphql-ws` `6.4.1` (MIT), `graphql` `16.14.2` (MIT) and
+  `graphql-subscriptions` `3.0.0` (MIT). They run only as the benchmark
+  baseline of `gql_ws`, and are not part of any MojoGraphQL package.
+- `bench/baselines/rust-ws/` builds the crates `tungstenite` `0.30.0` and
+  `tokio-tungstenite` `0.30.0` (MIT OR Apache-2.0, used under MIT), `tokio`
+  and `futures-util` (MIT). They run only as the benchmark baseline of
+  `gql_ws`, and are not part of any MojoGraphQL package.
 - `bench/baselines/js-client/` installs the npm packages `@apollo/client`
   `4.3.3` (MIT), `graphql` `16.14.2` (MIT) and its peer dependency `rxjs`
   `7.8.2` (Apache-2.0). They run only as the benchmark baseline of
@@ -359,9 +388,10 @@ the values of the public OpenSSL headers. A program that does not import
   ported passes have, `v2/pkg/astminify/minify_test.go` and
   `v2/pkg/variablesvalidation/variablesvalidation_test.go`.
   `_norm_fixtures.mojo` and `_minify_fixtures.mojo` embed their schemas,
-  operations and `.min.graphql.golden` files. Two schemas change: the
+  operations and `.min.graphql.golden` files. Three schemas change: the
   duplicate `ComplexInput` of `variablesDefaultValueExtractionDefinition` is
   left out, and `sameVariableExtraction` gets the `FooInput` that it uses.
+  The definition of `TestVariablesMapper` gets `scalar Upload`.
   They are MIT licensed, Copyright (c) 2022 WunderGraph UG
   (haftungsbeschränkt). The files are test data only.
 

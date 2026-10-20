@@ -12,7 +12,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project is new. Today it has twenty-one finished packages, and more are in progress.
+The project is new. Today it has twenty-four finished packages, and more are in progress.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
@@ -111,13 +111,15 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 
 - [x] [`gql_json`](https://github.com/SethKitchen/MojoGraphQL/wiki/Json): a strict RFC 8259 parser and a `JSON.stringify` writer, for requests and responses.
 - [x] [`gql_validation`](https://github.com/SethKitchen/MojoGraphQL/wiki/Validation): the validation rules of the GraphQL specification.
-- [x] [`gql_execution`](https://github.com/SethKitchen/MojoGraphQL/wiki/Execution): execution of operations against a schema, with introspection.
+- [x] [`gql_execution`](https://github.com/SethKitchen/MojoGraphQL/wiki/Execution): execution of operations against a schema, with introspection and subscriptions.
 - [x] [`gql_http`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http): an HTTP/1.1 server, client and parser, for GraphQL over HTTP.
 - [x] [`gql_http2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http2): HTTP/2 and HPACK in Mojo. The server detects the HTTP/2 preface and falls back to HTTP/1.1.
 - [x] [`gql_tls`](https://github.com/SethKitchen/MojoGraphQL/wiki/Tls): TLS 1.3 and ALPN through the system OpenSSL, loaded at run time. Only users who pick it need OpenSSL.
 - [x] [`gql_https2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Https2): HTTP/2 over TLS. ALPN picks `h2`, and the same connection falls back to HTTPS/1.1.
 - [x] [`gql_quic`](https://github.com/SethKitchen/MojoGraphQL/wiki/Quic): a QUIC transport in Mojo, a port of quinn-proto. OpenSSL does only the TLS handshake and the packet protection.
 - [x] [`gql_http3`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3): HTTP/3 and QPACK over `gql_quic`, with `Alt-Svc`. Its client falls back in this order: h3, h2 over TLS, HTTPS/1.1, h2c, HTTP/1.1.
+- [x] [`gql_stream`](https://github.com/SethKitchen/MojoGraphQL/wiki/Stream): event streams for subscriptions, polled by an epoll event loop with no thread per stream, and an in-process PubSub.
+- [x] [`gql_ws`](https://github.com/SethKitchen/MojoGraphQL/wiki/Ws): WebSocket (RFC 6455) and the `graphql-transport-ws` protocol of graphql-ws, as server and client. `gql_ws_execution` runs its operations and subscriptions.
 - [x] [`gql_server`](https://github.com/SethKitchen/MojoGraphQL/wiki/Server): a port of Apollo Server, with the request pipeline, plugins, batching, persisted queries and a standalone server.
 - [x] [`gql_subgraph`](https://github.com/SethKitchen/MojoGraphQL/wiki/Subgraph): a port of `@apollo/subgraph` and the Apollo Federation subgraph specification.
 - [x] [`gql_composition`](https://github.com/SethKitchen/MojoGraphQL/wiki/Composition): a port of Hive Federation Composition: subgraph validation, supergraph composition, satisfiability and contracts, for federation v1 and v2.0 to v2.15.
@@ -150,8 +152,11 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_json` | Done | nothing | RFC 8259; ECMAScript `JSON.stringify` |
 | `gql_schema` | Done, except introspection | `gql_language`, `gql_json` | graphql-js `src/type`, `src/utilities` |
 | `gql_validation` | Done | `gql_schema` | graphql-js `src/validation` |
-| `gql_execution` | Done, except async resolvers and subscriptions | `gql_schema`, `gql_json` | graphql-js `src/execution` |
+| `gql_execution` | Done, with subscriptions; except async resolvers | `gql_schema`, `gql_json`, `gql_stream` | graphql-js `src/execution` |
 | `gql_http` | Done | nothing | RFC 9110, RFC 9112; GraphQL over HTTP |
+| `gql_stream` | Done | `gql_json` | graphql-subscriptions PubSub and `withFilter` |
+| `gql_ws` | Done | `gql_http`, `gql_stream` | RFC 6455; graphql-ws `graphql-transport-ws`; tungstenite |
+| `gql_ws_execution` | Done | `gql_ws`, `gql_execution`, `gql_validation` | graphql-ws `useServer` |
 | `gql_http2` | Done | `gql_http` | hyperium/h2 0.4.20; RFC 9113, RFC 7541 |
 | `gql_tls` | Done | `gql_http`; system OpenSSL 3 at run time | RFC 8446, RFC 7301 |
 | `gql_https2` | Done | `gql_tls`, `gql_http2` | RFC 9113 over TLS; RFC 7301 |
@@ -164,7 +169,7 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_client` | Done, except optimistic layers | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache` |
 | `gql_codegen` | Done, `operationBased` models only | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
 | `gql_compiler` | Done | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
-| `gql_normalization` | Done, operations only | `gql_schema`, `gql_json` | graphql-go-tools v2 `astnormalization`, `astminify`, `variablesvalidation` |
+| `gql_normalization` | Done | `gql_schema`, `gql_json` | graphql-go-tools v2 `astnormalization`, `astminify`, `variablesvalidation` |
 | `gql_mcp` | Done | `gql_validation`, `gql_http` | Apollo MCP Server 2.0.0 |
 | `gql_seamstress` | Done, offline commands only | `gql_composition`, `gql_execution`, `gql_http` | Rover 1.0.0, MIT parts |
 
@@ -203,8 +208,14 @@ Mojo is faster than every baseline on every workload. Each package with a hot pa
 | `gql_compiler` | Validate `big_schema_many_fragments` (apollo-compiler benchmark) | 1.17 ms | apollo-compiler, 2.81 ms | 2.4x |
 | `gql_compiler` | Parse with syntax error recovery: `many_aliases` (apollo-parser benchmark) | 476 µs | apollo-parser, 2.56 ms | 5.4x |
 | `gql_compiler` | Parse with syntax error recovery: the supergraph (apollo-parser benchmark) | 50.9 µs | apollo-parser, 263 µs | 5.2x |
-| `gql_normalization` | Normalize an operation (graphql-go-tools benchmark) | 729 ns | graphql-go-tools, 872 ns | 1.20x |
-| `gql_normalization` | Minify an operation (graphql-go-tools benchmark) | 12.6 µs | graphql-go-tools, 35.0 µs | 2.78x |
+| `gql_normalization` | Normalize an operation (graphql-go-tools benchmark) | 612 ns | graphql-go-tools, 822 ns | 1.34x |
+| `gql_normalization` | Minify an operation (graphql-go-tools benchmark) | 12.7 µs | graphql-go-tools, 34.6 µs | 2.72x |
+| `gql_normalization` | Fragment spread depth (graphql-go-tools benchmark) | 107 ns | graphql-go-tools, 957 ns | 8.9x |
+| `gql_stream` | Publish to 1000 subscribers | 169 µs | graphql-subscriptions, 866 µs | 5.1x |
+| `gql_execution` | Subscribe, publish 100 events and execute each | 247 µs | graphql-js, 547 µs | 2.2x |
+| `gql_ws` | Parse a WebSocket frame | 79 ns | tungstenite, 741 ns | 9.4x |
+| `gql_ws` | Echo a message over a WebSocket | 7.44 µs | tokio-tungstenite, 10.8 µs | 1.45x |
+| `gql_ws` | Send 1000 subscription events over graphql-transport-ws | 2.00 µs per event | graphql-ws, 37.7 µs | 18.9x |
 | `gql_validation` | Validate the introspection query (graphql-js benchmark) | 40.2 µs | graphql-js, 409 µs | 10.2x |
 | `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 694 µs | apollo-compiler, 2.13 ms | 3.1x |
 | `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 418 µs | apollo-compiler, 3.03 ms | 7.2x |

@@ -70,10 +70,15 @@ summary = "Operation normalization, minification and variables validation of gra
 depends = ["gql_language", "gql_schema", "gql_json"]
 upstream = ["graphql-go-tools v2 (9ef6e24, 2026-10-14) v2/pkg/astnormalization (the operation stages and passes), v2/pkg/astminify, the executable document part of v2/pkg/astprinter and v2/pkg/variablesvalidation, and their tests (MIT); sjson v1.0.4 and jsonparser JSON edits as upstream writes them"]
 
+[packages.gql_stream]
+summary = "Pull-based event streams for subscriptions: Poll, EventStream, Waker, an epoll EventLoop, PubSub, map and withFilter"
+depends = ["gql_json"]
+upstream = ["graphql-subscriptions 3.0.0 (d74107c) src/pubsub.ts, src/pubsub-engine.ts, src/pubsub-async-iterable-iterator.ts, src/with-filter.ts and src/test (MIT); graphql-js 16.14.2 src/execution/mapAsyncIterator.ts (MIT)"]
+
 [packages.gql_execution]
-summary = "Execution of operations with resolvers, and introspection"
-depends = ["gql_language", "gql_schema", "gql_json"]
-upstream = ["graphql-js 16.14.2 src/execution, src/type/introspection.ts and the introspection utilities of src/utilities (MIT)"]
+summary = "Execution of operations with resolvers, subscriptions, and introspection"
+depends = ["gql_language", "gql_schema", "gql_json", "gql_stream"]
+upstream = ["graphql-js 16.14.2 src/execution (subscribe.ts included), src/type/introspection.ts and the introspection utilities of src/utilities (MIT)"]
 
 [packages.gql_client]
 summary = "Normalized client cache: InMemoryCache, type and field policies"
@@ -120,3 +125,14 @@ upstream = ["Apollo Rover 1.0.0 (39a041a) MIT parts: src/command/supergraph/comp
 summary = "apollo-compiler: the Schema model built from AST documents, without copies"
 depends = ["gql_language"]
 upstream = ["apollo-compiler 1.33.0 (apollo-rs b7eee5c) crates/apollo-compiler/src: schema/mod.rs, schema/component.rs, schema/from_ast.rs, built_in_types.graphql (the MIT arm of MIT OR Apache-2.0)", "apollo-parser 0.8.6 (apollo-rs b7eee5c) crates/apollo-parser/src: lexer/, error.rs, limit.rs, parser/mod.rs, parser/grammar/ (the MIT arm of MIT OR Apache-2.0)"]
+
+[packages.gql_ws]
+summary = "WebSocket (RFC 6455) server and client on gql_http, and the GraphQL over WebSocket protocol graphql-transport-ws"
+depends = ["gql_http", "gql_json", "gql_stream"]
+test_depends = ["gql_ws_execution"]
+upstream = ["tungstenite 0.30.0 (7f4aeaf) src/protocol (mod.rs, message.rs, frame/coding.rs, frame/frame.rs, frame/mask.rs, frame/mod.rs), src/handshake (mod.rs, server.rs, client.rs), src/utf8.rs, src/error.rs and tests/ (the MIT arm of MIT OR Apache-2.0)", "graphql-ws 6.4.1 (7281f1b) src/common.ts, src/utils.ts, src/server.ts, src/use/ws.ts, src/client.ts and tests/ (MIT)"]
+
+[packages.gql_ws_execution]
+summary = "graphql-transport-ws on gql_execution: parse, validate, execute and subscribe for the gql_ws transport server"
+depends = ["gql_ws", "gql_execution", "gql_language", "gql_schema", "gql_validation", "gql_json", "gql_stream"]
+upstream = ["graphql-ws 6.4.1 (7281f1b) src/server.ts: the parse, validate, getOperationAST, roots, execute and subscribe path of makeServer, and tests/server.test.ts (MIT)"]

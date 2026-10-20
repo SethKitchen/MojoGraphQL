@@ -1,0 +1,14 @@
+{
+  "name": "mojographql-bench-ws-js",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Node.js ws and graphql-ws baselines for the MojoGraphQL gql_ws benchmarks.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "dependencies": {
+    "graphql": "16.14.2",
+    "graphql-subscriptions": "3.0.0",
+    "graphql-ws": "6.4.1",
+    "ws": "8.18.3"
+  }
+}

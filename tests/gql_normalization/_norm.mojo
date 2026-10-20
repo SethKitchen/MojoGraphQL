@@ -366,7 +366,8 @@ def run_normalize(
 ) raises:
     """Normalize with the options of `TestNormalizeOperation`: upstream
     `NewWithOpts(WithInlineFragmentSpreads(), WithExtractVariables(),
-    WithRemoveFragmentDefinitions(), WithRemoveUnusedVariables())`.
+    WithRemoveFragmentDefinitions(), WithRemoveUnusedVariables(),
+    WithEnableDefer())`.
 
     Args:
         definition: The schema.
@@ -383,6 +384,7 @@ def run_normalize(
     options.extract_variables = True
     options.remove_fragment_definitions = True
     options.remove_unused_variables = True
+    options.enable_defer = True
     var schema = schema_of(definition)
     var document = parse(operation)
     var values = String(variables)

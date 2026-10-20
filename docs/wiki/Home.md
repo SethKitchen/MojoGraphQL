@@ -18,9 +18,11 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 
 - [Language](Language): the `gql_language` package, which is the lexer, parser and printer.
 - [Json](Json): the `gql_json` package, which is the JSON parser, document and writer.
-- [Execution](Execution): the `gql_execution` package: execute operations, introspection and `buildClientSchema`.
+- [Execution](Execution): the `gql_execution` package: execute operations, subscriptions, introspection and `buildClientSchema`.
+- [Stream](Stream): the `gql_stream` package, which is the streaming core of subscriptions: event streams, wakers, an epoll event loop, `PubSub` and `withFilter`.
 - [Http](Http): the `gql_http` package, which is the HTTP/1.1 server, client and parser.
 - [Http2](Http2): the `gql_http2` package, which is HTTP/2 and HPACK: h2c, the h2c upgrade, the HTTP/1.1 fallback, and a `Transport` for TLS.
+- [Ws](Ws): the `gql_ws` and `gql_ws_execution` packages: WebSocket servers and clients, and the GraphQL over WebSocket protocol `graphql-transport-ws` for subscriptions.
 - [Tls](Tls): the `gql_tls` package, which is TLS 1.3 and ALPN through the system OpenSSL, and the HTTPS server and client.
 - [Https2](Https2): the `gql_https2` package, which is HTTP/2 over TLS with ALPN `h2`: the server, the client with its HTTPS/1.1 fallback, and the TLS `Transport`.
 - [Quic](Quic): the `gql_quic` package, which is the QUIC transport.

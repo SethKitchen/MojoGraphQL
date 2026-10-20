@@ -6,19 +6,22 @@
 """Tests ported from graphql-go-tools v2
 `v2/pkg/astnormalization/astnormalization_test.go`.
 
-The `@defer` cases are not ported, because `WithEnableDefer` is not. The
-type extension cases ("type extensions" and the three "use extended ...
-without explicit schema definition") are not ported, because they need
-`WithNormalizeDefinition`, which normalizes the SDL and is not ported.
-`TestVariablesNormalizer` is not ported, because `VariablesNormalizer` is
-not. The benchmark is in `bench/gql_normalization/`.
+`TestVariablesNormalizer` is in `test_variables_normalizer.mojo`. The
+benchmark is in `bench/gql_normalization/`.
 """
 
+from _def_norm import parse_sdl
 from _norm import *
 from _norm_fixtures import *
+from gql_language.ast import Document
 from gql_language.parser import parse
 from gql_language.printer import print_ast
-from gql_normalization.normalize import OperationNormalizer, normalize_operation
+from gql_schema.definition import Schema
+from gql_normalization.normalize import (
+    NormalizerOptions,
+    OperationNormalizer,
+    normalize_operation,
+)
 from std.testing import TestSuite, assert_equal, assert_true
 
 
@@ -71,6 +74,104 @@ def test_complex() raises:
 					}
 					disallowedSecondRootField
 				}""",
+        "",
+        "",
+    )
+
+
+def test_defer_parent_ids_preserved_across_merged_and_discarded_scopes() raises:
+    run_normalize(
+        """
+			type Query { user: User }
+			type User { info: Info }
+			type Info { address: String email: String phone: String nestedInfo: NestedInfo }
+			type NestedInfo { a: String b: String c: String d: String }""",
+        """
+			query DeferUserTitle {
+				user {
+					info {
+						address
+					}
+				}
+				... @defer {
+					user {
+						info {
+							nestedInfo {
+								a
+							}
+						}
+						... @defer {
+							info {
+								nestedInfo {
+									b
+								}
+								... @defer {
+									nestedInfo {
+										c
+									}
+									phone
+								}
+							}
+						}
+						... @defer {
+							info {
+								email
+								... @defer {
+									nestedInfo {
+										d
+									}
+								}
+							}
+						}
+					}
+				}
+			}""",
+        """
+			query DeferUserTitle {
+				user {
+					info {
+						address
+						nestedInfo @__defer_internal(id: 1) {
+							a @__defer_internal(id: 1)
+							b @__defer_internal(id: 2, parentDeferId: 1)
+							c @__defer_internal(id: 3, parentDeferId: 2)
+							d @__defer_internal(id: 5, parentDeferId: 4)
+						}
+						phone @__defer_internal(id: 3, parentDeferId: 2)
+						email @__defer_internal(id: 4, parentDeferId: 1)
+					}
+				}
+			}""",
+        "",
+        "",
+    )
+
+
+def test_deferred_typename_on_initial_entity_becomes_non_deferred() raises:
+    run_normalize(
+        """
+			type Query { article: Article }
+			type Article { id: ID! title: String! reviews: [Review!]! }
+			type Review { id: ID! }""",
+        """
+			query Q {
+				article {
+					id
+					... @defer { __typename title }
+					reviews { id }
+				}
+			}""",
+        """
+			query Q {
+				article {
+					id
+					__typename
+					title @__defer_internal(id: 1)
+					reviews {
+						id
+					}
+				}
+			}""",
         "",
         "",
     )
@@ -495,6 +596,152 @@ def test_preserve_still_used_fragments() raises:
     )
 
 
+def test_defer_no_conditions_typename_placeholder_needed() raises:
+    run_normalize(
+        TEST_DEFINITION,
+        """
+			query pet {
+				pet {
+					... on Dog @defer {
+						name
+						nickname
+						... @defer {
+							barkVolume
+						}
+					}
+					... on Dog {
+						... @defer {
+							extra {
+								noString
+							}
+						}
+						... @defer {
+							extra {
+								string
+								noString
+							}
+						}
+					}
+					... on Cat {
+						name
+						extra {
+							bool
+						}
+					}
+					... on Cat @defer {
+						name
+						meowVolume
+						extra {
+							bool
+						}
+					}
+					... on Cat @defer {
+						name
+						nickname
+						meowVolume
+					}
+				}
+			}""",
+        """
+			query pet {
+				pet {
+					... on Dog {
+						name @__defer_internal(id: 1)
+						nickname @__defer_internal(id: 1)
+						barkVolume @__defer_internal(id: 2, parentDeferId: 1)
+						extra @__defer_internal(id: 3) {
+							noString @__defer_internal(id: 3)
+							string @__defer_internal(id: 4, parentDeferId: 3)
+						}
+						__internal_typename: __typename
+					}
+					... on Cat {
+						name
+						extra {
+							bool
+						}
+						meowVolume @__defer_internal(id: 5)
+						nickname @__defer_internal(id: 6)
+					}
+				}
+			}""",
+        "",
+        "",
+    )
+
+
+def test_defer_with_conditions() raises:
+    run_normalize(
+        TEST_DEFINITION,
+        """
+			query pet($dogExtraString: Boolean!, $catExtra: Boolean!, $catNoExtra: Boolean!) {
+				pet {
+					... on Dog @defer(if: true) {
+						name
+						nickname
+						... @defer {
+							barkVolume
+						}
+					}
+					... on Dog {
+						... @defer(if: false) {
+							extra {
+								noString
+							}
+						}
+						... @defer(if: $dogExtraString) {
+							extra {
+								string
+								noString
+							}
+						}
+					}
+					... on Cat {
+						name
+						extra {
+							bool
+						}
+					}
+					... on Cat @defer(if: $catExtra) {
+						name
+						meowVolume
+						extra {
+							bool
+						}
+					}
+					... on Cat @defer(if: $catNoExtra) {
+						name
+						nickname
+					}
+				}
+			}""",
+        """
+			query pet {
+				pet {
+					... on Dog {
+						name @__defer_internal(id: 1)
+						nickname @__defer_internal(id: 1)
+						barkVolume @__defer_internal(id: 2, parentDeferId: 1)
+						extra {
+							noString
+							string
+						}
+					}
+					... on Cat {
+						name
+						extra {
+							bool
+						}
+						meowVolume @__defer_internal(id: 3)
+						nickname
+					}
+				}
+			}""",
+        '{"dogExtraString": false, "catExtra": true, "catNoExtra": false}',
+        "{}",
+    )
+
+
 def test_should_return_an_error_once_on_normalization_with_missing_field() raises:
     """Upstream `TestOperationNormalizer_NormalizeOperation`: an unknown
     field is for validation to report."""
@@ -809,6 +1056,166 @@ def test_parse_missing_base_schema() raises:
         )
         return
     assert_true(False, "normalization should report an error")
+
+
+def run_with_definition(
+    definition: StringSlice,
+    operation: StringSlice,
+    expected: StringSlice,
+    variables: StringSlice,
+    expected_variables: StringSlice,
+) raises:
+    """Normalize with the options of `TestNormalizeOperation`, and with
+    `WithNormalizeDefinition`, against the SDL as a document.
+
+    Args:
+        definition: The SDL.
+        operation: The operation.
+        expected: The expected operation.
+        variables: The variables JSON.
+        expected_variables: The expected variables JSON.
+
+    Raises:
+        Error: If the outputs differ or the normalization fails.
+    """
+    var options = NormalizerOptions()
+    options.inline_fragment_spreads = True
+    options.extract_variables = True
+    options.remove_fragment_definitions = True
+    options.remove_unused_variables = True
+    options.normalize_definition = True
+    var sdl = parse_sdl(definition)
+    var document = parse(operation)
+    var values = String(variables)
+    OperationNormalizer(options).normalize_operation_with_definition(
+        document, sdl, values
+    )
+    assert_equal(print_ast(document), printed(expected))
+    assert_equal(values, String(expected_variables))
+
+
+def test_type_extensions() raises:
+    run_with_definition(
+        TYPE_EXTENSIONS_DEFINITION,
+        """
+			{
+				findUserByLocation(loc: {lat: 1.000, lon: 2.000, planet: "EARTH"}) {
+					id
+					name
+					age
+					type {
+						... on TrialUser {
+							__typename
+							enabled
+						}
+						... on SubscribedUser {
+							__typename
+							subscription
+						}
+					}
+					metadata
+				}
+			}""",
+        """query($a: Location){
+				findUserByLocation(loc: $a) {
+					id
+					name
+					age
+					type {
+						... on TrialUser {
+							__typename
+							enabled
+						}
+						... on SubscribedUser {
+							__typename
+							subscription
+						}
+					}
+					metadata
+				}
+			}""",
+        """{"a": {"lat": 1.000, "lon": 2.000, "planet": "EARTH"}}""",
+        """{"a": {"lat":1.000,"lon":2.000,"planet":"EARTH"}}""",
+    )
+
+
+def test_use_extended_query_without_explicit_schema_definition() raises:
+    run_with_definition(
+        EXTENDED_ROOT_OPERATION_TYPE_DEFINITION,
+        "{ me }",
+        "{ me }",
+        "",
+        "",
+    )
+
+
+def test_use_extended_mutation_without_explicit_schema_definition() raises:
+    run_with_definition(
+        EXTENDED_ROOT_OPERATION_TYPE_DEFINITION,
+        "mutation { increaseTextCounter }",
+        "mutation { increaseTextCounter }",
+        "",
+        "",
+    )
+
+
+def test_use_extended_subscription_without_explicit_schema_definition() raises:
+    run_with_definition(
+        EXTENDED_ROOT_OPERATION_TYPE_DEFINITION,
+        "subscription { textCounter }",
+        "subscription { textCounter }",
+        "",
+        "",
+    )
+
+
+def test_named_operation_with_definition() raises:
+    # Not from upstream: `NormalizeNamedOperation` on an SDL document.
+    var options = NormalizerOptions()
+    options.remove_not_matching_operation_definitions = True
+    options.normalize_definition = True
+    var sdl = parse_sdl(EXTENDED_ROOT_OPERATION_TYPE_DEFINITION)
+    var document = parse("query A { me } query B { me }")
+    var values = String()
+    OperationNormalizer(options).normalize_named_operation_with_definition(
+        document, sdl, "B", values
+    )
+    assert_equal(print_ast(document), printed("query B { me }"))
+    # Without the option, the SDL is built as it is.
+    var plain = parse("type Query { me: String }")
+    var again = parse("{ me }")
+    OperationNormalizer(
+        NormalizerOptions()
+    ).normalize_operation_with_definition(again, plain, values)
+    assert_equal(print_ast(again), printed("{ me }"))
+
+
+def _refuse_forbidden(
+    operation: Document, schema: Schema, variables: String
+) raises:
+    """A prevalidation rule: refuse an operation with a `forbidden` field."""
+    var text = print_ast(operation)
+    if "forbidden" in text:
+        raise Error("forbidden field")
+
+
+def test_prevalidation_rules() raises:
+    # Not from upstream: a rule reads the operation before the first stage.
+    var options = NormalizerOptions()
+    options.prevalidation_rules.append(_refuse_forbidden)
+    var normalizer = OperationNormalizer(options)
+    var schema = schema_of("type Query { allowed: String forbidden: String }")
+    var values = String()
+    var good = parse("{ allowed allowed }")
+    normalizer.normalize_operation(good, schema, values)
+    assert_equal(print_ast(good), printed("{ allowed }"))
+    var bad = parse("{ forbidden }")
+    try:
+        normalizer.normalize_operation(bad, schema, values)
+    except error:
+        assert_equal(String(error), "forbidden field")
+        return
+    assert_true(False, "expected the error: forbidden field")
 
 
 def main() raises:

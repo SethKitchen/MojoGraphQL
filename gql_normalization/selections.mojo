@@ -28,8 +28,9 @@ Differences from upstream:
 - The walker of upstream reads a directive list while a visitor removes a
   directive from it, so it can skip the directive after a removed one. Here
   each directive is read once, in order.
-- `@defer` handling (`MergeFieldsDefer`) is not ported; see
-  `gql_normalization.normalize`.
+
+The `@defer` stages are in `gql_normalization.defer`. The merges here keep
+the winning `@__defer_internal` with `merge_fields_defer`.
 """
 
 from gql_language.ast import Document, FLAG_TRUE, Kind, NO_NODE, Role
@@ -186,6 +187,24 @@ def _condition(
     return (False, False)
 
 
+def directive_condition(
+    document: Document, variables: String, directive: Int
+) -> Tuple[Bool, Bool]:
+    """Return the `if` argument of an `@include` or `@skip` directive:
+    `GetBooleanValue` of its only argument.
+
+    Args:
+        document: The operation document.
+        variables: The variables JSON.
+        directive: The directive.
+
+    Returns:
+        The value, and whether it is known: the directive has one argument,
+        `if`, with a boolean or a variable of a known boolean value.
+    """
+    return _condition(document, variables, directive)
+
+
 def _add_variables(document: Document, value: Int, mut names: List[String]):
     """Add each variable in a value to a list, once."""
     var kind = document.kind(value)
@@ -222,10 +241,13 @@ struct _IncludeSkip(Movable):
     """Remove the directives, and keep the nodes they would remove."""
     var used: List[String]
     """The variables in an argument anywhere in the document."""
+    var has_defer: Bool
+    """Whether a directive of the walk is `@defer`."""
 
     def __init__(out self, keep_nodes: Bool):
         self.keep_nodes = keep_nodes
         self.used = List[String]()
+        self.has_defer = False
 
 
 @always_inline
@@ -250,6 +272,8 @@ def _directives(
         var name = document.name(directive)
         var is_skip = name == "skip"
         if not is_skip and not name == "include":
+            if name == "defer":
+                state.has_defer = True
             continue
         var condition = _condition(document, variables, directive)
         if not condition[1]:
@@ -324,35 +348,34 @@ def _spreads_under(document: Document, node: Int, mut out: List[Int]):
         current = document.next_sibling(current)
 
 
-def _has_spread(document: Document, node: Int) -> Bool:
-    """Return True if a fragment spread is under a node."""
-    var current = document.first_child(node)
+def _has_spread(document: Document, selection_set: Int) -> Bool:
+    """Return True if a fragment spread is under a selection set."""
+    var current = document.first_child(selection_set)
     while current != NO_NODE:
-        var kind = document.kind(current)
-        if kind == Kind.FRAGMENT_SPREAD:
+        if document.kind(current) == Kind.FRAGMENT_SPREAD:
             return True
-        if (kind == Kind.SELECTION_SET or kind.is_selection()) and _has_spread(
-            document, current
-        ):
+        var inner = document.child(current, Role.SELECTION_SET)
+        if inner != NO_NODE and _has_spread(document, inner):
             return True
         current = document.next_sibling(current)
     return False
 
 
-def _spread_closes(document: Document, node: Int) -> Bool:
-    """Return True if a spread under a node names a fragment that has a
-    spread: only then can a cycle pass through the node."""
-    var current = document.first_child(node)
+def _spread_closes(document: Document, selection_set: Int) -> Bool:
+    """Return True if a spread under a selection set names a fragment that
+    has a spread: only then can a cycle pass through the set."""
+    var current = document.first_child(selection_set)
     while current != NO_NODE:
-        var kind = document.kind(current)
-        if kind == Kind.FRAGMENT_SPREAD:
+        if document.kind(current) == Kind.FRAGMENT_SPREAD:
             var target = _fragment_definition(document, document.name(current))
-            if target != NO_NODE and _has_spread(document, target):
+            if target != NO_NODE and _has_spread(
+                document, document.child(target, Role.SELECTION_SET)
+            ):
                 return True
-        elif (
-            kind == Kind.SELECTION_SET or kind.is_selection()
-        ) and _spread_closes(document, current):
-            return True
+        else:
+            var inner = document.child(current, Role.SELECTION_SET)
+            if inner != NO_NODE and _spread_closes(document, inner):
+                return True
         current = document.next_sibling(current)
     return False
 
@@ -399,7 +422,9 @@ def _cycle(document: Document) -> Int:
     while definition != NO_NODE and not possible:
         possible = document.kind(
             definition
-        ) == Kind.FRAGMENT_DEFINITION and _spread_closes(document, definition)
+        ) == Kind.FRAGMENT_DEFINITION and _spread_closes(
+            document, document.child(definition, Role.SELECTION_SET)
+        )
         definition = document.next_sibling(definition)
     if not possible:
         return NO_NODE
@@ -457,6 +482,37 @@ def directive_include_skip(
         Error: `Unknown type "<name>".` for an unknown root or fragment
             type, or `fragment spread: <name> forms fragment cycle`.
     """
+    return directive_include_skip_with_defer(
+        document, schema, variables, keep_nodes
+    )[0].copy()
+
+
+def directive_include_skip_with_defer(
+    mut document: Document,
+    schema: Schema,
+    variables: String,
+    keep_nodes: Bool,
+) raises -> Tuple[List[String], Bool]:
+    """Run `directive_include_skip`, and also tell whether the document has
+    a `@defer` directive.
+
+    Without a `@defer`, the `@defer` stages change nothing, so the
+    normalizer skips them. The walk reads each directive name already, so
+    the check costs one comparison for each directive.
+
+    Args:
+        document: The operation document.
+        schema: The schema.
+        variables: The variables JSON, for an `if: $variable`.
+        keep_nodes: See `directive_include_skip`.
+
+    Returns:
+        The variables that the arguments use, and whether a directive of an
+        operation or a fragment definition is `@defer`.
+
+    Raises:
+        Error: As `directive_include_skip`.
+    """
     var cycle = _cycle(document)
     var state = _IncludeSkip(keep_nodes)
     var definition = document.first_child(document.root)
@@ -493,7 +549,9 @@ def directive_include_skip(
         raise Error(
             "fragment spread: ", document.name(cycle), " forms fragment cycle"
         )
-    return state.used.copy()
+    var used = List[String]()
+    swap(used, state.used)
+    return (used^, state.has_defer)
 
 
 @always_inline
@@ -678,6 +736,31 @@ def fragment_spread_inline(mut document: Document, schema: Schema) raises:
             fragment, or `Unknown type "<name>".`.
     """
     _walk_operations[_spread_inline_set](document, schema, False)
+
+
+def operations_have_spread(document: Document) -> Bool:
+    """Return True if a fragment spread is in an operation.
+
+    After `directive_include_skip`, which checks each type condition,
+    `fragment_spread_inline` changes nothing and raises nothing in a
+    document without one, so the normalizer skips it.
+
+    Args:
+        document: The operation document.
+
+    Returns:
+        Whether a selection set of an operation has a fragment spread.
+    """
+    var definition = document.first_child(document.root)
+    while definition != NO_NODE:
+        if document.kind(
+            definition
+        ) == Kind.OPERATION_DEFINITION and _has_spread(
+            document, document.child(definition, Role.SELECTION_SET)
+        ):
+            return True
+        definition = document.next_sibling(definition)
+    return False
 
 
 @always_inline
@@ -1082,6 +1165,34 @@ def merge_and_deduplicate(mut document: Document, schema: Schema) raises:
     _walk_operations[_cleanup_set, False](document, schema, True)
 
 
+def merge_inline_and_deduplicate_set(
+    mut document: Document, schema: Schema, selection_set: Int, enclosing: Int
+) raises:
+    """Run `merge_inline_fragment_selections`,
+    `inline_selections_from_inline_fragments` and `deduplicate_fields` on
+    one walk of a selection set and the sets under it.
+
+    The walk enters each selection set in document order, and runs the
+    three passes on it in turn, as the walker of
+    `NewAbstractFieldNormalizer` does with its three visitors.
+
+    Args:
+        document: The operation document.
+        schema: The schema.
+        selection_set: The `SelectionSet` node.
+        enclosing: The enclosing type of the selection set, or `NO_TYPE`.
+
+    Raises:
+        Error: `Unknown type "<name>".`, as the walker of upstream.
+    """
+    _merge_here(document, schema, selection_set, enclosing)
+    _inline_selections_here(document, schema, selection_set, enclosing)
+    _deduplicate_here(document, schema, selection_set, enclosing)
+    _walk_children[merge_inline_and_deduplicate_set](
+        document, schema, selection_set, enclosing
+    )
+
+
 def _used_in_set(document: Document, node: Int, mut names: List[String]):
     """Add the variables of every argument under a node, in walk order."""
     var current = document.first_child(node)
@@ -1099,6 +1210,24 @@ def _used_in_set(document: Document, node: Int, mut names: List[String]):
         ):
             _used_in_set(document, current, names)
         current = document.next_sibling(current)
+
+
+def detect_variable_usage(document: Document) -> List[String]:
+    """Return the variables that an argument uses, anywhere in the
+    document: `detectVariableUsage` on a walker of its own.
+
+    Args:
+        document: The operation document.
+
+    Returns:
+        The names, once each, for `delete_unused_variables`.
+    """
+    var names = List[String]()
+    var definition = document.first_child(document.root)
+    while definition != NO_NODE:
+        _used_in_set(document, definition, names)
+        definition = document.next_sibling(definition)
+    return names^
 
 
 def delete_unused_variables(

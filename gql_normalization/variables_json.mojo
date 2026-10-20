@@ -271,7 +271,8 @@ def delete_member(text: String, name: StringSlice) -> String:
     """Delete a top-level member: `sjson.DeleteBytes` of sjson v1.0.4.
 
     A member after the first goes with the comma before it. The first
-    member goes with the white space and the comma after it.
+    member goes with the white space around its key, and with the white
+    space and the comma after its value.
 
     Args:
         text: The JSON text.
@@ -291,6 +292,8 @@ def delete_member(text: String, name: StringSlice) -> String:
         while data[start] != UInt8(ord(",")):
             start -= 1
     else:
+        while data[start - 1] != UInt8(ord("{")):
+            start -= 1
         var after = _skip_space(data, end)
         if after < len(data) and data[after] == UInt8(ord(",")):
             end = after + 1

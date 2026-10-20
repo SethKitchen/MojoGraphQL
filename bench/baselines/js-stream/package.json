@@ -1,0 +1,15 @@
+{
+  "name": "mojographql-bench-stream-js",
+  "version": "0.0.0",
+  "private": true,
+  "description": "graphql-js subscribe and graphql-subscriptions PubSub baseline for the MojoGraphQL gql_stream and gql_execution subscription benchmarks.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  },
+  "dependencies": {
+    "graphql": "16.14.2",
+    "graphql-subscriptions": "3.0.0"
+  }
+}

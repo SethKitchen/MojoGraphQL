@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Rust WebSocket baselines. `ws-echo-server` is a tokio-tungstenite
+# server on a tokio runtime with one thread. `ws-frames` times the frame
+# codec of tungstenite. tungstenite and tokio-tungstenite are MIT OR
+# Apache-2.0, used under MIT; tokio and futures-util are MIT.
+
+[package]
+name = "mojographql-bench-ws-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+tungstenite = { version = "=0.30.0", default-features = false, features = ["handshake"] }
+tokio-tungstenite = { version = "0.30", default-features = false, features = ["handshake"] }
+tokio = { version = "1", features = ["rt", "net", "macros"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+
+[[bin]]
+name = "ws-echo-server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "ws-frames"
+path = "src/bin/frames.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

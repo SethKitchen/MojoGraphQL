@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Execution
 
-`gql_execution` runs a GraphQL operation against a schema and gives the result as JSON. It is a port of graphql-js 16.14.2 `src/execution`, `src/type/introspection.ts`, `getIntrospectionQuery`, `introspectionFromSchema` and `buildClientSchema`. It needs `gql_language`, `gql_schema` and `gql_json`.
+`gql_execution` runs a GraphQL operation against a schema and gives the result as JSON. It is a port of graphql-js 16.14.2 `src/execution`, `subscribe` included, `src/type/introspection.ts`, `getIntrospectionQuery`, `introspectionFromSchema` and `buildClientSchema`. It needs `gql_language`, `gql_schema`, `gql_json` and `gql_stream`.
 
 ```mojo
 from gql_execution.execute import ExecutionArgs, ResolveInfo, execute
@@ -37,6 +37,8 @@ Execution does not validate the document. Validate it first with `gql_validation
 | `execute(schema, document, args)` | `executeSync(args)` | `ExecutionResult` |
 | `execute(schema, document)` | `executeSync({ schema, document })` | `ExecutionResult` |
 | `execute_sync(schema, document, args)` | `executeSync(args)` | `ExecutionResult` |
+| `subscribe(schema, document, args)` | `subscribe(args)` | `Subscription` |
+| `create_source_event_stream(schema, document, args)` | `createSourceEventStream(args)` | `SourceEventStream` |
 | `get_variable_values(schema, document, operation, values, inputs, max_errors)` | `getVariableValues` | `CoercedVariables` |
 | `get_argument_values(schema, owner, definition, document, node, values, variables)` | `getArgumentValues` | An object of `Values` |
 | `get_directive_values(schema, directive, document, node, values, variables)` | `getDirectiveValues` | An object, or `UNDEFINED` |
@@ -113,6 +115,53 @@ The arena stays in `args.values` after execution. A resolver can change values t
 
 Execution writes the result directly into the `JsonDocument`. A field that fails becomes `null`, and the error goes up to the nearest field that can be `null`, as in graphql-js.
 
+## Subscriptions
+
+`gql_execution.subscribe` ports graphql-js `subscribe.ts`. `subscribe` calls the `subscribe` function of the root field, and gets the source event stream. Each event of that stream becomes the root value of one execution, as `mapAsyncIterator` maps it. See [Stream](Stream) for the streams.
+
+```mojo
+from gql_execution.execute import ExecutionArgs, ResolveInfo
+from gql_execution.subscribe import subscribe
+from gql_execution.value import Values
+from gql_language.parser import parse
+from gql_schema.build import build_schema
+from gql_stream.poll import Event
+from gql_stream.pubsub import PubSub
+from gql_stream.stream import AnyStream
+from gql_stream.waker import Waker
+
+
+def main() raises:
+    var schema = build_schema(
+        "type Query { a: String } type Subscription { greeting: String }"
+    )
+    var pubsub = PubSub()
+    var args = ExecutionArgs()
+    var root = args.values.add_object()
+    var source = AnyStream(pubsub.subscribe("GREETING"))
+    args.values.add_member(root, "greeting", args.values.add_stream(source^))
+    args.root_value = root
+    var subscription = subscribe(schema, parse("subscription { greeting }"), args^)
+    var responses = subscription.take_stream()
+    pubsub.publish("GREETING", Event.parse('{"greeting":"Hello"}'))
+    var waker = Waker.noop()
+    print(responses.poll_next(waker).value().to_json())
+    # {"data":{"greeting":"Hello"}}
+```
+
+A `subscribe` function is a `FieldResolver`. Set it with `Resolvers.subscribe(type_name, field_name, resolve)`. It returns a value that `Values.add_stream` made. A field with no `subscribe` function uses `Resolvers.subscribe_field_resolver`, which is `default_field_resolver` by default. That resolver returns the property of the root value, as in the example.
+
+`subscribe` returns a `Subscription`. It holds a `ResponseStream`, or an `ExecutionResult` with errors and no data. `take_stream()` takes the stream. `to_json()` gives the JSON of the result. `subscribe` raises in the cases where graphql-js rejects:
+
+- The schema is not valid, or the variable values are not an object.
+- The subscription field does not return a stream: `Subscription field must return Async Iterable. Received: ...`.
+
+A `ResponseStream` is an `EventStream`. Each event is the JSON of an `ExecutionResult`, with the keys of `ExecutionResult.to_json()`. A field error is in the `errors` of that event, and the stream continues. An error of the source stream ends the stream with `ERROR`.
+
+The execution of an event uses the arena of the subscription. The values of the event are dropped after it, unless a resolver links one of them into an older value.
+
+`create_source_event_stream` returns a `SourceEventStream`. It holds the source event stream, or the result with the errors.
+
 ## Introspection
 
 The meta fields `__typename`, `__schema` and `__type` and the fields of the introspection types use their own resolvers, as in graphql-js. They read the arenas of the `Schema` directly. They write the introspection result into the response without making arena values.
@@ -135,7 +184,12 @@ These things differ from graphql-js `buildClientSchema`:
 
 ## Differences from graphql-js
 
-- Execution is synchronous. There are no promises, so `execute` is `executeSync`. A subscription operation executes as graphql-js `execute` executes it. `subscribe` is not ported.
+- Execution is synchronous. There are no promises, so `execute` is `executeSync`. A subscription operation executes as graphql-js `execute` executes it.
+- `subscribe` returns at once, not a promise. Its response stream is a pull-based `EventStream`, not an `AsyncGenerator`, and it has no `throw()`.
+- A `subscribe` function cannot be asynchronous. It must return a stream that `Values.add_stream` made.
+- `subscribe` validates the schema one time. Each event executes with `assume_valid_schema`.
+- The meta field `__typename` as the root field of a subscription is "not defined". `SingleFieldSubscriptionsRule` refuses such a document, so only a document that is not valid meets it.
+- The positional arguments of graphql-js 15 are not ported.
 - A resolver is a Mojo function, not a JavaScript function. It raises an `Error` with a message, and it cannot raise a `GraphQLError` with extensions.
 - A value is a JSON-like value, a handle or an error. There are no functions, classes, iterables other than arrays, `valueOf` or `toJSON`. A handle has no properties.
 - A custom scalar always behaves as a scalar built from SDL. `serialize` and `parseValue` are the identity, and `parseLiteral` is `valueFromASTUntyped`. An enum value is its name.
@@ -147,7 +201,7 @@ These things differ from graphql-js `buildClientSchema`:
 
 ## Tests
 
-The tests are in `tests/gql_execution/`. They port the graphql-js tests of `src/execution/__tests__`, `src/type/__tests__/introspection-test.ts`, `getIntrospectionQuery-test.ts`, `introspectionFromSchema-test.ts`, `buildClientSchema-test.ts`, `coerceInputValue-test.ts`, `valueFromAST-test.ts` and `valueFromASTUntyped-test.ts`. Each module docstring lists the upstream cases that are not ported, and why.
+The tests are in `tests/gql_execution/`. They port the graphql-js tests of `src/execution/__tests__`, `subscribe-test.ts` included, `src/type/__tests__/introspection-test.ts`, `getIntrospectionQuery-test.ts`, `introspectionFromSchema-test.ts`, `buildClientSchema-test.ts`, `coerceInputValue-test.ts`, `valueFromAST-test.ts` and `valueFromASTUntyped-test.ts`. Each module docstring lists the upstream cases that are not ported, and why.
 
 Many expected results come from graphql-js 16.14.2 itself, run in Node.js with the same SDL, document and values. That includes each upstream execution of `variables-test.ts` and `introspection-test.ts`, and the serialization of more than 400 values.
 
@@ -158,5 +212,7 @@ Many expected results come from graphql-js 16.14.2 itself, run in Node.js with t
 - `introspectionFromSchema-benchmark.js`, "Execute Introspection Query", is `graphql-js/execute-introspection-query`. It executes the introspection query against the GitHub schema. apollo-compiler `introspection::partial_execute` runs the same workload.
 - `repeated-fields-benchmark.js`, "Many repeated fields", is `graphql-js/repeated-fields-parse-execute`. Upstream also validates the document, and validation is not in this package. Thus the workload and its graphql-js baseline time `parse` and `executeSync` only.
 - `buildClientSchema-benchmark.js`, "Build Schema from Introspection", is `graphql-js/build-client-schema`. It builds the GitHub schema from its introspection result.
+
+`bench/gql_execution/subscribe.mojo` runs `stream/subscribe-publish-100`. It subscribes to an operation, then publishes 100 events to a `PubSub` and reads the 100 responses. The baseline in `bench/baselines/js-stream` runs graphql-js `subscribe` with a graphql-subscriptions `PubSub` in Node.js.
 
 The [Benchmarks](Benchmarks) page tells how the project measures and gives the numbers.

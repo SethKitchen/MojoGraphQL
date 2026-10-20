@@ -36,7 +36,11 @@ the same order, and the same errors with their locations and paths.
 
 - Execution is synchronous: there are no promises. `execute` is
   `executeSync`. A subscription operation executes as graphql-js `execute`
-  executes it; `subscribe` and its event streams are not ported.
+  executes it; `gql_execution.subscribe` has `subscribe`, which uses
+  `prepare`, `execute_subscription` and `resolve_source_event` here.
+- `Resolvers.subscribe` and `subscribe_field_resolver` are the `subscribe`
+  of a field and `subscribeFieldResolver`. A `subscribe` function is a
+  `FieldResolver` that returns a value of `Values.add_stream`.
 - A resolver raises an `Error`, which gives the message of the field
   error, or returns an error value. It cannot raise a `GraphQLError` with
   extensions.
@@ -169,6 +173,15 @@ struct Resolvers(Copyable, Movable):
     otherwise."""
     var has_default_field: Bool
     """Whether `default_field` is not graphql-js `defaultFieldResolver`."""
+    var subscribe_types: List[String]
+    """The type of each `subscribe` function."""
+    var subscribe_names: List[String]
+    """The field of each `subscribe` function."""
+    var subscribe_functions: List[FieldResolver]
+    """Each `subscribe` function of a field."""
+    var default_subscribe: FieldResolver
+    """The `subscribe` of a field with none: graphql-js
+    `subscribeFieldResolver`, `defaultFieldResolver` by default."""
 
     def __init__(out self):
         """Start with no resolvers: every field uses the default."""
@@ -182,6 +195,58 @@ struct Resolvers(Copyable, Movable):
         self.default_field = default_field_resolver
         self.default_type = List[TypeResolver]()
         self.has_default_field = False
+        self.subscribe_types = List[String]()
+        self.subscribe_names = List[String]()
+        self.subscribe_functions = List[FieldResolver]()
+        self.default_subscribe = default_field_resolver
+
+    def subscribe(
+        mut self, type_name: String, field_name: String, resolve: FieldResolver
+    ):
+        """Set the `subscribe` function of a subscription field.
+
+        It returns the source event stream: a value that
+        `Values.add_stream` made. Another value is an error of `subscribe`.
+
+        Args:
+            type_name: The subscription type, such as `Subscription`.
+            field_name: The field.
+            resolve: The function.
+        """
+        self.subscribe_types.append(type_name)
+        self.subscribe_names.append(field_name)
+        self.subscribe_functions.append(resolve)
+
+    def subscribe_field_resolver(mut self, resolve: FieldResolver):
+        """Set the `subscribe` of the fields with none, as graphql-js
+        `ExecutionArgs.subscribeFieldResolver`.
+
+        Args:
+            resolve: The function.
+        """
+        self.default_subscribe = resolve
+
+    def subscribe_function(
+        self, type_name: StringSlice, field_name: StringSlice
+    ) -> FieldResolver:
+        """Return the `subscribe` of a field, or the default.
+
+        Args:
+            type_name: The subscription type.
+            field_name: The field.
+
+        Returns:
+            The function.
+        """
+        var index = len(self.subscribe_functions) - 1
+        while index >= 0:
+            if (
+                self.subscribe_types[index] == type_name
+                and self.subscribe_names[index] == field_name
+            ):
+                return self.subscribe_functions[index]
+            index -= 1
+        return self.default_subscribe
 
     def field(
         mut self, type_name: String, field_name: String, resolve: FieldResolver
@@ -1711,6 +1776,32 @@ struct _Executor[
         max_errors: Int,
     ) raises -> ExecutionResult:
         """Return graphql-js `execute` after the argument checks."""
+        var early = self.prepare(operation_name, variable_values, max_errors)
+        if early:
+            return early.take()
+        self.root_value = root_value
+        self.context_value = context_value
+        try:
+            self.data.root = self._execute_operation(self.operation)
+        except e:
+            self.errors.append(e^)
+            self.data.root = self.data.add_null()
+        var data = JsonDocument()
+        swap(data, self.data)
+        var errors = List[GraphQLError]()
+        swap(errors, self.errors)
+        var result = ExecutionResult(data^, errors^)
+        swap(result.field_timings, self.field_timings)
+        return result^
+
+    def prepare(
+        mut self,
+        operation_name: Optional[String],
+        variable_values: Int,
+        max_errors: Int,
+    ) raises -> Optional[ExecutionResult]:
+        """Return the errors of graphql-js `buildExecutionContext`, or None
+        after it set the operation and the coerced variables."""
         ref document = self.document[]
         var operation = NO_NODE
         var definition = document.child(document.root, Role.DEFINITION)
@@ -1760,20 +1851,78 @@ struct _Executor[
             return ExecutionResult(data^, errors^)
         self.variables = coerced.coerced
         self.operation = operation
+        return None
+
+    def execute_subscription(
+        mut self, root_value: Int, context_value: Int
+    ) raises GraphQLError -> Int:
+        """Return graphql-js `executeSubscription` after `prepare`: the
+        value that the `subscribe` function of the first root field
+        returns. Its errors are located at the field."""
+        ref document = self.document[]
         self.root_value = root_value
         self.context_value = context_value
+        var operation = self.operation
+        var root = self.schema[].root_type(OperationType.SUBSCRIPTION.value)
+        if root == NO_TYPE:
+            raise GraphQLError(
+                "Schema is not configured to execute subscription operation.",
+                document.source,
+                [document.start(operation)],
+            )
+        var plan = self.collector.collect_fields(
+            self.schema[],
+            document,
+            self.values,
+            self.variables,
+            root,
+            document.child(operation, Role.SELECTION_SET),
+        )
+        self._sync_groups()
+        var group = Int(self.collector.plan(plan).start)
+        var field = self._field_def(root, group)
+        if field == NO_TYPE or field < 0:
+            var node = self.collector.node(
+                Int(self.collector.group(group).start)
+            )
+            raise self._locate(
+                GraphQLError(
+                    'The subscription field "'
+                    + String(document.name(node))
+                    + '" is not defined.'
+                ),
+                group,
+                0,
+            )
+        var type = self._return_type(field)
+        self.path.append(Int32(group))
         try:
-            self.data.root = self._execute_operation(operation)
+            var node = self.collector.node(
+                Int(self.collector.group(group).start)
+            )
+            var args = get_argument_values(
+                self.schema[],
+                ArgumentOwner.FIELD,
+                field,
+                document,
+                node,
+                self.values,
+                self.variables,
+            )
+            var info = self._info(root, field, group, type)
+            var resolve = self.resolvers[].subscribe_function(
+                self.schema[].types[root].name, info.field_name
+            )
+            var stream: Int
+            try:
+                stream = resolve(self.values, root_value, args, info)
+            except e:
+                raise GraphQLError(String(e))
+            if self.values.kind(stream) == ValueKind.ERROR:
+                raise GraphQLError(String(self.values.string(stream)))
+            return stream
         except e:
-            self.errors.append(e^)
-            self.data.root = self.data.add_null()
-        var data = JsonDocument()
-        swap(data, self.data)
-        var errors = List[GraphQLError]()
-        swap(errors, self.errors)
-        var result = ExecutionResult(data^, errors^)
-        swap(result.field_timings, self.field_timings)
-        return result^
+            raise self._locate(e^, group, 1)
 
     def _only_errors(self, var error: GraphQLError) -> ExecutionResult:
         """Return a result with one error and no `data` key."""
@@ -1892,6 +2041,83 @@ def execute_with_resolvers(
         raise e^
     swap(args.values, executor.values)
     return result^
+
+
+def assert_valid_execution_arguments(
+    schema: Schema, args: ExecutionArgs
+) raises:
+    """Raise as graphql-js `assertValidExecutionArguments` throws.
+
+    Args:
+        schema: The schema; validated unless `args.assume_valid_schema`.
+        args: The inputs; `variable_values` must be an object or nullish.
+
+    Raises:
+        Error: The `assertValidSchema` error, or the error of variable
+            values that are not an object.
+    """
+    if not args.assume_valid_schema:
+        assert_valid_schema(schema)
+    var kind = args.values.kind(args.variable_values)
+    if kind.value > ValueKind.NULL.value and kind.value < ValueKind.LIST.value:
+        raise Error(
+            "Variables must be provided as an Object where each property is"
+            " a variable value. Perhaps look to see if an unparsed JSON"
+            " string was provided."
+        )
+
+
+def resolve_source_event(
+    schema: Schema,
+    document: Document,
+    resolvers: Resolvers,
+    mut args: ExecutionArgs,
+    mut errors: List[GraphQLError],
+) raises -> Int:
+    """Run graphql-js `buildExecutionContext` and `executeSubscription`:
+    call the `subscribe` function of the first root field.
+
+    `gql_execution.subscribe` builds `createSourceEventStream` on it.
+
+    Args:
+        schema: The schema.
+        document: The document.
+        resolvers: The resolvers; `args.resolvers` is not read.
+        args: The other inputs; the value stays in `args.values`.
+        errors: Gets the errors of the operation, of the variables, or of
+            `subscribe`, each located at the field.
+
+    Returns:
+        What `subscribe` returned, or `UNDEFINED` when `errors` is not
+        empty.
+
+    Raises:
+        Error: As `assert_valid_execution_arguments` raises.
+    """
+    assert_valid_execution_arguments(schema, args)
+    var values = Values(capacity=0)
+    swap(values, args.values)
+    var executor = _Executor(schema, document, resolvers, values^)
+    var value = UNDEFINED
+    var early: Optional[ExecutionResult]
+    try:
+        early = executor.prepare(
+            args.operation_name, args.variable_values, args.max_coercion_errors
+        )
+    except e:
+        swap(args.values, executor.values)
+        raise e^
+    if early:
+        swap(errors, early.value().errors)
+    else:
+        try:
+            value = executor.execute_subscription(
+                args.root_value, args.context_value
+            )
+        except e:
+            errors.append(e^)
+    swap(args.values, executor.values)
+    return value
 
 
 def execute(schema: Schema, document: Document) raises -> ExecutionResult:

@@ -9,9 +9,16 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 | Module | Contents | graphql-go-tools source |
 | --- | --- | --- |
-| `gql_normalization.normalize` | `OperationNormalizer`, `NormalizerOptions`, `normalize_operation`, `normalize_named_operation` | `astnormalization/astnormalization.go` |
+| `gql_normalization.normalize` | `OperationNormalizer`, `NormalizerOptions`, `VariablesNormalizer`, `normalize_operation`, `normalize_named_operation` | `astnormalization/astnormalization.go` |
 | `gql_normalization.selections` | The selection passes | `directive_include_skip.go`, `fragment_spread_inlining.go` and the others |
 | `gql_normalization.variables` | The variable passes | `variables_extraction.go`, `input_coercion_for_list.go` and the others |
+| `gql_normalization.defer` | The `@defer` stages | `defer_expand_into_internal.go`, `defer_ensure_typename.go`, `defer_align_typename_scope.go`, `defer_populate_parent_ids.go` |
+| `gql_normalization.definition` | `DefinitionNormalizer`, `SubgraphSDLNormalizer`, `normalize_definition`, `normalize_subgraph_sdl` and the SDL passes | `definition_normalization.go`, `subgraph_sdl_normalization.go`, the `*_type_extending.go` files and the others |
+| `gql_normalization.inline_arguments` | `find_inline_arguments`, `InlineArgumentsValidationOptions`, `NormalizationResult`, `RunOptions` | `inline_arguments.go` |
+| `gql_normalization.uploads` | `UploadFinder`, `UploadPathMapping` | `uploads/upload_finder.go`, `uploads/path.go` |
+| `gql_normalization.fragment_spread_depth` | `FragmentSpreadDepth`, `Depths`, `Depth` | `fragmentspread_depth.go` |
+| `gql_normalization.abstract_field_normalizer` | `AbstractFieldNormalizer`: the merge, inline and deduplication passes under one field | `abstract_field_normalizer.go` |
+| `gql_normalization.variables_mapper` | `VariablesMapper`, `mapping_name`: sequential variable names, and the map from the new names to the old names | `variables_mapper.go`, `variables_mapping.go` |
 | `gql_normalization.minify` | `Minifier`, `MinifyOptions`, `minify` | `astminify/minify.go` |
 | `gql_normalization.go_printer` | `print_compact`, `print_indent`, `GoPrinter` | `astprinter/astprinter.go` |
 | `gql_normalization.variables_validation` | `VariablesValidator`, `VariablesValidatorOptions`, `InvalidVariableError` | `variablesvalidation/variablesvalidation.go` |
@@ -109,14 +116,16 @@ The passes edit the JSON as the libraries of upstream do, so the bytes are the s
 
 ### Normalization
 
-- **The definition.** The definition is a `gql_schema` `Schema`, not an `ast.Document`. It holds the built-in types and the merged type extensions. So `MergeDefinitionWithBaseSchema` and `WithNormalizeDefinition` have no counterpart.
+- **The definition.** The operation passes take a `gql_schema` `Schema`, not an `ast.Document`. A `Schema` holds the built-in types and the merged type extensions, so `MergeDefinitionWithBaseSchema` has no counterpart. The `normalize_definition` option is upstream `WithNormalizeDefinition`: it runs `DefinitionNormalizer` on the SDL document first.
 - **Default root types.** When the schema definition leaves out a root, the type with the default name is the root, as `MergeDefinitionWithBaseSchema` makes it.
 - **Errors.** A stage raises an `Error` with the message of the upstream external error. Upstream adds the error to an `operationreport.Report`.
-- **Not ported.** `WithEnableDefer` and the `@defer` stages, `WithPrevalidationRules`, `WithInlineArgumentsValidation`, `VariablesNormalizer`, the fragment spread depth calculator and the file uploads are not ported. `@__defer_internal` directives are compared and merged as upstream does.
+- **The other graphql-go-tools packages.** This package ports `astnormalization`, `astminify`, `variablesvalidation`, the upload finder and the fragment spread depth calculator. The parser, the printer and the validation of graphql-go-tools are not ported. `gql_language` and `gql_validation` port graphql-js, and do the same work. The engine of graphql-go-tools, its federation planner and resolver, is not ported. `gql_router` ports Hive Router, which does that work.
 - **Fewer walks.** Stage 5 and stage 6 each walk the document once. Upstream merges and deduplicates in two stages, with stage 7 between them. The result is the same.
 - **The first walk.** Stage 2 checks the fragment cycles before it removes a selection. Upstream walks the removed selections too, so it sees the same spreads.
 - **Directive lists.** The walker of upstream can skip the directive after a removed directive. Here each directive is read once.
 - **Upstream defects kept.** A list of input objects counts only the elements that it changes, as `jsonWalker` does. `input_coercion_for_list` reads the variable definitions of the current operation; upstream reads those of the first operation.
+- **One field.** `AbstractFieldNormalizer.normalize` takes the operation and the schema. Upstream `NewAbstractFieldNormalizer` keeps pointers to the two documents.
+- **The variables mapper.** `VariablesMapper.normalize_operation` returns a `Dict`, and does not raise. A document without an operation does not change; upstream panics. The mapper keeps two upstream defects. An argument in a fragment definition keeps its variable. The variables of two operations with one name share one item.
 
 ### Minification
 
@@ -137,8 +146,9 @@ The passes edit the JSON as the libraries of upstream do, so the bytes are the s
 
 The tests are in `tests/gql_normalization/`. They port `astnormalization_test.go` and the test file of each ported pass, `minify_test.go` and `variablesvalidation_test.go`. `_norm_fixtures.mojo` and `_minify_fixtures.mojo` embed the upstream schemas, operations and goldens, because `make coverage` copies only `.mojo` files.
 
-- The `@defer` cases, the type extension cases of `TestNormalizeOperation` and `TestVariablesNormalizer` are not ported, because their features are not.
-- `build_schema` refuses an unknown type, and keeps the last of two types with one name. So two test schemas change: see `THIRD-PARTY-NOTICES.md`.
+- The `@defer` cases, the type extension cases of `TestNormalizeOperation` and `TestVariablesNormalizer` are ported. So are the tests of the definition passes, the inline arguments, the uploads, the fragment spread depth and `TestVariablesMapper`. The definition of `TestVariablesMapper` gets `scalar Upload`, because `build_schema` refuses an unknown type.
+- Upstream has no test for `AbstractFieldNormalizer`. The expected outputs of `test_abstract_field_normalizer.mojo` come from upstream at the pinned revision.
+- `build_schema` refuses an unknown type, and keeps the last of two types with one name. So three test schemas change: see `THIRD-PARTY-NOTICES.md`.
 - `test_passes_extra.mojo`, `test_variables_extra.mojo` and `test_values_json.mojo` are not from upstream. They reach each branch, and their tricky cases were run against upstream.
 
 ## Benchmarks
@@ -149,5 +159,6 @@ The tests are in `tests/gql_normalization/`. They port `astnormalization_test.go
 | --- | --- |
 | `go-tools/AstNormalization` | `BenchmarkAstNormalization`: `NewNormalizer(false, false)` on `testOperation` again and again |
 | `go-tools/Minify` | `BenchmarkMinify`: `operation1.graphql` on `simpleschema.graphql`, with `SortAST` |
+| `go-tools/FragmentSpreadDepth` | The fragment spread depth benchmark of `fragmentspread_depth_test.go` |
 
 `variablesvalidation_test.go` has no benchmark. Run `make bench-check PKG=gql_normalization` to compare the two.

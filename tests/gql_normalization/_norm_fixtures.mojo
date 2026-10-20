@@ -174,7 +174,7 @@ union Extra = CatExtra | DogExtra"""
 comptime TYPE_EXTENSIONS_DEFINITION = """
 schema { query: Query }
 
-extend scalar JSONPayload
+extend scalar JSONPayload @__bare
 extend union UserType = TrialUser | SubscribedUser
 
 extend type Query {
