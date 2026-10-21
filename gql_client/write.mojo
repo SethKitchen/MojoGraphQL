@@ -42,6 +42,11 @@ from gql_client.helpers import (
     result_key_name,
     should_include,
 )
+from gql_client.incremental import (
+    StreamFieldInfo,
+    StreamInfo,
+    path_key_append,
+)
 from gql_client.policies import FieldMergeFunction, KeyMode, MergeMode
 from gql_client.store import member_index, member_value
 from gql_client.values import (
@@ -66,6 +71,9 @@ struct MergeInfo(Copyable, Movable):
     """`TRUE`, `FALSE` or `FUNCTION`."""
     var function: Optional[FieldMergeFunction]
     """The function, for `MergeMode.FUNCTION`."""
+    var path: String
+    """The key of the field path, from `path_key_append`, when the write
+    has stream information; empty otherwise."""
 
 
 struct TreeNode(Copyable, Movable):
@@ -215,6 +223,14 @@ struct WriteContext(Movable):
     """Whether `key_typename` uses the default `dataIdFromObject`."""
     var key_valid: Bool
     """Whether `key_default` is set."""
+    var extensions: Int
+    """The `extensions` that merge functions get, or `NO_VALUE`."""
+    var stream_info: StreamInfo
+    """The stream information of the write; empty for a write that is
+    not part of an incremental request."""
+    var path: String
+    """The key of the field path of the value being written, when
+    `stream_info` has an entry: upstream `context.path`."""
 
     def __init__(
         out self,
@@ -247,6 +263,9 @@ struct WriteContext(Movable):
         self.key_typename = String("")
         self.key_default = False
         self.key_valid = False
+        self.extensions = NO_VALUE
+        self.stream_info = StreamInfo()
+        self.path = String()
 
     def new_tree(mut self) -> Int:
         """Add an empty merge tree node.
@@ -366,6 +385,8 @@ def write_to_store(
     data_id: String,
     variables: JsonDocument,
     overwrite: Bool,
+    extensions: JsonDocument = JsonDocument(),
+    stream_info: StreamInfo = StreamInfo(),
 ) raises -> String:
     """Write a result into the store, as `StoreWriter.writeToStore`.
 
@@ -376,6 +397,8 @@ def write_to_store(
         data_id: The entity to write, or empty to identify the result.
         variables: The variables object, or an empty document.
         overwrite: Whether merge functions get no existing value.
+        extensions: The extensions of the result, or an empty document.
+        stream_info: The stream information, or an empty trie.
 
     Returns:
         The id that the result was written to.
@@ -408,6 +431,16 @@ def write_to_store(
         len(cache.policies.fuzzy_names) > 0,
         len(query.nodes),
     )
+    var given_extensions = cache.values.from_json(extensions, extensions.root)
+    if (
+        stream_info
+        and cache.values.is_object(given_extensions)
+        and cache.values.length(given_extensions) == 0
+    ):
+        # Upstream drops `extensions` that hold only the stream key.
+        given_extensions = NO_VALUE
+    context.extensions = given_extensions
+    context.stream_info = stream_info.copy()
     _ = cache.take_pending()
     var root = context.new_tree()
     var result = process_selection_set(
@@ -884,6 +917,7 @@ def get_merge_info(
     typename: String,
     field_name: String,
     child_typename: String,
+    path: String = String(),
 ) raises -> Optional[MergeInfo]:
     """Return the merge function of a field, as `getMergeFunction`.
 
@@ -895,6 +929,7 @@ def get_merge_info(
         typename: The parent type, or empty.
         field_name: The field name.
         child_typename: The child object's type, or empty.
+        path: The key of the field path, or empty.
 
     Returns:
         The merge info, or None.
@@ -912,13 +947,14 @@ def get_merge_info(
             typename,
             cache.policies.fields[policy].merge_mode,
             cache.policies.fields[policy].merge_function,
+            path,
         )
     if child_typename.byte_length() > 0:
         var type_policy = cache.policies.get_type_policy(child_typename)
         ref found = cache.policies.types[type_policy]
         if found.merge_mode != MergeMode.UNSET:
             return MergeInfo(
-                field, typename, found.merge_mode, found.merge_function
+                field, typename, found.merge_mode, found.merge_function, path
             )
     return None
 
@@ -974,7 +1010,10 @@ def process_selection_set(
     var fields = flatten_fields(
         cache, context, document, data, selection_set, result, typename
     )
-    var merges = cache.policies.has_merges
+    # With stream information, a `@stream` array can merge with
+    # `default_stream_field_merge`, and the field paths count.
+    var streaming = Bool(context.stream_info)
+    var merges = cache.policies.has_merges or streaming
     var count = len(context.field_lists[fields])
     var position = 0
     while position < count:
@@ -991,9 +1030,17 @@ def process_selection_set(
         var child = -1
         if merges:
             child = context.child_tree(tree, store_name)
+        var path = String()
+        if streaming:
+            path = context.path.copy()
+            path_key_append(
+                context.path, context.field_memo[field].field_name, False
+            )
         var stored = process_field_value(
             cache, context, document, data, value, subselection, child
         )
+        if streaming:
+            swap(path, context.path)
         if merges:
             var child_typename = String("")
             if subselection != NO_AST_NODE and (
@@ -1005,10 +1052,22 @@ def process_selection_set(
                     child_typename = String(cache.values.text(found))
             var name = context.field_memo[field].field_name
             var info = get_merge_info(
-                cache, field, typename, name, child_typename
+                cache, field, typename, name, child_typename, path
             )
             if info:
                 context.tree[child].info = info^
+            elif (
+                streaming
+                and cache.values.is_array(stored)
+                and is_stream_field(cache, document, field, context.variables)
+            ):
+                context.tree[child].info = MergeInfo(
+                    field,
+                    typename,
+                    MergeMode.FUNCTION,
+                    Optional[FieldMergeFunction](default_stream_field_merge),
+                    path,
+                )
             else:
                 context.recycle(tree, store_name)
         _merge_member(cache, context.stack, start, store_name, stored)
@@ -1265,16 +1324,25 @@ def process_field_value(
         var items = List[Int]()
         var item = data.first(value)
         var index = 0
+        var streaming = Bool(context.stream_info)
+        var outer = String()
+        if streaming:
+            outer = context.path.copy()
         while item != NO_NODE:
             var key = -1 - index
             var child = -1
             if tree >= 0:
                 child = context.child_tree(tree, key)
+            if streaming:
+                context.path = outer.copy()
+                path_key_append(context.path, String(index), True)
             items.append(
                 process_field_value(
                     cache, context, document, data, item, selection_set, child
                 )
             )
+            if streaming:
+                context.path = outer.copy()
             if tree >= 0:
                 context.recycle(tree, key)
             item = data.next(item)
@@ -1427,6 +1495,11 @@ def run_merge_function(
         NO_VALUE,
         False,
     )
+    var stream_field_info = Optional[StreamFieldInfo](None)
+    if context.stream_info:
+        var entry = context.stream_info.peek(info.path)
+        if entry:
+            stream_field_info = entry.value().current
     var options = FieldFunctionOptions(
         cache._pointer(),
         cache.field_args(document, info.field, context.variables),
@@ -1434,6 +1507,97 @@ def run_merge_function(
         store_name,
         context.variables,
         NO_VALUE,
+        context.extensions,
+        stream_field_info,
+        existing,
     )
     var function = info.function.value()
     return function(current, incoming, options)
+
+
+def is_stream_field(
+    cache: InMemoryCache, document: Document, field: Int, variables: Int
+) -> Bool:
+    """Tell if a field has an active `@stream`: upstream `isStreamField`.
+
+    Args:
+        cache: The cache, for the variables.
+        document: The document.
+        field: The `Field` node.
+        variables: The variables object.
+
+    Returns:
+        False without `@stream`. Else the value of a literal `if`, the
+        truth of the variable of a variable `if`, or True.
+    """
+    var directive = document.child(field, Role.DIRECTIVE)
+    while directive != NO_AST_NODE:
+        if document.name(directive) == "stream":
+            break
+        directive = document.next_with_role(directive)
+    if directive == NO_AST_NODE:
+        return False
+    var argument = document.child(directive, Role.ARGUMENT)
+    while argument != NO_AST_NODE:
+        if document.name(argument) == "if":
+            var value = document.child(argument, Role.VALUE)
+            var kind = document.kind(value)
+            if kind == Kind.BOOLEAN:
+                return document.boolean_value(value)
+            if kind == Kind.VARIABLE:
+                return cache.values.truthy(
+                    cache.values.get(variables, document.name(value))
+                )
+        argument = document.next_with_role(argument)
+    return True
+
+
+def default_stream_field_merge(
+    existing: Int, incoming: Int, mut options: FieldFunctionOptions
+) raises -> Int:
+    """Merge a `@stream` array during a stream: upstream
+    `defaultStreamFieldMergeFn`.
+
+    Each incoming item replaces the item at its index, and an `undefined`
+    incoming item keeps the existing item. Until the last payload, the
+    items after the incoming ones stay.
+
+    Args:
+        existing: The stored array, or `NO_VALUE`.
+        incoming: The incoming array.
+        options: The options; `existing_data` stands in for `existing`
+            with `overwrite`.
+
+    Returns:
+        The merged array.
+
+    Raises:
+        Error: Never.
+    """
+    ref values = options.cache[].values
+    if not values.truthy(existing) and not values.truthy(options.existing_data):
+        return incoming
+    # `existing ?? existingData`: a `null` existing value makes both falsy,
+    # so only `undefined` reaches the fallback.
+    var previous = existing
+    if values.kind(previous) == ValueKind.UNDEFINED:
+        previous = options.existing_data
+    var kept = values.length(previous) if values.is_array(previous) else 0
+    var count = values.length(incoming)
+    var length = count
+    var last = False
+    if options.stream_field_info:
+        last = options.stream_field_info.value().is_last_chunk
+    if not last and kept > length:
+        length = kept
+    # A stored array has no holes, so an incoming item is `undefined` only
+    # past the end of the incoming array, where the previous item stays.
+    var out = List[Int](capacity=length)
+    var index = 0
+    while index < length:
+        if index < count:
+            out.append(values.item(incoming, index))
+        else:
+            out.append(values.item(previous, index))
+        index += 1
+    return values.add_array(out)

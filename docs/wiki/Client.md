@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Client
 
-`gql_client` is the normalized cache of a GraphQL client. It is a port of the `InMemoryCache` of Apollo Client 4.3.3 (`ae0dfce`). It writes query results into a store of entities, and reads queries and fragments back. It needs only `gql_language` and `gql_json`.
+`gql_client` is the normalized cache of a GraphQL client. It is a port of the `InMemoryCache` of Apollo Client 4.3.3 (`ae0dfce`). It writes query results into a store of entities, and reads queries and fragments back. It also merges the payloads of `@defer` and `@stream`, and writes each payload and each subscription result to the cache. It needs only `gql_language` and `gql_json`.
 
 | Module | Contents | Apollo Client source |
 | --- | --- | --- |
@@ -18,6 +18,10 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_client.helpers` | Store key names, `should_include`, `check_document`, `add_typename_to_document` | `helpers.ts` and `src/utilities` |
 | `gql_client.key_extractor` | `KeySpecifier` | `key-extractor.ts` |
 | `gql_client.fuzzy` | The patterns of fuzzy `possibleTypes` | `new RegExp(subtype)` |
+| `gql_client.incremental` | `GraphQL17Alpha9Handler`, `Defer20220824Handler`, their requests, `StreamInfo`, `merge_at_path`, `add_defer_fragment_labels`, `has_directives` | `src/incremental/handlers/`, `DeepMerger.ts`, `makeStreamInfoTrie.ts`, `addDeferFragmentLabels.ts`, `hasDirectives.ts` |
+| `gql_client.query_info` | `mark_result`, `mark_subscription_result`, `subscribe_result`, `ErrorPolicy`, `CacheWriteBehavior`, `DataState` | `src/core/QueryInfo.ts`, `QueryManager.startGraphQLSubscription` |
+
+The package `gql_client_http` reads HTTP responses. It needs `gql_http` and `gql_json`, so a user of the cache alone does not build `gql_http`. See [HTTP responses](#http-responses).
 
 ```mojo
 from gql_client.cache import InMemoryCache
@@ -166,11 +170,83 @@ def concat(existing: Int, incoming: Int, mut options: FieldFunctionOptions) rais
 
 A value that nothing uses stays in the arena until the next compaction. The cache compacts the arena when it is more than twice its live size. The compaction comes at the end of a write, a `modify`, an `evict`, a `gc` or a `restore`.
 
+## Incremental delivery
+
+A request of an incremental handler merges the payloads of `@defer` and `@stream` into one result. `GraphQL17Alpha9Handler` reads the format of graphql-js 17, which `gql_execution.incremental` writes: `pending`, `incremental`, `completed` and `hasNext`. `Defer20220824Handler` reads the older format, where each incremental item has a `path`.
+
+```mojo
+from gql_client.cache import InMemoryCache
+from gql_client.incremental import GraphQL17Alpha9Handler
+from gql_client.query_info import mark_result
+from gql_json.parser import parse as parse_json
+from gql_language.parser import parse
+
+var cache = InMemoryCache()
+var handler = GraphQL17Alpha9Handler()
+var query = cache.transform_document(
+    handler.transform_document(parse("{ hero { id ... @defer { name } } }"))
+)
+var request = handler.start_request()
+var first = mark_result(cache, request, query, parse_json(
+    '{"data":{"hero":{"__typename":"Hero","id":"1"}},'
+    '"pending":[{"id":"0","path":["hero"]}],"hasNext":true}'
+))
+# first.data_state is DataState.STREAMING
+var last = mark_result(cache, request, query, parse_json(
+    '{"incremental":[{"id":"0","data":{"name":"Luke"}}],'
+    '"completed":[{"id":"0"}],"hasNext":false}'
+))
+# last.result is {"data":{"hero":{"__typename":"Hero","id":"1","name":"Luke"}}}
+```
+
+| Member of a handler | Apollo Client | Use |
+| --- | --- | --- |
+| `start_request()` | `startRequest` | A new `IncrementalRequest` or `DeferRequest` |
+| `is_incremental_result(result)` | `isIncrementalResult` | True when the result has `hasNext` |
+| `extract_errors(result)` | `extractErrors` | The array of the errors, or None |
+| `prepare_accept(document, accept)` | `prepareRequest` | The `accept` values, with the multipart type first for `@defer` or `@stream` |
+| `transform_document(document)` | `documentTransform` | `GraphQL17Alpha9Handler` only: a label on each `@defer` |
+
+`request.handle(cache_data, chunk)` merges one payload and returns a `FormattedExecutionResult`. Its members are indices into `request.acc.values`. `request.stringify(result)` gives the JSON text, `request.to_json(result)` a `JsonDocument`, and `request.data_json(result)` the data alone. `cache_data` is None for `undefined`: the request then goes on from its own data. `request.has_next` is the `hasNext` of the last payload.
+
+An `IncrementalRequest` has `stream_info`, the `@stream` arrays by path, and `pending_with_info()`, as `getPendingWithInfo`. When a request has a stream, `result.has_stream_info` is True, and `extensions` is `{}` at least, as upstream shows the symbol key.
+
+`mark_result(cache, request, query, chunk, variables, error_policy, cache_write_behavior, return_partial_data)` does the cache part of `QueryInfo.markQueryResult`:
+
+1. It reads the query from the cache with partial data, and gives the read to `handle` as `cache_data`.
+2. It writes the merged result with `write_query`, with the `extensions` of the result and the stream information.
+3. It reads the query again. A complete read, or a read while deferred data is to come, replaces the data.
+
+A result with errors goes to the cache only with `ErrorPolicy.IGNORE` or `ErrorPolicy.ALL`, and only when it has data. `CacheWriteBehavior.FORBID` does no write, and `OVERWRITE` writes with `overwrite`.
+
+`write_query` has two more arguments. Merge functions get `extensions` as `options.extensions`. With `stream_info`, a `@stream` array that has no merge function merges with `default_stream_field_merge`, and a merge function of a `@stream` field gets `options.stream_field_info`. `options.existing_data` is the existing value, also with `overwrite`.
+
+## Subscriptions
+
+`mark_subscription_result(cache, document, result, variables, error_policy, cache_write_behavior)` writes one result of a subscription to `ROOT_SUBSCRIPTION`, as `QueryInfo.markSubscriptionResult`. It reads the subscription back as a query. A complete read replaces the data of the result.
+
+`subscribe_result(raw, error_policy)` gives the `SubscribeResult` of one result, as `QueryManager.startGraphQLSubscription`: `data`, `error` (the array of the GraphQL errors) and `extensions`. With `ErrorPolicy.NONE`, a result with errors has no data. With `ErrorPolicy.IGNORE`, it has no error. A result with no data and no error gives None.
+
+## HTTP responses
+
+`gql_client_http.response` is a port of `src/link/http/parseAndCheckHttpResponse.ts`.
+
+`MultipartBodyReader(content_type, status)` reads a `multipart/mixed` response as its bytes arrive. `feed(bytes)` returns the results of the parts that the bytes complete, as `readMultipartBody`. `finish()` raises `premature end of multipart body` when the close delimiter did not arrive. The `MultipartDecoder` of `gql_http` reads the parts. `boundary_from_content_type` reads the boundary with the regular expression of upstream, and gives `-` when no parameter matches.
+
+A part must have no content type, or a JSON content type. A result that is an empty object is skipped. A result of the multipart subscription protocol, `{"payload": ...}`, gives its payload, and its `errors` are `MultipartResult.protocol_errors`. `{"payload": null}` ends the reading.
+
+`parse_and_check_http_response(operation_name, status, content_type, body_text)` parses a JSON response. A status of 300 or more raises `Response not successful: Received status code N`, except for `application/graphql-response+json`. A result that is not an array, and has no `data` and no `errors`, raises `Server response was malformed for query 'name'.`
+
 ## Differences from Apollo Client
 
 - **No result cache.** A read builds a new result. Watches, broadcasts, `batch`, `performTransaction` and `resultCaching` are not ported.
 - **No optimistic layers.** `recordOptimisticTransaction` and `removeOptimistic` are not ported.
-- **Not ported.** Custom scalars, `@defer` and `@stream` merging, the fragment registry, reactive variables, `updateQuery`, `updateFragment` and the `storage` of policy functions.
+- **Not ported.** Custom scalars, the fragment registry, reactive variables, `updateQuery`, `updateFragment` and the `storage` of policy functions.
+- **No client.** `ApolloClient`, `QueryManager`, `ObservableQuery`, the links and the network are not ported. `query_info` ports only the cache writes of a result. Apollo Link has the network; `gql_client_http` ports only its response parsing.
+- **No incremental reads.** `cache.diff` does not prune the pending `@defer` boundaries (`deferInfo`) or cut the pending `@stream` arrays (`StreamArrayState.truncate`) of Apollo Client 4.3. A result whose deferred data is to come has the data state `STREAMING` and the read with partial data. The memo of the last stream merge (`streamInfo.previous`) is not ported, so a merge function runs for each write.
+- **No data masking.** `maskOperation`, `maskFragment` and `@unmask` are not ported. They change the data that a client gives to a component, not the data that the cache stores.
+- **Results as values.** A handler result is a set of value indices, and the stream information is `request.stream_info`, not a `WeakRef` under a symbol key. A hole of a sparse `@stream` array becomes `null` in `data_json`, so a cache write keeps no hole.
+- **HTTP errors.** `ServerError`, `ServerParseError` and `CombinedProtocolErrors` are not classes: they are `Error`s with the upstream messages, and a parse error has the message of `gql_json`.
 - **No warnings.** The development warnings of upstream, such as the data loss warning, are not printed.
 - **Options.** The methods take their options as arguments. `extract` gives JSON text. A key function returns a `String`, not a new specifier.
 - **Numbers.** A number keeps the text that `JSON.stringify` writes for it. Two numbers are equal when their texts are equal.
@@ -182,8 +258,14 @@ The tests are in `tests/gql_client/`. They port these upstream files of `src/cac
 
 `test_extract_exact.mojo` compares `extract()` and read results with the bytes that Apollo Client 4.3.3 gives in Node.js.
 
+`test_incremental_graphql17_defer.mojo`, `test_incremental_graphql17_stream.mojo`, `test_incremental_defer20220824_defer.mojo` and `test_incremental_defer20220824_stream.mojo` port the four files of `src/incremental/handlers/__tests__/`. Each case has the payloads and the results of the upstream test. They were recorded in Node.js with graphql 17.0.0-alpha.9 or alpha.2, the versions of the upstream tests. `test_query_info.mojo` ports the cache part of the upstream cases that run `ApolloClient`, and of `cache.writeQuery/extensions.test.ts`. `test_incremental_paths.mojo` tests the helpers and the malformed payloads.
+
+The tests of `gql_client_http` are in `tests/gql_client_http/`. They port `src/link/http/__tests__/responseIterator.ts` and `parseAndCheckHttpResponse.ts`.
+
 ## Benchmarks
 
 `bench/gql_client/client.mojo` and `bench/baselines/js-client/bench.mjs` run the same workloads on `bench/fixtures/client-items-1000.json`. The fixture has 1000 `Item` entities, each with an `Author` entity and an embedded object. Apollo Client 4.3.3 publishes no runtime benchmark of its cache, so the workloads are the project's own.
+
+`bench/gql_client/incremental.mojo` runs `client/merge-deferred-chunks-100`: a new `GraphQL17Alpha9Handler` request, then `handle` of 101 payloads. The first payload has 100 items, each with a pending `@defer`. Each next payload delivers one item. The payloads are parsed in setup, as the link parses them before the handler. The baseline runs the same workload.
 
 The baseline runs the production build of Apollo Client, with `node --conditions=production`. Its read workloads use `resultCaching: false`, so that each read reads the store. The [Benchmarks](Benchmarks) page tells how the project measures.

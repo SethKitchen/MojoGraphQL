@@ -19,7 +19,7 @@ from _wsutil import close_frame, frames, raw, text_frame
 from gql_http.socket import Sys
 from gql_ws.frame import CloseCode, OpCode
 from gql_ws.handshake import client_request
-from gql_ws.protocol import Message, MessageKind
+from gql_ws.protocol import Message, MessageKind, WsConfig
 from gql_ws.server import Server, Sockets, UpgradeRequired, listen
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
@@ -347,6 +347,36 @@ def test_close_all() raises:
     server.close()
     peer.close()
     waiting.close()
+
+
+def test_attach_and_detach() raises:
+    # A bridge carries a WebSocket that has no socket, in any slot.
+    var sockets = Sockets(WsConfig(), 1000)
+    assert_equal(sockets.free_slot(), 0)
+    var id = sockets.attach(3, "graphql-transport-ws", "/graphql")
+    assert_equal(len(sockets.conns), 4)
+    assert_equal(sockets.free_slot(), 0)
+    _ = sockets.attach(0, "", "/")
+    _ = sockets.attach(2, "", "/")
+    assert_equal(sockets.free_slot(), 1)
+    assert_true(sockets.is_open(id))
+    assert_equal(sockets.protocol(id), "graphql-transport-ws")
+    assert_equal(sockets.path(id), "/graphql")
+    assert_true(sockets.send_text(id, "hi"))
+    assert_equal(sockets.dirty[0], 3)
+    assert_true(sockets.pending(id) > 0)
+    # A slot below the end of the table needs no new entry.
+    var low = sockets.attach(1, "", "/")
+    assert_equal(len(sockets.conns), 4)
+    assert_true(low != id)
+    assert_equal(sockets.free_slot(), 4)
+    sockets.detach(3)
+    assert_false(sockets.is_open(id))
+    assert_false(sockets.send_text(id, "late"))
+    # A new WebSocket in the slot has a new id and a new state.
+    var again = sockets.attach(3, "", "/")
+    assert_true(again != id)
+    assert_equal(sockets.pending(again), 0)
 
 
 def main() raises:

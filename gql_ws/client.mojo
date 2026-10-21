@@ -79,7 +79,53 @@ def _io(message: String, errno: Int) -> WsError:
     return WsError.of(WsErrorKind.IO, message + ": errno " + String(errno))
 
 
-struct WsClient(Movable):
+trait MessageSocket(Deinitable, Movable):
+    """The client end of a WebSocket that carries a protocol such as
+    `graphql-transport-ws`: `WsClient`, or a WebSocket on an HTTP/2 or an
+    HTTP/3 stream."""
+
+    def read(
+        mut self, mut message: Message, timeout_ms: Int
+    ) raises WsError -> Bool:
+        """Read the next message, and answer a ping.
+
+        Args:
+            message: The message to fill.
+            timeout_ms: The longest wait; -1 waits without a limit.
+
+        Returns:
+            True with a message; False after the timeout.
+
+        Raises:
+            WsError: `CLOSED` after the closing handshake, or a failure.
+        """
+        ...
+
+    def send_text(mut self, text: StringSlice) raises WsError:
+        """Send a text message.
+
+        Args:
+            text: The text.
+
+        Raises:
+            WsError: When the send fails.
+        """
+        ...
+
+    def close(mut self, code: CloseCode, reason: StringSlice) raises WsError:
+        """Start the closing handshake.
+
+        Args:
+            code: The code.
+            reason: The reason, at most 123 bytes.
+
+        Raises:
+            WsError: When the send fails.
+        """
+        ...
+
+
+struct WsClient(MessageSocket):
     """A connected WebSocket client."""
 
     var ws: WebSocket
@@ -150,7 +196,7 @@ struct WsClient(Movable):
             )
         var port = parsed.port if parsed.port >= 0 else 80
         var deadline = _now_ms() + config.connect_timeout_ms
-        var fd = _open(sys, parsed.host, port, deadline)
+        var fd = open_socket(sys, parsed.host, port, deadline)
         var client = WsClient(fd, sys^, config)
         var target = parsed.path
         if parsed.query.byte_length() > 0:
@@ -167,7 +213,7 @@ struct WsClient(Movable):
 
     def _wait(mut self, events: Int, deadline: Int) raises WsError -> Bool:
         """Wait until the socket is ready; False at the deadline."""
-        return _wait(self.sys, self.fd, events, deadline)
+        return wait_socket(self.sys, self.fd, events, deadline)
 
     def _flush_until(mut self, deadline: Int) raises WsError:
         """Send the whole output, or raise `TIMEOUT` at the deadline."""
@@ -343,10 +389,24 @@ struct WsClient(Movable):
             self.fd = -1
 
 
-def _wait(
+def wait_socket(
     mut sys: Sys, fd: Int, events: Int, deadline: Int
 ) raises WsError -> Bool:
-    """Wait until a socket is ready; False at the deadline, -1 for none."""
+    """Wait until a socket is ready.
+
+    Args:
+        sys: The system calls.
+        fd: The socket.
+        events: The `poll` events, such as `POLLIN`.
+        deadline: The deadline on the clock of `perf_counter_ns`, in
+            milliseconds; -1 for none.
+
+    Returns:
+        True when the socket is ready; False at the deadline.
+
+    Raises:
+        WsError: `IO` when `poll` fails.
+    """
     while True:
         var remaining = -1
         if deadline >= 0:
@@ -360,10 +420,24 @@ def _wait(
             raise _io("poll failed", -rc)
 
 
-def _open(
+def open_socket(
     mut sys: Sys, host: StringSlice, port: Int, deadline: Int
 ) raises WsError -> Int:
-    """Resolve a host and connect a non-blocking socket to it."""
+    """Resolve a host and connect a non-blocking socket to it.
+
+    Args:
+        sys: The system calls.
+        host: The host name or address.
+        port: The port.
+        deadline: The deadline of the connect, as for `wait_socket`.
+
+    Returns:
+        The connected socket.
+
+    Raises:
+        WsError: `IO` when the name does not resolve or the connect fails;
+            `TIMEOUT` at the deadline.
+    """
     var address: IPv4Address
     try:
         address = sys.resolve(host)
@@ -377,7 +451,7 @@ def _open(
     if rc == -EINPROGRESS:
         var ready: Bool
         try:
-            ready = _wait(sys, fd, POLLOUT, deadline)
+            ready = wait_socket(sys, fd, POLLOUT, deadline)
         except e:
             sys.close(fd)
             raise e^

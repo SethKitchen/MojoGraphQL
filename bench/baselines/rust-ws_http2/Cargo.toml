@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+# The Rust baseline of WebSockets over HTTP/2 (RFC 8441). `ws-h2-server`
+# is an h2 0.4.20 server with `enable_connect_protocol`, with h2c prior
+# knowledge, on a tokio runtime with one thread. The frames of each
+# WebSocket go through tungstenite 0.30.0. h2, tokio, http and bytes are
+# MIT; tungstenite is MIT OR Apache-2.0, used under MIT.
+
+[package]
+name = "mojographql-bench-ws-http2-rust"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+h2 = "=0.4.20"
+tungstenite = { version = "=0.30.0", default-features = false }
+tokio = { version = "1", features = ["rt", "net", "macros"] }
+http = "1"
+bytes = "1"
+
+[[bin]]
+name = "ws-h2-server"
+path = "src/bin/server.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

@@ -83,6 +83,16 @@ directory."""
 comptime WS_LOAD = "../../../.cache/bin/ws_load"
 """The gql_ws load generator; the workload and the server command follow."""
 
+comptime H2WS_LOAD_BUILD = (
+    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
+    " .cache/bin/h2ws_load bench/gql_ws_http2/_h2wsload.mojo > /dev/null)"
+)
+"""The shell command that builds the gql_ws_http2 load generator, from a
+baseline directory."""
+
+comptime H2WS_LOAD = "../../../.cache/bin/h2ws_load"
+"""The gql_ws_http2 load generator; the server command follows."""
+
 comptime MCP_DRIVER = "../../../.cache/bin/mcp_driver --root ../../.."
 """The stdio driver of the MCP servers; the server command follows."""
 
@@ -389,6 +399,16 @@ def baselines() -> List[Baseline]:
             WS_LOAD
             + " ws/echo-roundtrip ./target/release/ws-echo-server"
             " && ./target/release/ws-frames",
+        )
+    )
+    # The WebSockets over HTTP/2 run under the load generator of
+    # gql_ws_http2.
+    out.append(
+        Baseline(
+            "h2 0.4.20 and tungstenite 0.30.0 (Rust)",
+            "bench/baselines/rust-ws_http2",
+            "cargo build --release --locked --quiet && " + H2WS_LOAD_BUILD,
+            H2WS_LOAD + " ./target/release/ws-h2-server",
         )
     )
     out.append(

@@ -13,10 +13,10 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_ws.frame` | `OpCode`, `CloseCode`, `FrameHeader`, `HeaderState`, `parse_header`, `write_header`, `apply_mask`, `random_mask` |
 | `gql_ws.handshake` | `server_response`, `reject_response`, `client_request`, `verify_response`, `accept_key`, `generate_key`, `is_upgrade` |
 | `gql_ws.server` | `Server`, `ServerConfig`, `WsHandler`, `Sockets`, `UpgradeRequired`, `listen` |
-| `gql_ws.client` | `WsClient`, `ClientConfig` |
+| `gql_ws.client` | `WsClient`, `ClientConfig`, `MessageSocket`, `open_socket`, `wait_socket` |
 | `gql_ws.graphql_ws` | `MessageType`, `ProtocolMessage`, `parse_message`, the close codes, and the message writers |
 | `gql_ws.transport_server` | `TransportServer`, `GraphQLExecutor`, `Operation`, `Acknowledgement`, `TransportOptions` |
-| `gql_ws.transport_client` | `TransportClient`, `ClientEvent`, `subscribe_payload`, `generate_id` |
+| `gql_ws.transport_client` | `TransportClient`, `TransportClientOf`, `ClientEvent`, `subscribe_payload`, `generate_id` |
 | `gql_ws.utf8` | `Utf8Validator`, `is_utf8` |
 | `gql_ws.sha1` | `sha1`, `base64_encode` |
 | `gql_ws.error` | `WsError`, `WsErrorKind` |
@@ -102,6 +102,8 @@ A `WsHandler` gets these calls:
 
 `Sockets` is the table of open connections. Its methods are `send_text`, `send_binary`, `ping`, `close`, `is_open`, `protocol`, `path` and `pending`. An id stays valid until `on_close`. A connection with output that waits for the peer is not read until the output goes out.
 
+`free_slot`, `attach` and `detach` let another transport keep WebSockets in the same table. [WsHttp2](WsHttp2) uses them for the WebSockets on HTTP/2 streams.
+
 | `ServerConfig` field | Default | Contents |
 | --- | --- | --- |
 | `http` | `gql_http` defaults | The address, the port, the request limits and `idle_timeout_ms` for the handshake |
@@ -113,6 +115,8 @@ A `WsHandler` gets these calls:
 ## Client
 
 `WsClient.connect(url, protocols, config)` connects to a `ws://` URL and does the handshake. `read(message, timeout_ms)` returns the next message, or False after the timeout. A ping gets its pong. After the closing handshake, `read` raises `CLOSED`.
+
+`WsClient` conforms to the `MessageSocket` trait. `TransportClientOf[S]` runs `graphql-transport-ws` on any `MessageSocket`, and `TransportClient` is `TransportClientOf[WsClient]`.
 
 ## graphql-transport-ws
 

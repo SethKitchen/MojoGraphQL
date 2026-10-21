@@ -28,6 +28,12 @@ Differences from upstream:
   head arrives, and the application reads the content and releases its
   window. Here a message is ready when its stream ends, and the window goes
   back at once. `max_body_bytes` limits the content; more gives 413.
+- **Tunnels.** The tunnel of an extended `CONNECT` (RFC 8441) is the one
+  kind of stream that is not whole: its head is a `HEAD` event, and each
+  `DATA` frame is a `DATA` event. The driver takes the content from the
+  body of the stream. A client marks a stream as a tunnel when its request
+  has `:protocol`, as h2 `ext::Protocol` does. A response that is not 2xx
+  is an ordinary response.
 - **No push, no priority.** The connection sends `SETTINGS_ENABLE_PUSH = 0`
   and refuses `PUSH_PROMISE`, as RFC 9113 allows. It checks `PRIORITY` and
   then ignores it, as h2 does.
@@ -189,25 +195,35 @@ struct EventKind(Equatable, ImplicitlyCopyable, Writable):
     """A whole request or response arrived."""
     comptime RESET = EventKind(1)
     """The stream ended before its message was whole."""
+    comptime HEAD = EventKind(2)
+    """The head of a tunnel arrived: the request of an extended `CONNECT`
+    (RFC 8441), or its 2xx response. The stream stays open."""
+    comptime DATA = EventKind(3)
+    """Content arrived on a tunnel. It is in the body of the stream, and the
+    driver takes it from there."""
 
     def is_valid(self) -> Bool:
         """Return True if the value names one of the kinds.
 
         Returns:
-            Whether the value is 0 or 1.
+            Whether the value is at most 3.
         """
-        return self.value <= 1
+        return self.value <= 3
 
     def write_to(self, mut writer: Some[Writer]):
-        """Write `message` or `reset`.
+        """Write `message`, `reset`, `head` or `data`.
 
         Args:
             writer: The destination.
         """
-        if self == EventKind.MESSAGE:
-            writer.write("message")
-        elif self == EventKind.RESET:
-            writer.write("reset")
+        comptime names: Array[StaticString, 4] = [
+            "message",
+            "reset",
+            "head",
+            "data",
+        ]
+        if self.is_valid():
+            writer.write(materialize[names]()[Int(self.value)])
         else:
             writer.write("invalid")
 
@@ -300,6 +316,10 @@ struct Stream(Movable):
     var released: Bool
     """Whether the driver is done with the message; the slot is free once
     the stream closes."""
+    var tunnel: Bool
+    """Whether the stream is the tunnel of an extended `CONNECT` (RFC
+    8441). Its head and each `DATA` frame are events, and the driver takes
+    the content from `body`."""
 
     def __init__(out self):
         """Make a free slot."""
@@ -319,6 +339,7 @@ struct Stream(Movable):
         self.answered = False
         self.head_request = False
         self.released = False
+        self.tunnel = False
 
     def reset(mut self, id: Int, send_window: Int, recv_window: Int):
         """Make the slot a new stream, and keep the capacity of its buffers.
@@ -344,6 +365,7 @@ struct Stream(Movable):
         self.answered = False
         self.head_request = False
         self.released = False
+        self.tunnel = False
 
     def pending(self) -> Int:
         """Return the content that waits for a window.
@@ -511,6 +533,18 @@ struct Connection(Movable):
             Whether the first frame was read.
         """
         return not self._first_frame
+
+    def is_extended_connect_protocol_enabled(self) -> Bool:
+        """Return True when the extended `CONNECT` of RFC 8441 can go to the
+        peer: a client got `SETTINGS_ENABLE_CONNECT_PROTOCOL = 1`, or a
+        server sent it.
+
+        Returns:
+            Whether a request with `:protocol` is allowed.
+        """
+        if self.role == Role.CLIENT:
+            return self.remote.enable_connect_protocol
+        return self.local.enable_connect_protocol
 
     def active_streams(self) -> Int:
         """Return the count of streams that are not closed.
@@ -821,6 +855,18 @@ struct Connection(Movable):
                     Reason.PROTOCOL_ERROR, "RST_STREAM on an idle stream"
                 )
             return
+        if (
+            reason == Reason.NO_ERROR
+            and not self.streams[index].state.can_receive()
+        ):
+            # A server can reset with NO_ERROR after a whole response; the
+            # client keeps the response (RFC 9113 section 8.1).
+            self.streams[index].out.clear()
+            self.streams[index].out_at = 0
+            self.streams[index].end_after_out = False
+            if self.streams[index].state != StreamState.CLOSED:
+                self._close(index)
+            return
         if not self.streams[index].answered:
             self._remote_resets += 1
             if self._remote_resets > self.config.max_remote_resets:
@@ -893,7 +939,7 @@ struct Connection(Movable):
                     Reason.ENHANCE_YOUR_CALM, "too many empty DATA frames"
                 )
         if len(self.streams[index].body) + size > self.config.max_body_bytes:
-            if self.role == Role.SERVER:
+            if self.role == Role.SERVER and not self.streams[index].tunnel:
                 self._reject(index, 413, Reason.CANCEL)
                 return
             raise H2Error.stream(
@@ -912,6 +958,8 @@ struct Connection(Movable):
         if end:
             self._end_remote(index)
             return
+        if self.streams[index].tunnel and size > 0:
+            self._event(EventKind.DATA, id)
         self.streams[index].unacked += head.length
         if self.streams[index].unacked >= self.config.initial_window_size // 2:
             var amount = self.streams[index].unacked
@@ -1071,6 +1119,8 @@ struct Connection(Movable):
         self.streams[index].got_head = True
         if end_stream:
             self._message(index)
+        elif self.streams[index].tunnel:
+            self._event(EventKind.HEAD, id)
 
     def _response_head(mut self, index: Int, end_stream: Bool) raises H2Error:
         """Take the head of a response, or an informational one."""
@@ -1092,6 +1142,12 @@ struct Connection(Movable):
             self.streams[index].status = 0
             return
         self.streams[index].got_head = True
+        if self.streams[index].tunnel:
+            if self.streams[index].status >= 300:
+                # A refused tunnel is an ordinary, whole response.
+                self.streams[index].tunnel = False
+            elif not end_stream:
+                self._event(EventKind.HEAD, id)
         if end_stream:
             self._end_remote(index)
 
@@ -1118,6 +1174,7 @@ struct Connection(Movable):
         )
         self.streams[index].content_length = head.content_length
         self.streams[index].head_request = head.head_request
+        self.streams[index].tunnel = head.tunnel
 
     def _check_response(mut self, index: Int) raises H2Error:
         """Check the head of a response, and keep its status."""
@@ -1199,11 +1256,13 @@ struct Connection(Movable):
                 Reason.PROTOCOL_ERROR,
                 "content does not match content-length",
             )
+        self._event(EventKind.MESSAGE, id)
+
+    def _event(mut self, kind: EventKind, id: Int):
+        """Announce an event of a stream that has no error."""
         self.events.append(
             Event(
-                EventKind.MESSAGE,
-                id,
-                H2Error(H2ErrorKind.STREAM, Reason.NO_ERROR, id, ""),
+                kind, id, H2Error(H2ErrorKind.STREAM, Reason.NO_ERROR, id, "")
             )
         )
 
@@ -1263,6 +1322,11 @@ struct Connection(Movable):
     ) raises H2Error:
         """Send a head on a stream: the fields of a request or a response.
 
+        A client request with `:protocol` opens a tunnel (RFC 8441): its
+        2xx response is a `HEAD` event, and its content comes as `DATA`
+        events. The client checks `is_extended_connect_protocol_enabled`
+        first, as h2 leaves to its caller.
+
         Args:
             stream_id: The stream.
             fields: The fields, pseudo-header fields first, names in
@@ -1282,6 +1346,8 @@ struct Connection(Movable):
             end_stream,
             self.remote.max_frame_size,
         )
+        if self.role == Role.CLIENT and not self.streams[index].answered:
+            self.streams[index].tunnel = _has_protocol(fields)
         self.streams[index].answered = True
         if self.role == Role.SERVER:
             self._remote_resets = 0
@@ -1555,6 +1621,16 @@ def _eq(bytes: Span[UInt8, _], text: StaticString) -> Bool:
     return True
 
 
+def _has_protocol(fields: HeaderList) -> Bool:
+    """Return True for a head with the `:protocol` pseudo-header field."""
+    var i = 0
+    while i < fields.count():
+        if _eq(fields.name(i), ":protocol"):
+            return True
+        i += 1
+    return False
+
+
 def _malformed(id: Int, message: String) -> H2Error:
     """Return the stream error of a malformed message (RFC 9113 section
     8.1.1)."""
@@ -1586,6 +1662,8 @@ struct MessageHead(ImplicitlyCopyable):
     """The `:status` of a response, or 0."""
     var head_request: Bool
     """Whether the request is `HEAD`."""
+    var tunnel: Bool
+    """Whether the request is an extended `CONNECT` with `:protocol`."""
 
 
 def check_regular_field(
@@ -1661,7 +1739,8 @@ def check_request_head(
             allowed, with `:protocol`.
 
     Returns:
-        The `content-length` value and whether the method is `HEAD`.
+        The `content-length` value, whether the method is `HEAD`, and
+        whether the request is an extended `CONNECT`.
 
     Raises:
         H2Error: A stream error `PROTOCOL_ERROR` for a malformed request:
@@ -1736,7 +1815,7 @@ def check_request_head(
             if not is_host_byte(value[at]):
                 raise _malformed(id, "an invalid :authority")
             at += 1
-    return MessageHead(length, 0, _eq(method_value, "HEAD"))
+    return MessageHead(length, 0, _eq(method_value, "HEAD"), protocol >= 0)
 
 
 def check_response_head(
@@ -1781,7 +1860,7 @@ def check_response_head(
         raise _malformed(id, "a response without :status")
     if status == 101:
         raise _malformed(id, "101 is not allowed in HTTP/2")
-    return MessageHead(length, status, False)
+    return MessageHead(length, status, False, False)
 
 
 def check_trailers(fields: HeaderList, id: Int) raises H2Error:

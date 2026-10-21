@@ -28,6 +28,8 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Https2](Https2): the `gql_https2` package, which is HTTP/2 over TLS with ALPN `h2`: the server, the client with its HTTPS/1.1 fallback, and the TLS `Transport`.
 - [Quic](Quic): the `gql_quic` package, which is the QUIC transport.
 - [Http3](Http3): the `gql_http3` package, which is HTTP/3 and QPACK over the `gql_quic` transport, `Alt-Svc`, and the client fallback chain.
+- [WsHttp2](WsHttp2): the `gql_ws_http2` package, which is WebSockets over HTTP/2: the extended `CONNECT`, an h2c server, a client, and the fallback to HTTP/1.1.
+- [WsHttp3](WsHttp3): the `gql_ws_http3` package, which is the protocol part of WebSockets over HTTP/3: the setting, the checks, and a WebSocket on one stream.
 - [Validation](Validation): the `gql_validation` package, which checks an executable document against a schema.
 - [Normalization](Normalization): the `gql_normalization` package, which normalizes and minifies operations and validates their variables, as graphql-go-tools does.
 - [Client](Client): the `gql_client` package, which is the normalized cache of a GraphQL client.

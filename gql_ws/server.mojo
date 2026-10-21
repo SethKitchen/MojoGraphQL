@@ -313,6 +313,65 @@ struct Sockets(Movable):
         self._touch(fd)
         return True
 
+    def attach(
+        mut self, slot: Int, protocol: StringSlice, path: StringSlice
+    ) -> Int:
+        """Open a WebSocket that a bridge carries, such as one on an HTTP/2
+        stream (RFC 8441), in a slot that no socket uses.
+
+        The bridge gives the bytes of the peer to `conns[slot].ws`, reads
+        its messages, sends its output, and calls `detach` at the end.
+
+        Args:
+            slot: The slot, 0 or more; a bridge without sockets can use any.
+            protocol: The subprotocol that the handshake chose, or empty.
+            path: The request path.
+
+        Returns:
+            The id of the new connection.
+        """
+        while len(self.conns) <= slot:
+            self.conns.append(_Conn(self._config))
+        ref conn = self.conns[slot]
+        conn.ws = WebSocket(Role.SERVER, self._config)
+        conn.fd = slot
+        conn.open = True
+        conn.protocol = String(protocol)
+        conn.path = String(path)
+        conn.deadline_ms = Int.MAX
+        conn.code = CloseCode.ABNORMAL.value
+        conn.reason = String()
+        self._serial += 1
+        conn.id = (self._serial << _FD_BITS) | slot
+        return conn.id
+
+    def free_slot(self) -> Int:
+        """Return the first slot that no WebSocket uses, for `attach`. A
+        bridge without sockets uses it; a server with sockets must not.
+
+        Returns:
+            The slot; the end of the table when each slot is in use.
+        """
+        var slot = 0
+        while slot < len(self.conns):
+            if self.conns[slot].fd < 0:
+                return slot
+            slot += 1
+        return slot
+
+    def detach(mut self, slot: Int):
+        """Free the slot of a WebSocket that a bridge carries. The ids of
+        the slot are no longer open.
+
+        Args:
+            slot: The slot of `attach`.
+        """
+        ref conn = self.conns[slot]
+        conn.fd = -1
+        conn.open = False
+        conn.code = CloseCode.ABNORMAL.value
+        conn.reason = String()
+
 
 trait WsHandler(Deinitable, Movable):
     """What a WebSocket server calls for its connections."""

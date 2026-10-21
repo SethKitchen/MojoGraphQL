@@ -1296,16 +1296,21 @@ struct Values(Copyable, Movable):
             index += 1
         return True
 
-    def merge(mut self, target: Int, source: Int) -> Int:
+    def merge(
+        mut self, target: Int, source: Int, truncate: Bool = False
+    ) -> Int:
         """Deep merge two values, as the default `DeepMerger` merges them.
 
         Two objects merge member by member, and two arrays merge item by
         item. Any other source replaces the target. The result is `target`
-        when the merge changes nothing.
+        when the merge changes nothing. With `truncate`, a target array
+        that is longer than the source array is cut to the source length
+        first, as `DeepMerger` does with `arrayMerge: "truncate"`.
 
         Args:
             target: The existing value, or `NO_VALUE`.
             source: The incoming value, or `NO_VALUE`.
+            truncate: Whether to use the `"truncate"` array strategy.
 
         Returns:
             The merged value.
@@ -1342,7 +1347,7 @@ struct Values(Copyable, Movable):
                 else:
                     var existing = Int(members[position].value)
                     if incoming != existing:
-                        var merged = self.merge(existing, incoming)
+                        var merged = self.merge(existing, incoming, truncate)
                         if merged != existing:
                             members[position].value = Int32(merged)
                             changed = True
@@ -1354,6 +1359,9 @@ struct Values(Copyable, Movable):
         var items = self.array_items(target)
         var changed = False
         var count = self.length(source)
+        if truncate and len(items) > count:
+            items.resize(count, NO_VALUE)
+            changed = True
         var index = 0
         while index < count:
             var incoming = self.item(source, index)
@@ -1361,7 +1369,7 @@ struct Values(Copyable, Movable):
                 items.append(incoming)
                 changed = True
             elif incoming != items[index]:
-                var merged = self.merge(items[index], incoming)
+                var merged = self.merge(items[index], incoming, truncate)
                 if merged != items[index]:
                     items[index] = merged
                     changed = True

@@ -17,6 +17,7 @@
 
 import { readFileSync } from 'node:fs';
 import { InMemoryCache, gql } from '@apollo/client';
+import { GraphQL17Alpha9Handler } from '@apollo/client/incremental';
 
 const FIXTURES = new URL('../../fixtures/', import.meta.url);
 const ROUND_NS = 1_000_000_000n;
@@ -178,6 +179,55 @@ measure('client/write-new-items-1000', () => {
   const cache = new InMemoryCache();
   const object = { __typename: 'Item', id: '500', title: 'Item number 500' };
   measure('client/identify', () => cache.identify(object).length);
+}
+
+// Merge 101 incremental payloads: 100 items with a pending @defer each,
+// then one payload for each item. The payloads are parsed in setup, as
+// the link parses them before the handler gets them.
+{
+  const COUNT = 100;
+  const items = [];
+  const pending = [];
+  for (let i = 0; i < COUNT; i++) {
+    items.push({ __typename: 'Item', id: String(i) });
+    pending.push({ id: String(i), path: ['items', i] });
+  }
+  const chunks = [
+    JSON.parse(JSON.stringify({ data: { items }, pending, hasNext: true })),
+  ];
+  for (let i = 0; i < COUNT; i++) {
+    chunks.push(
+      JSON.parse(
+        JSON.stringify({
+          incremental: [
+            { id: String(i), data: { title: `Item number ${i}`, score: i } },
+          ],
+          completed: [{ id: String(i) }],
+          hasNext: i + 1 < COUNT,
+        }),
+      ),
+    );
+  }
+  const handler = new GraphQL17Alpha9Handler();
+  const query = gql`
+    {
+      items {
+        id
+        ... @defer {
+          title
+          score
+        }
+      }
+    }
+  `;
+  measure('client/merge-deferred-chunks-100', () => {
+    const request = handler.startRequest({ query });
+    let result;
+    for (const chunk of chunks) {
+      result = request.handle(undefined, chunk);
+    }
+    return result.data.items.length;
+  });
 }
 
 if (sink === -1) console.log(sink);

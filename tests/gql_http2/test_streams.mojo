@@ -400,7 +400,9 @@ def test_types() raises:
     assert_equal(String(EventKind.MESSAGE), "message")
     assert_equal(String(EventKind.RESET), "reset")
     assert_equal(String(EventKind(4)), "invalid")
-    assert_true(EventKind.RESET.is_valid() and not EventKind(2).is_valid())
+    assert_equal(String(EventKind.HEAD), "head")
+    assert_equal(String(EventKind.DATA), "data")
+    assert_true(EventKind.DATA.is_valid() and not EventKind(4).is_valid())
     assert_equal(calc_max_continuation_frames(16384, 16384), 5)
     assert_equal(calc_max_continuation_frames(1 << 20, 16384), 80)
 

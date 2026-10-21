@@ -22,8 +22,12 @@ Differences from upstream:
   ported. `resultCaching` has no effect. A read builds a new result.
 - The methods take their options as arguments, not as one options object.
 - `extract` returns the JSON text of `JSON.stringify(cache.extract())`.
-- Custom scalars (`scalars`, `Scalar`) and `@stream` and `@defer` merging
-  (`streamInfoSymbol`, `handleIncrementalSymbol`) are not ported.
+- Custom scalars (`scalars`, `Scalar`) and the incremental reads of `diff`
+  (`handleIncrementalSymbol`) are not ported.
+- `write_query` takes the stream information of an incremental request as
+  the argument `stream_info`, not as the `streamInfoSymbol` key of
+  `extensions`. The memo of the last stream merge (`previous`) is not
+  ported, so a merge function runs for each write.
 - Warnings that upstream prints in development, such as the data loss
   warning of `writeToStore`, are not printed.
 - The arena of values is compacted when it holds many values that nothing
@@ -80,6 +84,7 @@ from gql_client.values import (
     Values,
     utf16_less,
 )
+from gql_client.incremental import StreamFieldInfo, StreamInfo
 from gql_client.write import write_to_store
 
 comptime DELETE = -2
@@ -224,6 +229,15 @@ struct FieldFunctionOptions(Movable):
     var from_object: Int
     """The object that `read_field` reads by default: the parent object of
     a read function, `NO_VALUE` for a merge function."""
+    var extensions: Int
+    """The `extensions` of the write, or `NO_VALUE` (upstream
+    `undefined`). Only a merge function gets them."""
+    var stream_field_info: Optional[StreamFieldInfo]
+    """For a merge function of a `@stream` field during a stream, where
+    the stream is; None otherwise."""
+    var existing_data: Int
+    """The existing value of a merge function, also with `overwrite`
+    (upstream `existingData`); `NO_VALUE` for a read function."""
 
     def __init__(
         out self,
@@ -233,6 +247,9 @@ struct FieldFunctionOptions(Movable):
         store_field_name: String,
         variables: Int,
         from_object: Int,
+        extensions: Int = NO_VALUE,
+        stream_field_info: Optional[StreamFieldInfo] = None,
+        existing_data: Int = NO_VALUE,
     ):
         """Make the options of one call.
 
@@ -243,6 +260,9 @@ struct FieldFunctionOptions(Movable):
             store_field_name: The store field name.
             variables: The variables object, or `NO_VALUE`.
             from_object: The parent object, or `NO_VALUE`.
+            extensions: The extensions of the write, or `NO_VALUE`.
+            stream_field_info: The stream information, or None.
+            existing_data: The existing value, or `NO_VALUE`.
         """
         self.cache = cache
         self.args = args
@@ -250,6 +270,9 @@ struct FieldFunctionOptions(Movable):
         self.store_field_name = store_field_name
         self.variables = variables
         self.from_object = from_object
+        self.extensions = extensions
+        self.stream_field_info = stream_field_info
+        self.existing_data = existing_data
 
     def read_field(mut self, name: StringSlice) raises -> Int:
         """Read a field of the parent object, as `options.readField(name)`.
@@ -1256,8 +1279,15 @@ struct InMemoryCache(Movable):
         variables: JsonDocument = JsonDocument(),
         id: StringSlice = "ROOT_QUERY",
         overwrite: Bool = False,
+        extensions: JsonDocument = JsonDocument(),
+        stream_info: StreamInfo = StreamInfo(),
     ) raises -> String:
         """Write the result of a query, as `cache.writeQuery`.
+
+        Merge functions get `extensions`. With the stream information of
+        an incremental request, a `@stream` array that has no merge
+        function merges with `default_stream_field_merge`, and a merge
+        function of a `@stream` field gets `stream_field_info`.
 
         Args:
             query: The query.
@@ -1265,6 +1295,10 @@ struct InMemoryCache(Movable):
             variables: The variables object, or an empty document.
             id: The entity that the query starts at.
             overwrite: Whether merge functions get no existing value.
+            extensions: The extensions of the result, or an empty
+                document for `undefined`.
+            stream_info: The `stream_info` of the incremental request, or
+                an empty trie.
 
         Returns:
             The id that the data was written to.
@@ -1274,7 +1308,14 @@ struct InMemoryCache(Movable):
                 fragment or a missing key field.
         """
         var result = write_to_store(
-            self, query, data, String(id), variables, overwrite
+            self,
+            query,
+            data,
+            String(id),
+            variables,
+            overwrite,
+            extensions,
+            stream_info,
         )
         self._maybe_compact()
         return result^

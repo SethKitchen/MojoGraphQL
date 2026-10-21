@@ -6,6 +6,10 @@
 """The client of `graphql-transport-ws` on a `WsClient`: many operations
 on one socket.
 
+`TransportClientOf[S]` runs the protocol on any `MessageSocket`, such as
+a WebSocket on an HTTP/2 stream; `TransportClient` is the one on a
+`WsClient`. `start` sends `connection_init` and waits for the ack.
+
 `TransportClient.connect` opens the socket with the subprotocol, sends
 `connection_init`, and waits for `connection_ack`. `subscribe` sends a
 `subscribe` and returns its id. `next` reads until the next `next`,
@@ -31,7 +35,7 @@ from std.random import random_ui64
 
 from gql_json.writer import write_string
 
-from gql_ws.client import ClientConfig, WsClient
+from gql_ws.client import ClientConfig, MessageSocket, WsClient
 from gql_ws.error import WsError, WsErrorKind
 from gql_ws.frame import CloseCode
 from gql_ws.graphql_ws import (
@@ -124,10 +128,19 @@ def subscribe_payload(
     return String(unsafe_from_utf8=out^)
 
 
-struct TransportClient(Movable):
-    """A connected and acknowledged `graphql-transport-ws` client."""
+comptime TransportClient = TransportClientOf[WsClient]
+"""The `graphql-transport-ws` client on a `WsClient`."""
 
-    var socket: WsClient
+
+struct TransportClientOf[S: MessageSocket](Movable):
+    """A connected and acknowledged `graphql-transport-ws` client.
+
+    Parameters:
+        S: The type of the WebSocket: `WsClient`, or a WebSocket on an
+            HTTP/2 or an HTTP/3 stream.
+    """
+
+    var socket: Self.S
     """The WebSocket."""
     var ack_payload: String
     """The JSON of the payload of the `connection_ack`, or empty."""
@@ -135,8 +148,8 @@ struct TransportClient(Movable):
     """The ids of the operations that have not ended."""
     var _message: Message
 
-    def __init__(out self, var socket: WsClient):
-        """Wrap a WebSocket before its `connection_init`.
+    def __init__(out self, var socket: Self.S):
+        """Wrap a WebSocket before its `connection_init`; call `start`.
 
         Args:
             socket: The WebSocket, with the subprotocol.
@@ -146,14 +159,51 @@ struct TransportClient(Movable):
         self.active = Dict[String, Bool]()
         self._message = Message()
 
+    def start(
+        mut self, connection_params: StringSlice = "", ack_timeout_ms: Int = 0
+    ) raises WsError:
+        """Send `connection_init`, and wait for the ack.
+
+        Args:
+            connection_params: The JSON object of the `connection_init`
+                payload, or empty.
+            ack_timeout_ms: The longest wait for the ack; 0 waits without a
+                limit, as `connectionAckWaitTimeout`.
+
+        Raises:
+            WsError: `CLOSED` with the close code when the server closes,
+                or the client closes with 4004 or 4504; the errors of the
+                socket.
+        """
+        self._send(
+            payload_message(MessageType.CONNECTION_INIT, connection_params)
+        )
+        var timeout = ack_timeout_ms if ack_timeout_ms > 0 else -1
+        var message = self._read(timeout)
+        if not message:
+            var failure = self._fail(
+                CONNECTION_ACKNOWLEDGEMENT_TIMEOUT,
+                "Connection acknowledgement timeout",
+            )
+            raise failure^
+        if message.value().type != MessageType.CONNECTION_ACK:
+            var failure = self._fail(
+                BAD_RESPONSE,
+                "First message cannot be of type "
+                + String(message.value().type.text()),
+            )
+            raise failure^
+        self.ack_payload = message.value().payload_json()
+
     @staticmethod
     def connect(
         url: StringSlice,
         connection_params: StringSlice = "",
         ack_timeout_ms: Int = 0,
         config: ClientConfig = ClientConfig(),
-    ) raises WsError -> TransportClient:
-        """Connect, send `connection_init`, and wait for the ack.
+    ) raises WsError -> TransportClientOf[WsClient]:
+        """Connect with a `WsClient`, send `connection_init`, and wait for
+        the ack.
 
         Args:
             url: The `ws://` URL of the server.
@@ -174,26 +224,8 @@ struct TransportClient(Movable):
         var socket = WsClient.connect(
             url, [GRAPHQL_TRANSPORT_WS_PROTOCOL], config
         )
-        var client = TransportClient(socket^)
-        client._send(
-            payload_message(MessageType.CONNECTION_INIT, connection_params)
-        )
-        var timeout = ack_timeout_ms if ack_timeout_ms > 0 else -1
-        var message = client._read(timeout)
-        if not message:
-            var failure = client._fail(
-                CONNECTION_ACKNOWLEDGEMENT_TIMEOUT,
-                "Connection acknowledgement timeout",
-            )
-            raise failure^
-        if message.value().type != MessageType.CONNECTION_ACK:
-            var failure = client._fail(
-                BAD_RESPONSE,
-                "First message cannot be of type "
-                + String(message.value().type.text()),
-            )
-            raise failure^
-        client.ack_payload = message.value().payload_json()
+        var client = TransportClientOf[WsClient](socket^)
+        client.start(connection_params, ack_timeout_ms)
         return client^
 
     def _send(mut self, text: String) raises WsError:

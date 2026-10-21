@@ -82,9 +82,14 @@ depends = ["gql_language", "gql_schema", "gql_json", "gql_stream"]
 upstream = ["graphql-js 16.14.2 src/execution (subscribe.ts included), src/type/introspection.ts and the introspection utilities of src/utilities (MIT)", "graphql-js 17.0.2 (71606d7) experimentalExecuteIncrementally: src/execution/collectFields.ts (@defer), getStreamUsage.ts, incremental/IncrementalExecutor.ts, IncrementalPublisher.ts, WorkQueue.ts and buildExecutionPlan.ts, the @defer and @stream definitions of src/type/directives.ts, and incremental/__tests__/defer-test.ts and stream-test.ts, with the abortSignal and enableEarlyExecution of ExecutionArgs (MIT)"]
 
 [packages.gql_client]
-summary = "Normalized client cache: InMemoryCache, type and field policies"
+summary = "Normalized client cache: InMemoryCache, type and field policies, incremental delivery and subscription writes"
 depends = ["gql_language", "gql_json"]
-upstream = ["Apollo Client 4.3.3 (ae0dfce) src/cache/inmemory: inMemoryCache.ts, entityStore.ts, writeToStore.ts, readFromStore.ts, policies.ts, helpers.ts, key-extractor.ts; src/cache/core/cache.ts; the src/utilities helpers they use (MIT)"]
+upstream = ["Apollo Client 4.3.3 (ae0dfce) src/cache/inmemory: inMemoryCache.ts, entityStore.ts, writeToStore.ts, readFromStore.ts, policies.ts, helpers.ts, key-extractor.ts; src/cache/core/cache.ts; the src/utilities helpers they use (MIT)", "Apollo Client 4.3.3 (ae0dfce) src/incremental/handlers: graphql17Alpha9.ts, defer20220824.ts; src/utilities/internal: DeepMerger.ts, makeStreamInfoTrie.ts, StreamArrayState.ts, addDeferFragmentLabels.ts, hasDirectives.ts, isStreamField.ts; src/core/QueryInfo.ts: markQueryResult, markSubscriptionResult, shouldWriteResult; the result mapping of QueryManager.startGraphQLSubscription (MIT)"]
+
+[packages.gql_client_http]
+summary = "The response parsing of the Apollo Client HTTP link: multipart/mixed results and the JSON response check"
+depends = ["gql_http", "gql_json"]
+upstream = ["Apollo Client 4.3.3 (ae0dfce) src/link/http/parseAndCheckHttpResponse.ts (MIT)"]
 
 [packages.gql_composition]
 summary = "Apollo Federation composition: validation of subgraphs"
@@ -137,6 +142,17 @@ upstream = ["tungstenite 0.30.0 (7f4aeaf) src/protocol (mod.rs, message.rs, fram
 summary = "graphql-transport-ws on gql_execution: parse, validate, execute and subscribe for the gql_ws transport server"
 depends = ["gql_ws", "gql_execution", "gql_language", "gql_schema", "gql_validation", "gql_json", "gql_stream"]
 upstream = ["graphql-ws 6.4.1 (7281f1b) src/server.ts: the parse, validate, getOperationAST, roots, execute and subscribe path of makeServer, and tests/server.test.ts (MIT)"]
+
+[packages.gql_ws_http2]
+summary = "WebSockets over HTTP/2 (RFC 8441): the extended CONNECT handshake, gql_ws and graphql-transport-ws on h2 tunnel streams, an h2c server and a client over any gql_http2 Transport"
+depends = ["gql_ws", "gql_http2", "gql_http"]
+test_depends = ["gql_ws_execution", "gql_execution", "gql_schema", "gql_stream", "gql_json", "gql_tls", "gql_https2"]
+upstream = ["h2 v0.4.20 (b0e8908) ext::Protocol, SETTINGS_ENABLE_CONNECT_PROTOCOL and the extended CONNECT tests of tests/h2-tests/tests/client_request.rs and server.rs (MIT), in gql_http2; RFC 8441; no other code is ported: the package joins gql_ws and gql_http2"]
+
+[packages.gql_ws_http3]
+summary = "WebSockets over HTTP/3 (RFC 9220): SETTINGS_ENABLE_CONNECT_PROTOCOL, the extended CONNECT checks, and a WebSocket on one HTTP/3 request stream without I/O"
+depends = ["gql_ws_http2", "gql_ws", "gql_http3", "gql_http2"]
+upstream = ["hyperium/h3 h3-v0.0.8 (22c1aa3) enable_extended_connect of h3/src/config.rs and the :protocol rules of h3/src/proto/headers.rs (MIT); RFC 9220"]
 
 [packages.gql_server_ws]
 summary = "Apollo Server subscriptions over graphql-transport-ws, on the port of its HTTP server, with a drain on stop"

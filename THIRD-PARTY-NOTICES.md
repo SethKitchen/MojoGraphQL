@@ -33,7 +33,7 @@ the Elastic License 2.0. The exclusions are listed with each project.
 | Hive Router | [graphql-hive/router](https://github.com/graphql-hive/router) | `1a29df9` | MIT | Copyright (c) 2018 Dotan Simha <dotan@the-guild.dev> |
 | graphql-go-tools | [wundergraph/graphql-go-tools](https://github.com/wundergraph/graphql-go-tools) | `9ef6e24` | MIT | Copyright (c) 2022 WunderGraph UG (haftungsbeschränkt) |
 | Apollo Federation subgraph compatibility | [apollographql/apollo-federation-subgraph-compatibility](https://github.com/apollographql/apollo-federation-subgraph-compatibility) | `f9520a4` | MIT | Copyright (c) 2022 Apollo Graph |
-| hyperium/h3 | [hyperium/h3](https://github.com/hyperium/h3), `h3/src/qpack` and `h3/src/proto` only | `h3-v0.0.8` (`22c1aa3`) | MIT | Copyright (c) 2020 h3 authors |
+| hyperium/h3 | [hyperium/h3](https://github.com/hyperium/h3), `h3/src/qpack`, `h3/src/proto` and `enable_extended_connect` of `h3/src/config.rs` only | `h3-v0.0.8` (`22c1aa3`) | MIT | Copyright (c) 2020 h3 authors |
 | hyperium/h2 | [hyperium/h2](https://github.com/hyperium/h2), `src/hpack`, `src/frame`, `src/proto`, `src/server.rs`, `src/client.rs`, and the tests of `tests/h2-tests` and `src/hpack/test` | `v0.4.20` (`b0e8908`) | MIT | Copyright (c) 2017 h2 authors |
 | quinn | [quinn-rs/quinn](https://github.com/quinn-rs/quinn), `quinn-proto/` (crate `0.11.19`) and the drivers of `quinn/` (crate `0.11.12`) only | `quinn-proto-0.11.19` (`8192ed3`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2018 The quinn Developers |
 | quinn-udp | [quinn-rs/quinn](https://github.com/quinn-rs/quinn), `quinn-udp/` (crate `0.5.16`) only | `quinn-proto-0.11.19` (`8192ed3`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2018 The quinn Developers |
@@ -203,7 +203,26 @@ the values of the public OpenSSL headers. A program that does not import
   `addTypenameToDocument` of `graphql/transform.ts`. It does not port
   `fragmentRegistry.ts`, `reactiveVars.ts`, `src/cache/core/Scalar.ts`, the
   watch and broadcast parts of `inMemoryCache.ts`, or anything outside
-  `src/cache` and those utilities.
+  `src/cache` and those utilities. For incremental delivery and
+  subscriptions, `gql_client` also ports `src/incremental/handlers/`
+  (`graphql17Alpha9.ts`, `defer20220824.ts`), and of
+  `src/utilities/internal`: `makeStreamInfoTrie.ts`, `StreamArrayState.ts`,
+  `addDeferFragmentLabels.ts`, `hasDirectives.ts`, `isStreamField.ts`, the
+  `truncate` and `atPath` options of `DeepMerger.ts`, and the stream parts
+  of `policies.ts` and `writeToStore.ts` (`defaultStreamFieldMergeFn`,
+  `streamFieldInfo`, `existingData`, `extensions`). It ports
+  `markQueryResult`, `markSubscriptionResult` and `shouldWriteResult` of
+  `src/core/QueryInfo.ts`, and the result mapping of
+  `startGraphQLSubscription` of `src/core/QueryManager.ts`. It does not
+  port the rest of `src/core`, `src/masking`, `notImplemented.ts`, or the
+  incremental reads of `readFromStore.ts` (`deferInfo`,
+  `prunePartialBoundaries`). `gql_client_http` ports
+  `src/link/http/parseAndCheckHttpResponse.ts`, and no other file of
+  `src/link`. The tests of both packages port the upstream tests named in
+  their module docstrings; the payloads and results of the handler tests
+  were recorded by running those upstream tests with the npm packages
+  `graphql` `17.0.0-alpha.2` and `17.0.0-alpha.9` (MIT), which are not part
+  of any MojoGraphQL package.
 - **Hive Federation Composition.** `gql_composition` ports these MIT files
   of `v0.27.0` (`6272ad8`): `src/validate.ts` (the subgraph phase),
   `src/specifications/` (`federation.ts`, `link.ts`, `tag.ts`,
@@ -273,6 +292,12 @@ the values of the public OpenSSL headers. A program that does not import
   `benches/`, `examples/` and `fuzz/` are not ported. The Autobahn
   testsuite needs Docker or Python 2; its cases of sections 1 to 7 are tests
   in `tests/gql_ws/`.
+- **WebSockets over HTTP/2 and HTTP/3 (gql_ws_http2, gql_ws_http3).** No
+  code is ported except the extended `CONNECT` of h2 v0.4.20 (in
+  `gql_http2`), and `enable_extended_connect` of `h3/src/config.rs` and
+  the `:protocol` rules of `h3/src/proto/headers.rs` of hyperium/h3
+  h3-v0.0.8 (in `gql_ws_http3`). The rest follows RFC 8441 and RFC 9220.
+  The WebTransport and datagram crates of hyperium/h3 are not ported.
 - **graphql-ws (gql_ws, gql_ws_execution).** The adapters of `src/use/`
   other than `ws.ts` (`bun`, `deno`, `fastify-websocket`, `uWebSockets`,
   `crossws`), the deprecated `subscriptions-transport-ws` protocol, the
@@ -343,6 +368,10 @@ MIT License. Everything else of graphql-js comes from `v16.14.2`.
   `tokio-tungstenite` `0.30.0` (MIT OR Apache-2.0, used under MIT), `tokio`
   and `futures-util` (MIT). They run only as the benchmark baseline of
   `gql_ws`, and are not part of any MojoGraphQL package.
+- `bench/baselines/rust-ws_http2/` builds the crates `h2` `0.4.20` (MIT),
+  `tungstenite` `0.30.0` (MIT OR Apache-2.0, used under MIT), `tokio`,
+  `http` and `bytes` (MIT). They run only as the benchmark baseline of
+  `gql_ws_http2`, and are not part of any MojoGraphQL package.
 - `bench/baselines/js-client/` installs the npm packages `@apollo/client`
   `4.3.3` (MIT), `graphql` `16.14.2` (MIT) and its peer dependency `rxjs`
   `7.8.2` (Apache-2.0). They run only as the benchmark baseline of
