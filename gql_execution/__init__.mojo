@@ -7,6 +7,8 @@
 and introspection.
 
 Port of graphql-js 16.14.2 `src/execution`, `src/type/introspection.ts`
-and the introspection utilities of `src/utilities`. See the Execution page
-of the wiki.
+and the introspection utilities of `src/utilities`. Incremental delivery,
+`@defer` and `@stream`, is a port of graphql-js v17.0.2
+`experimentalExecuteIncrementally`, in `gql_execution.incremental`. See the
+Execution page of the wiki.
 """

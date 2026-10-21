@@ -9,6 +9,7 @@ in one of them, as the `jest.fn` hooks of Apollo Server 5.5.1
 
 from gql_server.errors import ServerError
 from gql_server.http_types import HTTPGraphQLHead
+from gql_server.incremental import SubsequentPayload
 from gql_server.plugin import ServerPlugin
 from gql_server.types import GraphQLRequestContext
 
@@ -99,6 +100,19 @@ struct Recorder(ServerPlugin):
         self._hook("willSendResponse")
         if self.prefix == "format:":
             ctx.response.extensions = String('{"formatted":true}')
+
+    def did_encounter_subsequent_errors(
+        mut self, errors: List[ServerError]
+    ) raises:
+        self._hook("didEncounterSubsequentErrors(" + String(len(errors)) + ")")
+
+    def will_send_subsequent_payload(
+        mut self, mut payload: SubsequentPayload
+    ) raises:
+        self._hook("willSendSubsequentPayload")
+        if self.prefix == "rewrite:":
+            payload.json = String('{"hasNext":false,"rewritten":true}')
+            payload.has_next = False
 
     def context_creation_did_fail(mut self, error: ServerError) raises:
         self._hook("contextCreationDidFail")

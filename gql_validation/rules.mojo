@@ -9,9 +9,23 @@ Port of graphql-js 16.14.2 `validation/specifiedRules.ts` (`specifiedRules`
 and `recommendedRules`) and the rule names of `validation/rules/` and
 `validation/rules/custom/`.
 
+The four `@defer` and `@stream` rules are a port of graphql-js
+v17.0.2 (commit 71606d73). `incremental_rules()` gives them.
+
 A graphql-js rule is a function that returns a visitor. Here a rule is a
 `ValidationRule` value, and `gql_validation.validate` calls the code of
 each rule in one walk of the document.
+
+**Differences from upstream.**
+
+- graphql-js v17.0.2 puts the four `@defer` and `@stream` rules in
+  `specifiedRules`, after `UniqueDirectivesPerLocationRule`. Here they are
+  not in `specified_rules()`, because the rest of this package is a port
+  of graphql-js 16.14.2, which has no such rules. graphql-js 16 accepts
+  a document that uses `@defer` or `@stream` when the schema defines
+  them, and `specified_rules()` keeps that behavior. Add
+  `incremental_rules()` to the rule list to use them.
+- `incremental_rules()` has no graphql-js equivalent.
 """
 
 
@@ -21,7 +35,7 @@ struct ValidationRule(Equatable, ImplicitlyCopyable, Writable):
 
     var value: UInt8
     """The rule's index: its place in `specifiedRules`, then the custom
-    rules; see `is_valid`."""
+    rules, then the `@defer` and `@stream` rules; see `is_valid`."""
 
     comptime EXECUTABLE_DEFINITIONS = ValidationRule(0)
     """`ExecutableDefinitionsRule`: only operations and fragments."""
@@ -92,7 +106,19 @@ struct ValidationRule(Equatable, ImplicitlyCopyable, Writable):
     comptime NO_SCHEMA_INTROSPECTION_CUSTOM = ValidationRule(28)
     """`NoSchemaIntrospectionCustomRule`: no `__schema` or `__type`; not
     in `specifiedRules`."""
-    comptime COUNT = 29
+    comptime DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD = ValidationRule(29)
+    """`DeferStreamDirectiveOnRootFieldRule`: no `@defer` or `@stream` on
+    the root mutation or subscription type; not in `specified_rules()`."""
+    comptime DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS = ValidationRule(30)
+    """`DeferStreamDirectiveOnValidOperationsRule`: no enabled `@defer` or
+    `@stream` in a subscription; not in `specified_rules()`."""
+    comptime DEFER_STREAM_DIRECTIVE_LABEL = ValidationRule(31)
+    """`DeferStreamDirectiveLabelRule`: each `@defer` and `@stream` label is
+    a static string, and unique; not in `specified_rules()`."""
+    comptime STREAM_DIRECTIVE_ON_LIST_FIELD = ValidationRule(32)
+    """`StreamDirectiveOnListFieldRule`: `@stream` only on a list field; not
+    in `specified_rules()`."""
+    comptime COUNT = 33
     """How many rules there are."""
     comptime SPECIFIED_COUNT = 27
     """How many rules `specifiedRules` holds."""
@@ -112,7 +138,7 @@ struct ValidationRule(Equatable, ImplicitlyCopyable, Writable):
         Returns:
             The name, or `<invalid>`.
         """
-        comptime names: Array[StaticString, 29] = [
+        comptime names: Array[StaticString, ValidationRule.COUNT] = [
             "ExecutableDefinitionsRule",
             "UniqueOperationNamesRule",
             "LoneAnonymousOperationRule",
@@ -142,6 +168,10 @@ struct ValidationRule(Equatable, ImplicitlyCopyable, Writable):
             "MaxIntrospectionDepthRule",
             "NoDeprecatedCustomRule",
             "NoSchemaIntrospectionCustomRule",
+            "DeferStreamDirectiveOnRootFieldRule",
+            "DeferStreamDirectiveOnValidOperationsRule",
+            "DeferStreamDirectiveLabelRule",
+            "StreamDirectiveOnListFieldRule",
         ]
         if not self.is_valid():
             return "<invalid>"
@@ -177,3 +207,28 @@ def recommended_rules() -> List[ValidationRule]:
         `MAX_INTROSPECTION_DEPTH`.
     """
     return [ValidationRule.MAX_INTROSPECTION_DEPTH]
+
+
+def incremental_rules() -> List[ValidationRule]:
+    """Return the four `@defer` and `@stream` rules of graphql-js
+    v17.0.2, in their `specifiedRules` order.
+
+    They are not in `specified_rules()`. Add them to a rule list to use
+    them:
+
+    ```mojo
+    var rules = specified_rules()
+    rules.extend(incremental_rules())
+    ```
+
+    Returns:
+        `DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD`,
+        `DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS`,
+        `DEFER_STREAM_DIRECTIVE_LABEL` and `STREAM_DIRECTIVE_ON_LIST_FIELD`.
+    """
+    return [
+        ValidationRule.DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD,
+        ValidationRule.DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS,
+        ValidationRule.DEFER_STREAM_DIRECTIVE_LABEL,
+        ValidationRule.STREAM_DIRECTIVE_ON_LIST_FIELD,
+    ]

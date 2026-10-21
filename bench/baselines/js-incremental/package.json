@@ -1,0 +1,14 @@
+{
+  "name": "mojographql-bench-incremental-js",
+  "version": "0.0.0",
+  "private": true,
+  "description": "graphql-js 17 experimentalExecuteIncrementally baseline for the MojoGraphQL gql_execution @defer and @stream benchmarks.",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "bench": "node bench.mjs"
+  },
+  "dependencies": {
+    "graphql": "17.0.2"
+  }
+}

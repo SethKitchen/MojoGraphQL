@@ -127,6 +127,11 @@ def read_subgraph_response(
     if not has_data and not response.has_errors:
         raise Error("Subgraph returned malformed response")
     if has_data:
+        if len(arena.nodes) == 0:
+            # An empty arena takes the parsed document as it is.
+            arena = parsed^
+            response.data = data
+            return response^
         var offset = import_document(arena, parsed)
         response.data = offset - root + data
     return response^

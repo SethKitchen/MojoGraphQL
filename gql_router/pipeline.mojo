@@ -43,7 +43,12 @@ from gql_router.entity_keys import EntityKeys
 from gql_router.exec_http import SubgraphTransport
 from gql_router.exec_introspection import resolve_introspection
 from gql_router.exec_partition import partition_operation
-from gql_router.exec_plan import Executor, PlanExecutionOutput
+from gql_router.exec_plan import (
+    Executor,
+    PlanExecutionOutput,
+    subscription_node,
+    subscription_request_body,
+)
 from gql_router.exec_projection_plan import ProjectionPlan
 from gql_router.exec_variables import CoerceVariablesPayload, collect_variables
 from gql_router.federation_spec import OperationKind
@@ -356,6 +361,79 @@ struct RouterResponse(Movable):
         )
 
 
+struct PreparedRequest(Movable):
+    """A request after its parse, validation, normalization, variable
+    coercion and plan: what `Router.run_prepared` and the subscription
+    calls take."""
+
+    var slot: Int
+    """The slot of the cached operation."""
+    var kind: OperationKind
+    """The kind of the operation."""
+    var variables: CoerceVariablesPayload
+    """The coerced variables."""
+
+    def __init__(
+        out self,
+        slot: Int,
+        kind: OperationKind,
+        var variables: CoerceVariablesPayload,
+    ):
+        """Wrap a prepared request.
+
+        Args:
+            slot: The slot of the cached operation.
+            kind: The kind of the operation.
+            variables: The coerced variables.
+        """
+        self.slot = slot
+        self.kind = kind
+        self.variables = variables^
+
+    def is_subscription(self) -> Bool:
+        """Tell if the operation is a subscription.
+
+        Returns:
+            True for a subscription.
+        """
+        return self.kind == OperationKind.SUBSCRIPTION
+
+
+struct SubscriptionStart(Movable):
+    """The subgraph request that opens a subscription, as the
+    `SubgraphExecutionRequest` of upstream `execute_query_plan`."""
+
+    var subgraph: String
+    """The subgraph of the subscription fetch."""
+    var body: List[UInt8]
+    """The JSON body of the request."""
+
+    def __init__(out self, var subgraph: String, var body: List[UInt8]):
+        """Wrap a subscription request.
+
+        Args:
+            subgraph: The subgraph name.
+            body: The JSON body.
+        """
+        self.subgraph = subgraph^
+        self.body = body^
+
+
+def failure_body(message: String, code: String) -> List[UInt8]:
+    """Write the body of a failed event, as upstream
+    `FailedExecutionResult`.
+
+    Args:
+        message: The message.
+        code: The error code.
+
+    Returns:
+        `{"errors":[{"message":...,"extensions":{"code":...}}]}`.
+    """
+    var text = '{"errors":[' + error_json(error_with_code(message, code)) + "]}"
+    return List[UInt8](text.as_bytes())
+
+
 def _now_ms() -> Int:
     """Return a monotonic time in milliseconds."""
     return Int(perf_counter_ns() // 1_000_000)
@@ -381,6 +459,9 @@ struct Router[T: SubgraphTransport](Movable):
     var validated: OperationCache
     """The validation result of each document text, as upstream
     `validate_cache`: empty for a valid document, else the error body."""
+    var pins: List[Int]
+    """How many open subscriptions use each slot. A pinned slot is not
+    reused, even when its operation leaves the cache."""
 
     def __init__(
         out self,
@@ -401,6 +482,23 @@ struct Router[T: SubgraphTransport](Movable):
         self.slots = List[CachedOperation]()
         self.slot_keys = List[String]()
         self.validated = OperationCache(limits)
+        self.pins = List[Int]()
+
+    def pin(mut self, slot: Int):
+        """Keep a slot for an open subscription.
+
+        Args:
+            slot: The slot.
+        """
+        self.pins[slot] += 1
+
+    def unpin(mut self, slot: Int):
+        """Release a slot that `pin` keeps.
+
+        Args:
+            slot: The slot.
+        """
+        self.pins[slot] -= 1
 
     def validate(
         mut self, query: String, document: Document, now: Int
@@ -434,7 +532,10 @@ struct Router[T: SubgraphTransport](Movable):
             raise validation_error(body)
 
     def prepare(
-        mut self, query: String, operation_name: Optional[String]
+        mut self,
+        query: String,
+        operation_name: Optional[String],
+        validate: Bool = True,
     ) raises PipelineError -> Int:
         """Parse, normalize and partition an operation, or find it in the
         cache, as upstream `parse_operation_with_cache` and
@@ -443,6 +544,8 @@ struct Router[T: SubgraphTransport](Movable):
         Args:
             query: The operation document.
             operation_name: The operation to run.
+            validate: False for a document derived from a valid one, such
+                as the primary part of an operation with `@defer`.
 
         Returns:
             The slot of the operation.
@@ -469,7 +572,8 @@ struct Router[T: SubgraphTransport](Movable):
                 "Failed to parse GraphQL operation: " + String(e),
                 "GRAPHQL_PARSE_FAILED",
             )
-        self.validate(query, document, now)
+        if validate:
+            self.validate(query, document, now)
         var operation: OperationDefinition
         try:
             operation = normalize_operation(
@@ -498,6 +602,7 @@ struct Router[T: SubgraphTransport](Movable):
         if slot == len(self.slots):
             self.slots.append(cached^)
             self.slot_keys.append(key)
+            self.pins.append(0)
         else:
             self.slots[slot] = cached^
             self.slot_keys[slot] = key
@@ -508,7 +613,9 @@ struct Router[T: SubgraphTransport](Movable):
         """Return a slot whose operation left the cache, or a new slot."""
         var index = 0
         while index < len(self.slot_keys):
-            if not self.cache.get(self.slot_keys[index], now):
+            if self.pins[index] == 0 and not self.cache.get(
+                self.slot_keys[index], now
+            ):
                 return index
             index += 1
         return len(self.slots)
@@ -551,9 +658,42 @@ struct Router[T: SubgraphTransport](Movable):
         is_get: Bool,
     ) raises PipelineError -> RouterResponse:
         """Run one request; raise its pipeline error."""
+        var prepared = self.prepare_request(
+            query, operation_name, variables^, variables_root, is_get, False
+        )
+        return self.run_prepared(prepared)
+
+    def prepare_request(
+        mut self,
+        query: String,
+        operation_name: Optional[String],
+        var variables: JsonDocument,
+        variables_root: Int,
+        is_get: Bool,
+        subscriptions: Bool,
+    ) raises PipelineError -> PreparedRequest:
+        """Run the steps of a request before its execution: parse,
+        validate, normalize, coerce the variables, and plan.
+
+        Args:
+            query: The operation document.
+            operation_name: The operation to run.
+            variables: The parsed `variables` of the request.
+            variables_root: The variables object, or `NO_NODE`.
+            is_get: Whether the request is a `GET`.
+            subscriptions: Whether the caller can stream a subscription.
+
+        Returns:
+            The prepared request.
+
+        Raises:
+            PipelineError: As upstream: `SUBSCRIPTIONS_NOT_SUPPORTED` (415)
+                for a subscription that the caller cannot stream, and the
+                errors of each step.
+        """
         var slot = self.prepare(query, operation_name)
         var kind = self.slots[slot].downstream.kind
-        if kind == OperationKind.SUBSCRIPTION:
+        if kind == OperationKind.SUBSCRIPTION and not subscriptions:
             raise client_error(
                 "Subscriptions are not supported",
                 "SUBSCRIPTIONS_NOT_SUPPORTED",
@@ -576,6 +716,40 @@ struct Router[T: SubgraphTransport](Movable):
             )
         except error:
             raise client_error_prefer_ok(String(error), "BAD_USER_INPUT")
+        self._plan(slot)
+        return PreparedRequest(slot, kind, coerced^)
+
+    def prepare_coerced(
+        mut self,
+        query: String,
+        operation_name: Optional[String],
+        variables: CoerceVariablesPayload,
+        validate: Bool = True,
+    ) raises PipelineError -> PreparedRequest:
+        """Prepare a second document of a request with the variables that
+        `prepare_request` coerced, such as the parts of an operation with
+        `@defer`. Its variable definitions must be the same.
+
+        Args:
+            query: The operation document.
+            operation_name: The operation to run.
+            variables: The coerced variables of the first document.
+            validate: False for a document derived from a valid one.
+
+        Returns:
+            The prepared request.
+
+        Raises:
+            PipelineError: The errors of the parse, the validation, the
+                normalization and the plan.
+        """
+        var slot = self.prepare(query, operation_name, validate)
+        var kind = self.slots[slot].downstream.kind
+        self._plan(slot)
+        return PreparedRequest(slot, kind, variables.copy())
+
+    def _plan(mut self, slot: Int) raises PipelineError:
+        """Plan the operation of a slot once."""
         var downstream_set = self.slots[slot].downstream.selection_set
         var empty = (
             self.schema.planner.store.items[downstream_set].first == NONE
@@ -594,6 +768,22 @@ struct Router[T: SubgraphTransport](Movable):
                     "QUERY_PLAN_BUILD_FAILED",
                 )
             self.slots[slot].planned = True
+
+    def run_prepared(
+        mut self, prepared: PreparedRequest
+    ) raises PipelineError -> RouterResponse:
+        """Execute a prepared query or mutation and project its response.
+
+        Args:
+            prepared: The request from `prepare_request`.
+
+        Returns:
+            The status and the body.
+
+        Raises:
+            PipelineError: `PLAN_EXECUTION_FAILED` when the plan fails.
+        """
+        var slot = prepared.slot
         var arena = JsonDocument()
         var data = NO_NODE
         if self.slots[slot].has_introspection:
@@ -602,7 +792,7 @@ struct Router[T: SubgraphTransport](Movable):
                 self.slots[slot].introspection,
                 self.schema.consumer.document,
                 self.schema.metadata,
-                coerced,
+                prepared.variables,
                 arena,
             )
         try:
@@ -611,7 +801,7 @@ struct Router[T: SubgraphTransport](Movable):
                 self.slots[slot].plan,
                 self.schema.metadata,
                 self.schema.keys,
-                coerced,
+                prepared.variables,
                 self.slots[slot].projection,
                 self.slots[slot].root_type_name,
                 arena^,
@@ -625,3 +815,64 @@ struct Router[T: SubgraphTransport](Movable):
                 "Failed to execute a plan: " + String(error),
                 "PLAN_EXECUTION_FAILED",
             )
+
+    def subscription_start(
+        mut self, prepared: PreparedRequest
+    ) raises PipelineError -> SubscriptionStart:
+        """Return the subgraph request that opens a prepared subscription.
+
+        Args:
+            prepared: A subscription from `prepare_request`.
+
+        Returns:
+            The subgraph and the body of the subscription fetch.
+
+        Raises:
+            PipelineError: `PLAN_EXECUTION_FAILED` when the plan has no
+                `Subscription` node.
+        """
+        ref plan = self.slots[prepared.slot].plan
+        var node = subscription_node(plan)
+        if node == NONE:
+            raise internal_error(
+                "The plan of a subscription has no Subscription node",
+                "PLAN_EXECUTION_FAILED",
+            )
+        ref store = self.schema.planner.store
+        var service = plan.fetches[plan.nodes[node].fetch].service_name
+        return SubscriptionStart(
+            String(store.name(service)),
+            subscription_request_body(store, plan, node, prepared.variables),
+        )
+
+    def subscription_event(
+        mut self,
+        slot: Int,
+        variables: CoerceVariablesPayload,
+        var body: List[UInt8],
+    ) raises -> List[UInt8]:
+        """Run the rest of a subscription plan for one event.
+
+        Args:
+            slot: The slot of the subscription; `pin` keeps it.
+            variables: The coerced variables of the subscription.
+            body: The JSON of the subgraph event.
+
+        Returns:
+            The response body of the event.
+
+        Raises:
+            Error: When the event is not a GraphQL response, or when the
+                execution fails.
+        """
+        var output = self.executor.execute_event(
+            self.schema.planner.store,
+            self.slots[slot].plan,
+            self.schema.metadata,
+            self.schema.keys,
+            variables,
+            self.slots[slot].projection,
+            self.slots[slot].root_type_name,
+            body^,
+        )
+        return output^.take_body()

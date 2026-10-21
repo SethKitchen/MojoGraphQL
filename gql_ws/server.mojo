@@ -588,6 +588,10 @@ struct Server[W: WsHandler, H: Handler](Movable):
         var limit = self.handler.wait_ms()
         if limit >= 0:
             wait = limit if wait < 0 else min(wait, limit)
+        if self.http1.streams() > 0:
+            # A held HTTP response makes its content on each turn. It is an
+            # open connection, so `wait` is not negative here.
+            wait = min(wait, self.http1.config.stream_poll_ms)
         var count = self.sys.epoll_wait(
             self._epoll_fd,
             self._events.unsafe_ptr(),
@@ -621,6 +625,8 @@ struct Server[W: WsHandler, H: Handler](Movable):
             else:
                 self._readable(fd)
         self.handler.on_tick(self.sockets)
+        if self.http1.streams() > 0:
+            self.http1.pump()
         self._flush_dirty()
         if self.http1.draining:
             self.begin_shutdown()

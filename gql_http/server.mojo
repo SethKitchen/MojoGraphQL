@@ -31,6 +31,7 @@ Differences from upstream: none; there is no upstream.
 
 from std.time import perf_counter_ns
 
+from gql_http.body import BodyPoll, append_chunk, append_hex, append_last_chunk
 from gql_http.error import ErrorKind, HttpError
 from gql_http.headers import Headers
 from gql_http.parser import Limits, ParseState, Request, RequestReader
@@ -73,9 +74,42 @@ trait Handler(Deinitable, Movable):
         """
         ...
 
+    def poll_body(mut self, id: Int, mut out: List[UInt8]) raises -> BodyPoll:
+        """Make more content of a response that `ResponseWriter.hold` keeps.
+
+        The server calls it on each turn of its loop while the response is
+        held, and while the client reads. The server frames the bytes as
+        chunks. The default has no held responses, and returns `DONE`.
+
+        Args:
+            id: The connection of the response.
+            out: The destination of the bytes. It is empty at the call.
+
+        Returns:
+            `READY` after it appends bytes, `PENDING` when it has none now,
+            `DONE` at the end of the content, and `ERROR` to abort it.
+
+        Raises:
+            Error: Any error; the same as `ERROR`.
+        """
+        return BodyPoll.DONE
+
+    def body_closed(mut self, id: Int):
+        """Learn that a held response ends before `poll_body` ends it.
+
+        The server calls it when the client goes away, when `poll_body`
+        fails, and at a shutdown. The default does nothing.
+
+        Args:
+            id: The connection of the response.
+        """
+        pass
+
 
 comptime _CONTINUE = "HTTP/1.1 100 Continue\r\n\r\n"
 comptime _LINGER_MS = 2000
+comptime _PUMP_BYTES = 1 << 16
+"""The most bytes that one held response frames in one turn."""
 
 
 def format_http_date(seconds: Int) -> String:
@@ -151,21 +185,6 @@ def _append_int(mut out: List[UInt8], value: Int):
         out.append(digits[count])
 
 
-def _append_hex(mut out: List[UInt8], value: Int):
-    """Append the lowercase hexadecimal digits of a positive value."""
-    var digits = SIMD[DType.uint8, 32](0)
-    var count = 0
-    var rest = value
-    while rest > 0:
-        var digit = rest % 16
-        digits[count] = UInt8(48 + digit if digit < 10 else 87 + digit)
-        count += 1
-        rest //= 16
-    while count > 0:
-        count -= 1
-        out.append(digits[count])
-
-
 @fieldwise_init
 struct _WriterState(Equatable, ImplicitlyCopyable):
     """How far a response has gone."""
@@ -207,6 +226,7 @@ struct ResponseWriter(Movable):
     var _fd: Int
     var _head_only: Bool
     var _http11: Bool
+    var _hold: Bool
     var _date: List[UInt8]
 
     def __init__(out self):
@@ -221,6 +241,7 @@ struct ResponseWriter(Movable):
         self._fd = -1
         self._head_only = False
         self._http11 = True
+        self._hold = False
         self._date = List[UInt8]()
         self.set_date(0)
 
@@ -248,6 +269,7 @@ struct ResponseWriter(Movable):
         self.body.clear()
         self.keep_alive = keep_alive
         self._state = _WriterState.OPEN
+        self._hold = False
         self._fd = fd
         self._head_only = request.method == Method.HEAD
         self._http11 = request.version == Version.HTTP_1_1
@@ -418,10 +440,7 @@ struct ResponseWriter(Movable):
         if len(data) == 0 or self._head_only:
             return
         if self._state == _WriterState.CHUNKED:
-            _append_hex(self.out, len(data))
-            self.out.extend(StaticString("\r\n").as_bytes())
-            self.out.extend(data)
-            self.out.extend(StaticString("\r\n").as_bytes())
+            append_chunk(self.out, data)
         else:
             self.out.extend(data)
 
@@ -461,6 +480,7 @@ struct ResponseWriter(Movable):
             self.body.clear()
         else:
             self.keep_alive = False
+            self._hold = False
             self._state = _WriterState.DONE
 
     def finish(mut self):
@@ -476,9 +496,47 @@ struct ResponseWriter(Movable):
             else:
                 self._head(-1, False)
         elif self._state == _WriterState.CHUNKED:
-            if not self._head_only:
-                self.out.extend(StaticString("0\r\n\r\n").as_bytes())
+            if not self._head_only and not self._hold:
+                append_last_chunk(self.out)
         self._state = _WriterState.DONE
+
+    def hold(mut self) raises HttpError:
+        """Keep a stream open after the handler returns.
+
+        The server then calls `Handler.poll_body` on each turn of its loop
+        for more content, and ends the stream when it returns `DONE`. A
+        `HEAD` response has no content, so it ends at once.
+
+        Raises:
+            HttpError: `USAGE` before `begin_chunked`.
+        """
+        if self._state == _WriterState.OPEN:
+            raise HttpError(ErrorKind.USAGE, "call begin_chunked first", 0)
+        self._hold = not self._head_only
+
+    def held(self) -> Bool:
+        """Tell if `hold` keeps this response open.
+
+        Returns:
+            True after `hold`, until the next response begins.
+        """
+        return self._hold
+
+    def connection(self) -> Int:
+        """Return the connection of the response: the `id` of `poll_body`.
+
+        Returns:
+            The socket, or -1 for a writer that is not bound to one.
+        """
+        return self._fd
+
+    def chunked(self) -> Bool:
+        """Tell if the stream has chunks: False for an HTTP/1.0 client.
+
+        Returns:
+            True when the content goes out as chunks.
+        """
+        return self._http11
 
     def error(mut self, status: Status):
         """Append an empty error response that closes the connection.
@@ -655,6 +713,9 @@ struct ServerConfig(Copyable, Movable):
     """The most events of one `epoll_wait`."""
     var reuse_port: Bool
     """Whether the listening socket sets `SO_REUSEPORT`."""
+    var stream_poll_ms: Int
+    """The longest wait of the loop while a response is held, before it
+    polls `Handler.poll_body` again. 10 at first."""
 
     def __init__(out self):
         """Make the default configuration: port 4000 on every address."""
@@ -668,6 +729,7 @@ struct ServerConfig(Copyable, Movable):
         self.max_connections = 100000
         self.max_events = 512
         self.reuse_port = True
+        self.stream_poll_ms = 10
 
 
 @fieldwise_init
@@ -739,6 +801,9 @@ struct _Connection(Movable):
     var lingering: Bool
     var deadline_ms: Int
     var interest: UInt32
+    var streaming: Bool
+    var chunked: Bool
+    var close_after: Bool
 
     def __init__(out self, limits: Limits):
         self.fd = -1
@@ -750,6 +815,9 @@ struct _Connection(Movable):
         self.lingering = False
         self.deadline_ms = 0
         self.interest = 0
+        self.streaming = False
+        self.chunked = False
+        self.close_after = False
 
 
 def _now_ms() -> Int:
@@ -787,6 +855,8 @@ struct Server[H: Handler](Movable):
     var _second: Int
     var _last_sweep: Int
     var _drain_deadline: Int
+    var _streams: Int
+    var _scratch: List[UInt8]
 
     def __init__(
         out self,
@@ -829,6 +899,8 @@ struct Server[H: Handler](Movable):
         self._second = -1
         self._last_sweep = self._now
         self._drain_deadline = 0
+        self._streams = 0
+        self._scratch = List[UInt8]()
         self._tick()
         var epoll = self.sys.epoll_create()
         if epoll < 0:
@@ -918,9 +990,16 @@ struct Server[H: Handler](Movable):
             fd += 1
 
     def _idle(self, fd: Int) -> Bool:
-        """Return True for a connection between requests."""
+        """Return True for a connection between requests.
+
+        A held response is busy: a shutdown lets it end until the deadline.
+        """
         ref conn = self._conns[fd]
-        return conn.reader.buffered() == 0 and len(conn.pending) == 0
+        return (
+            conn.reader.buffered() == 0
+            and len(conn.pending) == 0
+            and not conn.streaming
+        )
 
     def _tick(mut self):
         """Read the clocks, and update the `Date` field once a second."""
@@ -946,7 +1025,10 @@ struct Server[H: Handler](Movable):
         """
         var wait = timeout_ms
         if self.open_connections > 0 or self.draining:
-            wait = 1000 if wait < 0 else min(wait, 1000)
+            var most = 1000
+            if self._streams > 0:
+                most = self.config.stream_poll_ms
+            wait = most if wait < 0 else min(wait, most)
         var count = self.sys.epoll_wait(
             self._epoll_fd,
             self._events.unsafe_ptr(),
@@ -974,9 +1056,90 @@ struct Server[H: Handler](Movable):
                 self._writable(fd)
             else:
                 self._readable(fd)
+        self.pump()
         if self._now - self._last_sweep >= 1000 or self.draining:
             self._sweep()
         return count
+
+    def streams(self) -> Int:
+        """Return the count of responses that `ResponseWriter.hold` keeps.
+
+        Returns:
+            The count.
+        """
+        return self._streams
+
+    def pump(mut self):
+        """Poll the handler for the content of each held response.
+
+        `poll` calls it on each turn. A loop that drives the server
+        without `poll`, such as the loop of a WebSocket server, calls it
+        too. A response whose client does not read waits.
+        """
+        if self._streams == 0:
+            return
+        var fd = 0
+        while fd < len(self._conns):
+            if (
+                self._conns[fd].fd >= 0
+                and self._conns[fd].streaming
+                and len(self._conns[fd].pending) == 0
+            ):
+                self._pump(fd)
+            fd += 1
+
+    def _pump(mut self, fd: Int):
+        """Frame the content of one held response, and send it."""
+        var result = self._fill(fd)
+        self._flush(fd)
+        if (
+            result == BodyPoll.DONE
+            and self._conns[fd].fd >= 0
+            and not self._conns[fd].closing
+            and len(self._conns[fd].pending) == 0
+        ):
+            # A request that came in during the stream waits in the buffer.
+            self._process(fd)
+
+    def _fill(mut self, fd: Int) -> BodyPoll:
+        """Frame the content of one held response into the output.
+
+        Returns:
+            The last result of `Handler.poll_body`.
+        """
+        var chunked = self._conns[fd].chunked
+        var result = BodyPoll.READY
+        while result == BodyPoll.READY and len(self.writer.out) < _PUMP_BYTES:
+            self._scratch.clear()
+            try:
+                result = self.handler.poll_body(fd, self._scratch)
+            except:
+                result = BodyPoll.ERROR
+            if result == BodyPoll.ERROR:
+                break
+            if chunked:
+                append_chunk(self.writer.out, self._scratch)
+            else:
+                self.writer.out.extend(Span(self._scratch))
+        if len(self.writer.out) > 0:
+            self._conns[fd].deadline_ms = (
+                self._now + self.config.idle_timeout_ms
+            )
+        if result == BodyPoll.ERROR:
+            # The content so far goes out, but not its end: the client
+            # sees that it is incomplete.
+            self._conns[fd].streaming = False
+            self._streams -= 1
+            self._conns[fd].closing = True
+            self.handler.body_closed(fd)
+        elif result == BodyPoll.DONE:
+            if chunked:
+                append_last_chunk(self.writer.out)
+            self._conns[fd].streaming = False
+            self._streams -= 1
+            if not chunked or self._conns[fd].close_after or self.draining:
+                self._conns[fd].closing = True
+        return result
 
     def _sweep(mut self):
         """Close the connections whose deadline has passed."""
@@ -985,7 +1148,13 @@ struct Server[H: Handler](Movable):
         var fd = 0
         while fd < len(self._conns):
             if self._conns[fd].fd >= 0:
-                if force or self._now >= self._conns[fd].deadline_ms:
+                # A held response can be quiet; a client that reads none of
+                # it cannot.
+                var due = self._now >= self._conns[fd].deadline_ms and (
+                    not self._conns[fd].streaming
+                    or len(self._conns[fd].pending) > 0
+                )
+                if force or due:
                     self._close(fd)
             fd += 1
 
@@ -1068,6 +1237,10 @@ struct Server[H: Handler](Movable):
         conn.discard = False
         conn.lingering = False
         self.open_connections -= 1
+        if conn.streaming:
+            conn.streaming = False
+            self._streams -= 1
+            self.handler.body_closed(fd)
 
     def _watch(mut self, fd: Int, events: UInt32) -> Bool:
         """Set the events of a connection; False after closing it."""
@@ -1100,7 +1273,7 @@ struct Server[H: Handler](Movable):
 
     def _process(mut self, fd: Int):
         """Answer the complete requests in the buffer of a connection."""
-        while True:
+        while not self._conns[fd].streaming:
             var result = self._conns[fd].reader.next()
             if result.state == ParseState.INCOMPLETE:
                 if self._conns[fd].reader.needs_continue:
@@ -1122,6 +1295,17 @@ struct Server[H: Handler](Movable):
                 self.writer.fail()
             self.writer.finish()
             self._conns[fd].reader.consume()
+            if self.writer.held():
+                self._conns[fd].streaming = True
+                self._conns[fd].chunked = self.writer.chunked()
+                self._conns[fd].close_after = not self.writer.keep_alive
+                self._streams += 1
+                # Frame the content that is ready now, so that the head
+                # and the content go out in one send.
+                _ = self._fill(fd)
+                if self._conns[fd].closing:
+                    break
+                continue
             if not self.writer.keep_alive:
                 self._conns[fd].closing = True
                 break

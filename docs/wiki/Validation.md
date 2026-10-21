@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Validation
 
-`gql_validation` checks an executable document against a schema. It is a port of graphql-js 16.14.2 `src/validation` and `src/utilities/TypeInfo.ts`, and it needs `gql_language` and `gql_schema`.
+`gql_validation` checks an executable document against a schema. It is a port of graphql-js 16.14.2 `src/validation` and `src/utilities/TypeInfo.ts`, and it needs `gql_language` and `gql_schema`. The four opt-in `@defer` and `@stream` rules are a port of graphql-js 17.0.2 (`71606d73`).
 
 ## Validate
 
@@ -18,6 +18,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `validate(schema, document, rules, options)` | `validate(schema, documentAST, rules, options)` | `List[GraphQLError]` |
 | `specified_rules()` | `specifiedRules` | `List[ValidationRule]` |
 | `recommended_rules()` | `recommendedRules` | `List[ValidationRule]` |
+| `incremental_rules()` | none | `List[ValidationRule]` |
 
 The result is empty for a valid document. `validate` raises an `Error` when the schema is not valid. The message of the `Error` is the message of each schema error, joined by a blank line (`"\n\n"`).
 
@@ -83,6 +84,38 @@ Two custom rules of graphql-js are not in `specified_rules()`. Give them in the 
 | `NO_DEPRECATED_CUSTOM` | `NoDeprecatedCustomRule` |
 | `NO_SCHEMA_INTROSPECTION_CUSTOM` | `NoSchemaIntrospectionCustomRule` |
 
+### The `@defer` and `@stream` rules
+
+Four rules check `@defer` and `@stream`. They are a port of graphql-js 17.0.2, and they are not in `specified_rules()`. To use them, add `incremental_rules()` to the rule list:
+
+```mojo
+from gql_validation.rules import incremental_rules, specified_rules
+from gql_validation.validate import validate
+
+var rules = specified_rules()
+rules.extend(incremental_rules())
+var errors = validate(schema, document, rules)
+```
+
+You can also give one rule alone, such as `[ValidationRule.STREAM_DIRECTIVE_ON_LIST_FIELD]`.
+
+| `ValidationRule` | graphql-js rule | The rule reports |
+| --- | --- | --- |
+| `DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD` | `DeferStreamDirectiveOnRootFieldRule` | A `@defer` in the root selection set of a mutation or a subscription, and a `@stream` on a root field of a mutation or a subscription. The message names the operation type. |
+| `DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS` | `DeferStreamDirectiveOnValidOperationsRule` | A `@defer` or `@stream` in the selections of a subscription, or in a fragment that a subscription spreads. An `if` argument of `false` or of a variable stops the error. A selection that `@skip` or `@include` removes is not checked. |
+| `DEFER_STREAM_DIRECTIVE_LABEL` | `DeferStreamDirectiveLabelRule` | A `label` argument that is not a static string or `null`, and a label that two directives use. |
+| `STREAM_DIRECTIVE_ON_LIST_FIELD` | `StreamDirectiveOnListFieldRule` | A `@stream` on a field whose type is not a list or a non-null list. |
+
+The rules find the directives by the names `defer` and `stream`. `@defer` and `@stream` are not specified directives, so a schema must define them for `KNOWN_DIRECTIVES`. graphql-js 17.0.2 defines them so:
+
+```graphql
+directive @defer(if: Boolean! = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @stream(initialCount: Int! = 0, if: Boolean! = true, label: String) on FIELD
+```
+
+`DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD` and `DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS` start at each operation. They walk its selections and the fragments that it spreads, in any order in the document. An error of `DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS` has the location of the directive, and then the locations of the fragment spreads that lead to it, the nearest first.
+
 graphql-js runs all rules in one walk of the document. At each node, `TypeInfo` enters the node, and then each rule sees it in the order of the list. This port does the same walk, so the errors come in the same order. Before the walk, `validate` makes a table of the rules that handle each node kind. A node calls only those rules.
 
 ## TypeInfo
@@ -134,3 +167,5 @@ The module also has `type_from_ast(schema, document, node)`, the port of graphql
 - `FieldsOnCorrectTypeRule` sorts its suggestions as the V8 `Array.prototype.sort` does for up to 64 items. The comparison of graphql-js is not transitive, so the order depends on the sort. For more than 64 items, the order is the same only when the comparison is consistent.
 - `OverlappingFieldsCanBeMergedRule` sorts equal fields into classes and compares each pair of classes once. The errors are the same as in graphql-js, but the rule does less work for many equal fields.
 - `TypeInfo.get_default_value` gives the input value that holds the default value, not the coerced value.
+- graphql-js 17.0.2 puts the four `@defer` and `@stream` rules in `specifiedRules`, after `UniqueDirectivesPerLocationRule`. Here they are not in `specified_rules()`, because the other rules are a port of graphql-js 16.14.2. Add `incremental_rules()` to the rule list to use them. `incremental_rules()` has no graphql-js equivalent.
+- `DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD` marks a fragment as visited before it walks the fragment. graphql-js 17.0.2 marks it after, so a fragment that spreads itself makes graphql-js raise `RangeError: Maximum call stack size exceeded`. Here the rule finds no error in the cycle, and `NO_FRAGMENT_CYCLES` reports it.

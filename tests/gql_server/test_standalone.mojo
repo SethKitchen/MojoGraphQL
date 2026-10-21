@@ -26,8 +26,11 @@ from gql_http.client import Client
 from gql_http.parser import Limits, RequestReader
 from gql_http.server import ResponseWriter, ServerConfig
 from gql_http.socket import IPv4Address
-from gql_server.plugin import NoPlugin
-from gql_server.server import ApolloServer
+from _incremental import ALPHA_9_ACCEPT, INCREMENTAL_SDL, incremental_resolvers
+from _plugins import Recorder
+from gql_http.body import BodyPoll
+from gql_server.plugin import NoPlugin, ServerPlugin
+from gql_server.server import ApolloServer, ApolloServerOptions
 from gql_server.standalone import (
     StandaloneHandler,
     request_headers,
@@ -276,6 +279,102 @@ def test_start_standalone_server() raises:
     assert_equal(response.text(), OK)
     client.close_idle()
     assert_equal(running.stop(), 0)
+
+
+def _incremental_handler[
+    P: ServerPlugin
+](var plugin: P) raises -> StandaloneHandler[P]:
+    var server_options = ApolloServerOptions()
+    server_options.node_env = String("test")
+    var server = ApolloServer.from_type_defs(
+        INCREMENTAL_SDL, incremental_resolvers(), server_options^, plugin^
+    )
+    server.start()
+    return StandaloneHandler(server^, context)
+
+
+def _send_to[
+    P: ServerPlugin
+](
+    mut handler: StandaloneHandler[P], raw: String, fd: Int
+) raises -> ResponseWriter:
+    var reader = RequestReader(Limits())
+    reader.append(raw.as_bytes())
+    _ = reader.next()
+    var writer = ResponseWriter()
+    writer.begin(reader.request, fd, True)
+    handler.handle(reader.request, writer)
+    return writer^
+
+
+def _deferred(query: String, method: String = "POST") -> String:
+    var body = '{"query":"' + query + '"}'
+    return (
+        method
+        + " /graphql HTTP/1.1\r\nHost: x\r\nContent-Type: application/json"
+        + "\r\nAccept: "
+        + ALPHA_9_ACCEPT
+        + "\r\nContent-Length: "
+        + String(body.byte_length())
+        + "\r\n\r\n"
+        + body
+    )
+
+
+def test_held_multipart_responses() raises:
+    var handler = _incremental_handler(NoPlugin())
+    # Two held responses: a stream of three items, and a deferred field.
+    var stream = _send_to(handler, _deferred("{ testStrings @stream }"), 7)
+    assert_true(stream.held())
+    var deferred = _send_to(
+        handler, _deferred("{ testString ... @defer { barrierString } }"), 8
+    )
+    assert_true(deferred.held())
+    assert_true(deferred.chunked())
+    var out = List[UInt8]()
+    assert_equal(handler.poll_body(8, out), BodyPoll.DONE)
+    assert_true(
+        String(unsafe_from_utf8=out).endswith(
+            '"completed":[{"id":"0"}]}\r\n-----\r\n'
+        )
+    )
+    # The stream is not ready at once; then it gives one part.
+    out.clear()
+    var polled = handler.poll_body(7, out)
+    var turns = 0
+    while polled == BodyPoll.PENDING and turns < 100:
+        polled = handler.poll_body(7, out)
+        turns += 1
+    assert_equal(polled, BodyPoll.READY)
+    assert_true('"items":["it works"]' in String(unsafe_from_utf8=out))
+    # A client that goes away closes the results; the id is forgotten.
+    handler.body_closed(7)
+    handler.body_closed(7)
+    out.clear()
+    assert_equal(handler.poll_body(7, out), BodyPoll.DONE)
+    assert_equal(len(out), 0)
+    # A HEAD request gets 405 and no parts, so it is not held.
+    var head = _send_to(
+        handler,
+        _deferred("{ testString ... @defer { barrierString } }", "HEAD"),
+        9,
+    )
+    assert_equal(head.status.code, 405)
+    assert_false(head.held())
+    assert_equal(len(handler.held_ids), 0)
+
+
+def test_held_response_whose_hook_raises() raises:
+    var handler = _incremental_handler(
+        Recorder("", "willSendSubsequentPayload")
+    )
+    var writer = _send_to(
+        handler, _deferred("{ testString ... @defer { barrierString } }"), 7
+    )
+    assert_true(writer.held())
+    var out = List[UInt8]()
+    assert_equal(handler.poll_body(7, out), BodyPoll.ERROR)
+    assert_equal(len(handler.held_ids), 0)
 
 
 def main() raises:

@@ -14,11 +14,15 @@ and `newHTTPGraphQLHead` and `mergeHTTPGraphQLHead` of `runHttpQuery.ts`.
   ignores a status of `0` too.
 - `HTTPGraphQLRequest.body` is a `JsonDocument`. A document with no root
   is the `undefined` body of upstream.
-- A response body is always complete text. Incremental delivery
-  (`chunked`) is not ported, because execution has no `@defer`.
+- A `chunked` body is its first chunk in `body`, and the
+  `IncrementalResults` that make the later chunks. The server writes each
+  later chunk from them; upstream holds an async iterator of strings.
 """
 
+from std.memory import ArcPointer
+
 from gql_json.value import JsonDocument
+from gql_server.incremental import IncrementalResults
 
 
 def _lower(byte: UInt8) -> UInt8:
@@ -228,7 +232,9 @@ struct HTTPGraphQLResponse(Movable):
     var headers: HeaderMap
     """The header fields."""
     var body: String
-    """The content."""
+    """The content; for a `chunked` body, its first chunk."""
+    var chunks: Optional[ArcPointer[IncrementalResults]]
+    """For a `chunked` body: the results that make the later chunks."""
 
     def __init__(out self, var head: HTTPGraphQLHead, var body: String):
         """Make a response.
@@ -241,3 +247,13 @@ struct HTTPGraphQLResponse(Movable):
         self.headers = HeaderMap()
         swap(self.headers, head.headers)
         self.body = body^
+        self.chunks = None
+
+    def is_chunked(self) -> Bool:
+        """Return True for a `chunked` body: upstream
+        `body.kind === 'chunked'`.
+
+        Returns:
+            Whether chunks follow `body`.
+        """
+        return Bool(self.chunks)

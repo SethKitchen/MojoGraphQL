@@ -195,7 +195,7 @@ Upstream answers `503` on `/readiness` before it loads a supergraph. A `RouterHa
 The steps are these:
 
 1. `prepare` parses, validates and normalizes the operation, and builds its projection plan. It also splits off the introspection part. [Validation](#validation) tells how the operation is validated.
-2. A subscription answers `415`. A mutation over `GET` answers `405`.
+2. A subscription answers `415`, because `gql_router` sends one response. [RouterStream](RouterStream) streams subscriptions. A mutation over `GET` answers `405`.
 3. `collect_variables` coerces the variables. A bad value answers `BAD_USER_INPUT`.
 4. The planner plans the downstream part. This occurs once for each cached operation.
 5. `resolve_introspection` answers the introspection part.
@@ -251,6 +251,8 @@ The response type is `application/graphql-response+json` when the `Accept` heade
 
 `Executor[T].execute` runs a query plan through a `SubgraphTransport`, as upstream `execute_query_plan`. A sequence runs its children in order. A parallel node prepares each child from the same data. Then it starts each request, and then it reads and merges each response. A condition node runs the branch that its variable selects. A subscription node and a defer node raise `Error`.
 
+`Router.prepare_request`, `subscription_start` and `subscription_event` are the steps of a subscription. `subscription_start` gives the request of the `Subscription` node. `subscription_event` runs the rest of the plan for one subgraph event, as `Executor.execute_event`, and projects it. `gql_router_stream` calls them; see [RouterStream](RouterStream). `pin` keeps the cached operation of an open subscription.
+
 A fetch sends the variables that it uses, and merges its data at the root. A flatten fetch walks its path, writes one representation for each different entity, and merges each returned entity back into each value that sent it. A batch fetch does the same for each alias. The merge uses the values that the prepare step found, so the path is walked once. When the subgraph returns errors, the merge walks the path again to get the error paths.
 
 `HttpTransport` sends each request with `gql_http.client`, over keep-alive connections. Each request in flight has its own connection, so the requests of a parallel node overlap. The slowest subgraph sets the time of the node. `CannedTransport` answers in the same process with fixed responses, for tests and benchmarks.
@@ -279,16 +281,18 @@ The executor works on one JSON arena, `gql_json.value.JsonDocument`. Strings and
 
 The recursive walks take a small handle of pointers, not the inputs themselves. LLVM gives a recursive function the fields of a read-only struct argument as separate arguments, so a large argument costs many stores on each call.
 
-The projection builds a table for the plan once per request: the `"key":` bytes and the flags of each field. Each field remembers the position where it was found last. The next object of the same field tries that position first.
+The projection plan has a table that `from_operation` makes once: the `"key":` bytes and the flags of each field. Each field remembers the position where it was found last. The next object of the same field tries that position first.
 
-`bench/gql_router/execute.mojo` measures `hive-router/execute` against upstream `execute_query_plan` in `bench/baselines/rust-router`.
+A flatten fetch makes the text of its path only when the subgraph returns errors, as the `LazyPlanContext` of upstream. A response that goes into an empty arena takes the parsed document, and is not copied.
+
+`bench/gql_router/execute.mojo` measures `hive-router/execute` against upstream `execute_query_plan` in `bench/baselines/rust-router`. `bench/gql_router/subscription.mojo` measures `hive-router/subscription-event`; see [RouterStream](RouterStream).
 
 ## Differences from upstream in the executor
 
 - One operation cache keeps the parse, normalization and plan results. Upstream keeps three caches.
 - A parallel node merges its responses in plan order. Upstream merges each response when it arrives. So the errors are in plan order.
 - A transport has no tasks. `start` sends a request, and `finish` reads the oldest response.
-- There are no plugins, coprocessors, persisted documents, demand control, CSRF prevention, CORS, request decompression, subscriptions, SSE, WebSocket or multipart responses.
+- There are no plugins, coprocessors, persisted documents, demand control, CSRF prevention, CORS or request decompression. Subscriptions, SSE, WebSocket and multipart responses are in `gql_router_stream`.
 - Header propagation, error masking and operation name forwarding are not ported.
 - The representation hash folds eight bytes per multiply. Upstream uses XXH3. Equal representations still have equal hashes.
 - The projection keeps one position hint for each plan field during the whole walk. Upstream keeps the hints for each list.

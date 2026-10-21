@@ -26,6 +26,15 @@
 //! timing, the program checks once that the body equals
 //! `bench/fixtures/hive-router-exec/expected_response.json` byte for byte.
 //!
+//! `hive-router/subscription-event` is what the stream of upstream
+//! `execute_query_plan` does for one event of `subscription { reviewAdded
+//! { id body product { upc name } } }` on upstream `e2e/supergraph.graphql`:
+//! it reads the `reviews` event with `SubgraphResponse::deserialize_from_bytes`,
+//! runs the rest of the plan (the `products` entity fetch, answered from
+//! `bench/fixtures/hive-router-sub/responses.json`) with
+//! `execute_query_plan_with_data`, and projects. `build.sh` makes that
+//! function public; upstream keeps it private.
+//!
 //! `--record` regenerates `bench/fixtures/hive-router-exec/` from the real
 //! upstream bench subgraphs (`upstream/bench/subgraphs`, port 4200):
 //!
@@ -131,6 +140,23 @@ fn main() {
     );
     measure("hive-router/execute", || {
         let body = rt.block_on(black_box(&execution).run());
+        let len = body.len();
+        black_box(body);
+        len
+    });
+
+    let subscription = execute::Execution::subscription();
+    let event = bytes::Bytes::from(fixture(execute::SUB_EVENT).trim().to_string());
+    let body = rt.block_on(subscription.run_event(&event));
+    let expected = fixture(execute::SUB_EXPECTED);
+    assert!(
+        body == expected.as_bytes(),
+        "the subscription event does not produce {}: {}",
+        execute::SUB_EXPECTED,
+        String::from_utf8_lossy(&body)
+    );
+    measure("hive-router/subscription-event", || {
+        let body = rt.block_on(black_box(&subscription).run_event(black_box(&event)));
         let len = body.len();
         black_box(body);
         len

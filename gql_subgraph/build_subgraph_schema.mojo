@@ -25,10 +25,17 @@ var result = subgraph.execute(parse("{ _service { sdl } }"), args)
 
 **Differences from upstream.**
 
-- A resolver map is a `SubgraphResolvers`: field resolvers, `__resolveType`,
-  `__isTypeOf` and `__resolveReference`. A `GraphQLScalarType`, the
-  internal values of an enum and a `subscribe` function cannot be given;
+- A resolver map is a `SubgraphResolvers`: field resolvers, `subscribe`
+  functions, `__resolveType`, `__isTypeOf` and `__resolveReference`. A
+  `GraphQLScalarType` and the internal values of an enum cannot be given;
   `gql_execution` has no such things.
+- A `subscribe` function returns a `gql_stream` event stream, made with
+  `Values.add_stream`, not an async iterator. `SubgraphSchema.subscribe`
+  runs the subscription, as graphql-js `subscribe` runs the schema of
+  upstream.
+- `SubgraphSchema.execute_incrementally` runs `@defer` and `@stream`, as
+  graphql-js 17 `experimentalExecuteIncrementally` runs the schema of
+  upstream. `@apollo/subgraph` adds nothing for them.
 - The result is a `SubgraphSchema`: the `gql_schema` schema with its
   resolvers and its SDL. Execute it with `SubgraphSchema.execute`, which
   runs with the resolvers of the subgraph, not with `args.resolvers`.
@@ -40,6 +47,13 @@ var result = subgraph.execute(parse("{ _service { sdl } }"), args)
 - `buildFederatedSchema`, the deprecated name, is not ported.
 """
 
+from std.memory import ArcPointer
+
+from gql_execution.incremental import (
+    ExperimentalIncrementalExecutionResults,
+    experimental_execute_incrementally,
+)
+from gql_execution.subscribe import Subscription, subscribe
 from gql_execution.execute import (
     ExecutionArgs,
     ExecutionResult,
@@ -102,6 +116,25 @@ struct SubgraphResolvers(Copyable, Movable):
         """
         self.resolvers.field(type_name, field_name, resolve)
 
+    def subscribe(
+        mut self,
+        type_name: String,
+        field_name: String,
+        subscribe: FieldResolver,
+    ):
+        """Set the `subscribe` function of a subscription field, as the
+        `subscribe` key of a field config.
+
+        It returns the source event stream: a value that
+        `Values.add_stream` made, such as a `gql_stream` `PubSub` iterator.
+
+        Args:
+            type_name: The subscription type, such as `Subscription`.
+            field_name: The field.
+            subscribe: The function.
+        """
+        self.resolvers.subscribe(type_name, field_name, subscribe)
+
     def resolve_type(mut self, type_name: String, resolve: TypeResolver):
         """Set `__resolveType` of an interface or union type.
 
@@ -144,6 +177,14 @@ struct SubgraphResolvers(Copyable, Movable):
                 theirs.field_types[index],
                 theirs.field_names[index],
                 theirs.field_functions[index],
+            )
+            index += 1
+        index = 0
+        while index < len(theirs.subscribe_functions):
+            self.resolvers.subscribe(
+                theirs.subscribe_types[index],
+                theirs.subscribe_names[index],
+                theirs.subscribe_functions[index],
             )
             index += 1
         index = 0
@@ -210,6 +251,11 @@ struct SubgraphSchema(Movable):
     """The subgraph, as parts of the SDL."""
     var order: List[Int]
     """The types of `model`, in the order of the types of `schema`."""
+    var shared_schema: Optional[ArcPointer[Schema]]
+    """A copy of `schema` that response streams share; made by the first
+    `subscribe` or `execute_incrementally`."""
+    var shared_resolvers: Optional[ArcPointer[Resolvers]]
+    """A copy of the resolvers that response streams share."""
 
     def __init__(
         out self,
@@ -233,6 +279,8 @@ struct SubgraphSchema(Movable):
         self.sdl = sdl^
         self.model = model^
         self.order = order^
+        self.shared_schema = None
+        self.shared_resolvers = None
 
     def attach(self, mut values: Values):
         """Add the handle that the federation resolvers find this subgraph
@@ -270,6 +318,69 @@ struct SubgraphSchema(Movable):
         args.assume_valid_schema = True
         return execute_with_resolvers(
             self.schema, document, self.resolvers.resolvers, args
+        )
+
+    def _shared(mut self):
+        """Make the copies of the schema and the resolvers that streams
+        share, once."""
+        if not self.shared_schema:
+            self.shared_schema = ArcPointer(self.schema.copy())
+            self.shared_resolvers = ArcPointer(self.resolvers.resolvers.copy())
+
+    def subscribe(
+        mut self, document: ArcPointer[Document], var args: ExecutionArgs
+    ) raises -> Subscription:
+        """Subscribe to an operation against the subgraph, as graphql-js
+        `subscribe` with the schema of `buildSubgraphSchema`.
+
+        Each event of the source stream of the root field executes with
+        the resolvers of the subgraph.
+
+        Args:
+            document: The operation; it is not validated.
+            args: The inputs; the response stream keeps them. Its resolvers
+                are not read.
+
+        Returns:
+            The response stream, or a result with the errors.
+
+        Raises:
+            Error: As `gql_execution.subscribe.subscribe` raises.
+        """
+        self._shared()
+        self.attach(args.values)
+        args.resolvers = self.shared_resolvers.value()[].copy()
+        return subscribe(self.shared_schema.value(), document, args^)
+
+    def execute_incrementally(
+        mut self, document: ArcPointer[Document], var args: ExecutionArgs
+    ) raises -> ExperimentalIncrementalExecutionResults:
+        """Execute an operation with `@defer` and `@stream` against the
+        subgraph, as graphql-js 17 `experimentalExecuteIncrementally`.
+
+        The schema must define the `@defer` and `@stream` directives that
+        the operation uses, as the validation of a server requires.
+
+        Args:
+            document: The operation; it is not validated.
+            args: The inputs; the subsequent results keep them. Its
+                resolvers are not read.
+
+        Returns:
+            A single result, or the initial result and the stream of the
+            subsequent results. The subgraph must not move while the
+            stream runs.
+
+        Raises:
+            Error: As `experimental_execute_incrementally` raises.
+        """
+        self._shared()
+        self.attach(args.values)
+        return experimental_execute_incrementally(
+            self.shared_schema.value(),
+            document,
+            self.shared_resolvers.value(),
+            args^,
         )
 
 

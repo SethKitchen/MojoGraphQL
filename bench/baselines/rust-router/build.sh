@@ -14,5 +14,10 @@ fi
 if [ "$(git -C upstream rev-parse HEAD)" != "$REV" ]; then
   git -C upstream checkout --quiet --force "$REV"
 fi
+# The `hive-router/subscription-event` workload calls the step that upstream
+# runs for each subscription event. Upstream keeps it private; this makes it
+# public, and changes nothing else.
+sed -i 's/^async fn execute_query_plan_with_data</pub async fn execute_query_plan_with_data</' \
+  upstream/bin/router/src/executor/execution/plan.rs
 export CARGO_TARGET_DIR="$PWD/target"
 cargo build --release --quiet

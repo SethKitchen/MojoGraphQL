@@ -18,6 +18,8 @@ The project is new. Today it has twenty-four finished packages, and more are in 
 
 `gql_server` is Apollo Server, and `gql_subgraph` builds Apollo Federation subgraphs. `gql_mcp` is the Apollo MCP Server. `gql_codegen` writes Mojo models for operations, as Apollo Kotlin does. `gql_composition` composes a supergraph, and `seamstress` (`gql_seamstress`) runs the offline Rover commands. `gql_router` plans and runs federated operations over a supergraph. `gql_http2`, `gql_tls` and `gql_http3` serve HTTP/2, HTTPS and HTTP/3, and fall back to what the network supports.
 
+Subscriptions and streams go through the whole stack. `gql_stream` holds the event streams. `gql_execution` runs subscriptions and `@defer`/`@stream`. `gql_ws` and `gql_sse` carry them over WebSocket and Server-Sent Events, and `gql_http` streams `multipart/mixed`. `gql_server_ws` adds subscriptions to `gql_server`, and `gql_router_stream` adds subscriptions and streamed `@defer` to `gql_router`. A user who needs no streams does not build these packages.
+
 The [feature checklist](#features) shows what is done and what is planned.
 
 ## Install
@@ -111,8 +113,9 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 
 - [x] [`gql_json`](https://github.com/SethKitchen/MojoGraphQL/wiki/Json): a strict RFC 8259 parser and a `JSON.stringify` writer, for requests and responses.
 - [x] [`gql_validation`](https://github.com/SethKitchen/MojoGraphQL/wiki/Validation): the validation rules of the GraphQL specification.
-- [x] [`gql_execution`](https://github.com/SethKitchen/MojoGraphQL/wiki/Execution): execution of operations against a schema, with introspection and subscriptions.
-- [x] [`gql_http`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http): an HTTP/1.1 server, client and parser, for GraphQL over HTTP.
+- [x] [`gql_execution`](https://github.com/SethKitchen/MojoGraphQL/wiki/Execution): execution of operations against a schema, with introspection, subscriptions, and [incremental delivery](https://github.com/SethKitchen/MojoGraphQL/wiki/Execution#incremental-delivery) of `@defer` and `@stream` from graphql-js 17.0.2.
+- [x] [`gql_http`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http): an HTTP/1.1 server, client and parser, for GraphQL over HTTP. It streams response bodies, chunked or held, and reads and writes `multipart/mixed`.
+- [x] [`gql_sse`](https://github.com/SethKitchen/MojoGraphQL/wiki/Sse): a port of graphql-sse, GraphQL over Server-Sent Events, in the single and distinct connection modes. `gql_sse_execution` runs its operations, subscriptions and `@defer`.
 - [x] [`gql_http2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http2): HTTP/2 and HPACK in Mojo. The server detects the HTTP/2 preface and falls back to HTTP/1.1.
 - [x] [`gql_tls`](https://github.com/SethKitchen/MojoGraphQL/wiki/Tls): TLS 1.3 and ALPN through the system OpenSSL, loaded at run time. Only users who pick it need OpenSSL.
 - [x] [`gql_https2`](https://github.com/SethKitchen/MojoGraphQL/wiki/Https2): HTTP/2 over TLS. ALPN picks `h2`, and the same connection falls back to HTTPS/1.1.
@@ -120,10 +123,11 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_http3`](https://github.com/SethKitchen/MojoGraphQL/wiki/Http3): HTTP/3 and QPACK over `gql_quic`, with `Alt-Svc`. Its client falls back in this order: h3, h2 over TLS, HTTPS/1.1, h2c, HTTP/1.1.
 - [x] [`gql_stream`](https://github.com/SethKitchen/MojoGraphQL/wiki/Stream): event streams for subscriptions, polled by an epoll event loop with no thread per stream, and an in-process PubSub.
 - [x] [`gql_ws`](https://github.com/SethKitchen/MojoGraphQL/wiki/Ws): WebSocket (RFC 6455) and the `graphql-transport-ws` protocol of graphql-ws, as server and client. `gql_ws_execution` runs its operations and subscriptions.
-- [x] [`gql_server`](https://github.com/SethKitchen/MojoGraphQL/wiki/Server): a port of Apollo Server, with the request pipeline, plugins, batching, persisted queries and a standalone server.
-- [x] [`gql_subgraph`](https://github.com/SethKitchen/MojoGraphQL/wiki/Subgraph): a port of `@apollo/subgraph` and the Apollo Federation subgraph specification.
+- [x] [`gql_server`](https://github.com/SethKitchen/MojoGraphQL/wiki/Server): a port of Apollo Server, with the request pipeline, plugins, batching, persisted queries, incremental delivery over `multipart/mixed` and a standalone server. `gql_server_ws` serves its subscriptions over graphql-ws, on the same port.
+- [x] [`gql_subgraph`](https://github.com/SethKitchen/MojoGraphQL/wiki/Subgraph): a port of `@apollo/subgraph` and the Apollo Federation subgraph specification, with subscriptions and `@defer`.
 - [x] [`gql_composition`](https://github.com/SethKitchen/MojoGraphQL/wiki/Composition): a port of Hive Federation Composition: subgraph validation, supergraph composition, satisfiability and contracts, for federation v1 and v2.0 to v2.15.
 - [x] [`gql_router`](https://github.com/SethKitchen/MojoGraphQL/wiki/Router): a port of Hive Router. It plans a federated operation with the [query planner](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#planner), runs the plan against the subgraphs, and serves the supergraph over HTTP. It has the operation cache, [authorization](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#authorization) and [null bubbling](https://github.com/SethKitchen/MojoGraphQL/wiki/Router#null-bubbling).
+- [x] [`gql_router_stream`](https://github.com/SethKitchen/MojoGraphQL/wiki/RouterStream): subscriptions and streamed `@defer` through the router. Clients use WebSocket, SSE or multipart HTTP. Subgraphs use WebSocket or HTTP streaming, and each event gets its entities.
 - [x] [`gql_client`](https://github.com/SethKitchen/MojoGraphQL/wiki/Client): a port of the Apollo Client normalized cache, `InMemoryCache` with type and field policies.
 - [x] [`gql_codegen`](https://github.com/SethKitchen/MojoGraphQL/wiki/Codegen): code generation in the style of Apollo Kotlin. It writes Mojo models for operations.
 - [x] [`gql_compiler`](https://github.com/SethKitchen/MojoGraphQL/wiki/Compiler): a port of apollo-compiler and apollo-parser from apollo-rs. It has the schema and executable document models, the schema printer and validation. Its parser recovers from syntax errors.
@@ -152,8 +156,10 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_json` | Done | nothing | RFC 8259; ECMAScript `JSON.stringify` |
 | `gql_schema` | Done, except introspection | `gql_language`, `gql_json` | graphql-js `src/type`, `src/utilities` |
 | `gql_validation` | Done | `gql_schema` | graphql-js `src/validation` |
-| `gql_execution` | Done, with subscriptions; except async resolvers | `gql_schema`, `gql_json`, `gql_stream` | graphql-js `src/execution` |
+| `gql_execution` | Done, with subscriptions and `@defer`/`@stream`; except async resolvers | `gql_schema`, `gql_json`, `gql_stream` | graphql-js 16.14.2 `src/execution`; graphql-js 17.0.2 incremental delivery |
 | `gql_http` | Done | nothing | RFC 9110, RFC 9112; GraphQL over HTTP |
+| `gql_sse` | Done | `gql_http`, `gql_json`, `gql_stream` | graphql-sse 2.6.3 |
+| `gql_sse_execution` | Done | `gql_sse`, `gql_execution`, `gql_validation` | graphql-sse 2.6.3 `handler.ts` |
 | `gql_stream` | Done | `gql_json` | graphql-subscriptions PubSub and `withFilter` |
 | `gql_ws` | Done | `gql_http`, `gql_stream` | RFC 6455; graphql-ws `graphql-transport-ws`; tungstenite |
 | `gql_ws_execution` | Done | `gql_ws`, `gql_execution`, `gql_validation` | graphql-ws `useServer` |
@@ -162,10 +168,12 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_https2` | Done | `gql_tls`, `gql_http2` | RFC 9113 over TLS; RFC 7301 |
 | `gql_quic` | Done | `gql_tls`; system OpenSSL 3.5 at run time | quinn-proto 0.11.19; RFC 9000, RFC 9001, RFC 9002 |
 | `gql_http3` | Done | `gql_quic`, `gql_https2`; OpenSSL 3.5 at run time | hyperium/h3; RFC 9114, RFC 9204 |
-| `gql_server` | Done | `gql_validation`, `gql_execution`, `gql_http` | Apollo Server 5.5.1 |
+| `gql_server` | Done | `gql_validation`, `gql_execution`, `gql_http`, `gql_stream` | Apollo Server 5.5.1 |
+| `gql_server_ws` | Done, except the subscription callback plugin | `gql_server`, `gql_ws_execution` | Apollo Server 5.5.1 subscriptions with graphql-ws |
 | `gql_subgraph` | Done | `gql_execution` | `@apollo/subgraph` 2.14.4 |
 | `gql_composition` | Done | `gql_language` | Hive Federation Composition v0.27.0 |
-| `gql_router` | Done | `gql_language`, `gql_json`, `gql_http` | Hive Router `1a29df9` query planner, executor and pipeline |
+| `gql_router` | Done | `gql_language`, `gql_json`, `gql_http`, `gql_validation` | Hive Router `1a29df9` query planner, executor and pipeline |
+| `gql_router_stream` | Done | `gql_router`, `gql_ws`, `gql_stream` | Hive Router `1a29df9` subscriptions; streamed `@defer` |
 | `gql_client` | Done, except optimistic layers | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache` |
 | `gql_codegen` | Done, `operationBased` models only | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
 | `gql_compiler` | Done | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
@@ -189,6 +197,10 @@ Mojo is faster than every baseline on every workload. Each package with a hot pa
 | `gql_json` | Stringify a small response | 1.83 µs | astjson, 2.85 µs | 1.56x |
 | `gql_http` | Parse a request | 200 ns | httparse, 221 ns | 1.11x |
 | `gql_http` | Keep-alive request with a JSON body | 8.95 µs | hyper, 12.7 µs | 1.42x |
+| `gql_http` | Stream a chunked response of 16 parts | 10.1 µs | hyper, 25.8 µs | 2.6x |
+| `gql_http` | Parse a `multipart/mixed` body of 100 parts | 135 µs | meros, 349 µs | 2.6x |
+| `gql_sse` | Subscribe and send 1000 `next` events | 1.31 ms | graphql-sse, 3.20 ms | 2.4x |
+| `gql_sse` | Parse 1000 `next` events | 600 µs | graphql-sse, 1.27 ms | 2.1x |
 | `gql_http2` | HPACK encode a GraphQL request header block | 815 ns | h2, 1.04 µs | 1.28x |
 | `gql_http2` | HPACK decode the same block | 1.02 µs | h2, 2.04 µs | 2.0x |
 | `gql_http2` | h2c round trip with a small JSON body | 69.6 µs | hyper and h2, 79.6 µs | 1.14x |
@@ -213,6 +225,8 @@ Mojo is faster than every baseline on every workload. Each package with a hot pa
 | `gql_normalization` | Fragment spread depth (graphql-go-tools benchmark) | 107 ns | graphql-go-tools, 957 ns | 8.9x |
 | `gql_stream` | Publish to 1000 subscribers | 169 µs | graphql-subscriptions, 866 µs | 5.1x |
 | `gql_execution` | Subscribe, publish 100 events and execute each | 247 µs | graphql-js, 547 µs | 2.2x |
+| `gql_execution` | Execute 100 `@defer` fragments and deliver each payload | 177 µs | graphql-js 17.0.2, 248 µs | 1.40x |
+| `gql_execution` | Execute a `@stream` of 1000 items | 333 µs | graphql-js 17.0.2, 993 µs | 2.98x |
 | `gql_ws` | Parse a WebSocket frame | 79 ns | tungstenite, 741 ns | 9.4x |
 | `gql_ws` | Echo a message over a WebSocket | 7.44 µs | tokio-tungstenite, 10.8 µs | 1.45x |
 | `gql_ws` | Send 1000 subscription events over graphql-transport-ws | 2.00 µs per event | graphql-ws, 37.7 µs | 18.9x |
@@ -229,6 +243,7 @@ Mojo is faster than every baseline on every workload. Each package with a hot pa
 | `gql_server` | Answer an automatic persisted query hit | 2.56 µs | Apollo Server, 9.49 µs | 3.7x |
 | `gql_server` | Serve a small POST over HTTP | 26.0 µs | Apollo Server, 160 µs | 6.2x |
 | `gql_server` | Execute with a federated trace (`ftv1`) | 20.2 µs | Apollo Server, 84.4 µs | 4.2x |
+| `gql_server` | Answer a `@defer` request over `multipart/mixed` | 37.9 µs | Apollo Server, 102 µs | 2.7x |
 | `gql_subgraph` | Build a catalog subgraph schema | 414 µs | `@apollo/subgraph`, 3.12 ms | 7.5x |
 | `gql_subgraph` | Print the catalog subgraph schema | 36.1 µs | `@apollo/subgraph`, 1.72 ms | 47x |
 | `gql_subgraph` | Answer `_service { sdl }` | 1.63 µs | `@apollo/subgraph`, 2.33 µs | 1.43x |
@@ -243,7 +258,8 @@ Mojo is faster than every baseline on every workload. Each package with a hot pa
 | `gql_composition` | Validate the subgraphs of the Netflix DGS example | 8.28 ms | Hive, 31.8 ms | 3.8x |
 | `gql_composition` | Validate a huge subgraph schema | 42.5 ms | Hive, 170 ms | 4.0x |
 | `gql_router` | Plan the Hive Router benchmark query (`qp_benches.rs`) | 653 µs | Hive Router, 892 µs | 1.37x |
-| `gql_router` | Execute the plan of that query against canned subgraph responses | 187 µs | Hive Router, 277 µs | 1.48x |
+| `gql_router` | Execute the plan of that query against canned subgraph responses | 184 µs | Hive Router, 281 µs | 1.52x |
+| `gql_router_stream` | Run one subscription event with an entity fetch (Hive e2e supergraph) | 2.98 µs | Hive Router, 3.39 µs | 1.14x |
 | `gql_seamstress` | `supergraph compose` of three subgraphs | 1.22 ms | Hive `composeServices`, 5.43 ms | 4.4x |
 | `gql_seamstress` | `graph introspect` of the GitHub schema | 30.1 ms | Rover, 118 ms | 3.9x |
 | `gql_seamstress` | `subgraph introspect` of the catalog subgraph | 21.7 ms | Rover, 107 ms | 4.9x |

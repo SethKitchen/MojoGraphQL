@@ -10,7 +10,9 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | Module | Contents |
 | --- | --- |
 | `gql_http.server` | `Handler`, `ResponseWriter`, `Router`, `ServerConfig`, `Server`, `listen`, `serve`, `start_workers`, `WorkerPool`, `format_http_date` |
-| `gql_http.client` | `Client`, `ClientConfig`, `Endpoint`, `Response` |
+| `gql_http.client` | `Client`, `ClientConfig`, `Endpoint`, `Response`, `ResponseStream`, `BodyStream` |
+| `gql_http.body` | `BodyPoll`, `BodySource`, `BodyPump`, `append_chunk`, `append_last_chunk`, `append_hex` |
+| `gql_http.multipart` | `MultipartEncoder`, `MultipartDecoder`, `MultipartPart`, `boundary_of`, `INCREMENTAL_CONTENT_TYPE`, `INCREMENTAL_ACCEPT` |
 | `gql_http.parser` | `Request`, `RequestReader`, `parse_request_head`, `parse_response_head`, `ChunkedDecoder`, `Limits`, `ParseState`, `BodyKind` |
 | `gql_http.headers` | `Headers`, `parse_media_type`, `MediaType`, `parse_accept`, `accept_quality`, `is_token`, `is_field_value` |
 | `gql_http.url` | `Url`, `percent_decode`, `parse_query`, `query_value` |
@@ -96,8 +98,38 @@ The writer starts as an empty 200 response. The handler sets the status, adds fi
 | `begin_chunked()` | Starts a stream with chunked transfer coding |
 | `write_chunk(data)` | Appends one chunk to the stream |
 | `flush()` | Sends what the writer holds now, as far as the socket takes it |
+| `hold()` | Keeps the stream open after `handle` returns; call it after `begin_chunked` |
+| `connection()` | The connection of the response: the `id` of `poll_body` |
 
 An HTTP/1.0 client gets a stream without chunks, and the connection closes at its end.
+
+### Held responses
+
+A held response streams content after `handle` returns. Use it for content that comes over time, such as SSE events or `multipart/mixed` parts.
+
+1. In `handle`, call `begin_chunked()` and then `hold()`.
+2. Keep the state of the stream by `response.connection()`.
+3. Implement `poll_body(id, out)`. Append the next bytes to `out`, and return a `BodyPoll`.
+4. Implement `body_closed(id)`. The server calls it when the stream ends before `DONE`.
+
+| `BodyPoll` | Meaning |
+| --- | --- |
+| `READY` | The handler appended bytes, and can have more |
+| `PENDING` | The handler has no bytes now; the server polls again on a later turn |
+| `DONE` | The content is complete; the server sends the last chunk |
+| `ERROR` | The content failed; the server closes the connection without the last chunk |
+
+The server calls `poll_body` first in the turn of `handle`, until it gets no `READY`. Thus the head and the first content go out in one `send`. While a response is held, the loop waits at most `stream_poll_ms` milliseconds, 10 at first. A client that reads no content stops the polls of its stream.
+
+`BodySource` and `BodyPump` do the same work outside of a `Handler`. A `BodyPump` polls a source, frames its chunks and sends them without a block. Over `high_water` bytes that are not sent, it does not poll the source.
+
+### Multipart
+
+`gql_http.multipart` is the `multipart/mixed` format of incremental delivery over HTTP (RFC 2046 section 5.1). The content type is `INCREMENTAL_CONTENT_TYPE`: `multipart/mixed; boundary="-"; deferSpec=20220824`.
+
+- **Encoder:** `MultipartEncoder.part(out, body)` appends one part, with `content-type: application/json; charset=utf-8` at first. `end(out)` appends the close delimiter. The bytes are the bytes of Apollo Server 4.
+- **Decoder:** `MultipartDecoder.feed(data)` reads content in parts of any size. `take()` returns the complete parts, and `finish()` raises when the content ends early.
+- **Boundary:** `boundary_of(content_type)` reads the boundary of a `Content-Type` value.
 
 ### Router
 
@@ -123,6 +155,9 @@ An HTTP/1.0 client gets a stream without chunks, and the connection closes at it
 | `send(endpoint, method, target, headers, body)` | Sends a request; the client writes `Host` and `Content-Length` |
 | `start(endpoint, method, target, headers, body)` | Sends a request and returns a `PendingRequest` before the response |
 | `finish(pending)` | Reads the whole response of a `PendingRequest` |
+| `stream(pending)` | Reads the head of a response, and returns a `ResponseStream` before the content |
+| `read_body(stream, out)` | Appends the next part of a streamed content to `out`; False at the end |
+| `close_stream(stream)` | Stops a streamed response before its end, and closes its connection |
 | `idle_connections()` | The count of connections in the pool |
 | `close_idle()` | Closes the connections in the pool |
 
@@ -227,20 +262,24 @@ The tests are in `tests/gql_http/`. They use real sockets on the loopback addres
 
 ## Benchmarks
 
-`bench/gql_http/` has two workloads. The baselines in `bench/baselines/js-http`, `go-http` and `rust-http` run the same workloads.
+`bench/gql_http/` has four workloads. The baselines in `bench/baselines/js-http`, `go-http` and `rust-http` run the first two. `rust-http` also runs `http/chunked-16-parts`, and `js-sse` runs meros for `multipart/parse-100-parts`.
 
 | Workload | Contents |
 | --- | --- |
 | `http/keepalive-small-json` | One server process answers a small GraphQL `POST` with `{"data":{"hello":"world"}}`, over 64 keep-alive connections. The result is nanoseconds per request. |
 | `http/parse-request` | The parser reads the head of a typical GraphQL `POST` from a browser. |
+| `http/chunked-16-parts` | One server process answers each `POST /stream` with a held response of 16 chunks of `{"data":{"hello":"world"}}`, over 64 keep-alive connections. The result is nanoseconds per request. |
+| `multipart/parse-100-parts` | A new `MultipartDecoder` reads a `multipart/mixed` body of 100 incremental payloads, and parses the JSON of each part. |
 
-The load generator `bench/gql_http/_loadgen.mojo` drives every server, so only the server is different. On both workloads, `gql_http` is faster than every baseline.
+The load generator `bench/gql_http/_loadgen.mojo` drives every server, so only the server is different. On each workload, `gql_http` is faster than every baseline.
 
 | Workload | Mojo | Node.js | Go | Rust |
 | --- | --- | --- | --- | --- |
-| `http/keepalive-small-json`, ns per request | 9,603 | 57,580 | 33,793 | 11,732 |
-| `http/parse-request`, ns | 197 | 2,705 | 4,303 | 222 |
+| `http/keepalive-small-json`, ns per request | 10,471 | 66,046 | 44,072 | 14,781 |
+| `http/parse-request`, ns | 222 | 3,010 | 4,441 | 227 |
+| `http/chunked-16-parts`, ns per request | 10,103 | | | 25,841 |
+| `multipart/parse-100-parts`, ns | 134,982 | 349,263 | | |
 
-The numbers come from one run of `make bench-check PKG=gql_http` on one machine. They change from machine to machine.
+The numbers come from one run of `tools/bench.mojo --check` for `gql_http` and `gql_sse` on one machine. They change from machine to machine. The Node.js baseline of `multipart/parse-100-parts` is meros 1.3.2.
 
 The parser looks up the `tchar` and `Host` byte classes in tables of 256 bytes. It finds the end of a target and of a field value with SIMD. It compares the field names of the framing rules 8 bytes at a time. The baselines are Node.js `node:http` and llhttp, Go `net/http`, and hyper on a tokio runtime with one thread, with httparse. The [Benchmarks](Benchmarks) page tells how the project measures speed.

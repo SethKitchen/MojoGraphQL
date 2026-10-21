@@ -80,6 +80,12 @@ from gql_validation.rules_fragments import (
     possible_inline_fragment,
     unique_fragment_names,
 )
+from gql_validation.rules_incremental import (
+    defer_stream_directive_label,
+    defer_stream_directive_on_root_field,
+    defer_stream_directive_on_valid_operations,
+    stream_directive_on_list_field,
+)
 from gql_validation.rules_operations import (
     add_variable_definition,
     count_operations,
@@ -221,6 +227,16 @@ def _enters(rule: ValidationRule, kind: Kind) -> Bool:
             or kind == Kind.OBJECT_FIELD
             or kind == Kind.ENUM
         )
+    if (
+        rule == ValidationRule.DEFER_STREAM_DIRECTIVE_LABEL
+        or rule == ValidationRule.STREAM_DIRECTIVE_ON_LIST_FIELD
+    ):
+        return kind == Kind.DIRECTIVE
+    if (
+        rule == ValidationRule.DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD
+        or rule == ValidationRule.DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS
+    ):
+        return kind == Kind.OPERATION_DEFINITION
     # PROVIDED_REQUIRED_ARGUMENTS handles only exits.
     return False
 
@@ -361,6 +377,14 @@ def _enter(
             no_deprecated_input_field(walk, schema, document, node)
         else:
             no_deprecated_enum_value(walk, schema, document, node)
+    elif rule == ValidationRule.DEFER_STREAM_DIRECTIVE_ON_ROOT_FIELD:
+        defer_stream_directive_on_root_field(walk, schema, document, node)
+    elif rule == ValidationRule.DEFER_STREAM_DIRECTIVE_ON_VALID_OPERATIONS:
+        defer_stream_directive_on_valid_operations(walk, document, node)
+    elif rule == ValidationRule.DEFER_STREAM_DIRECTIVE_LABEL:
+        defer_stream_directive_label(walk, document, node)
+    elif rule == ValidationRule.STREAM_DIRECTIVE_ON_LIST_FIELD:
+        stream_directive_on_list_field(walk, schema, document, node)
     else:
         no_schema_introspection(walk, schema, document, node)
     return False

@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # Execution
 
-`gql_execution` runs a GraphQL operation against a schema and gives the result as JSON. It is a port of graphql-js 16.14.2 `src/execution`, `subscribe` included, `src/type/introspection.ts`, `getIntrospectionQuery`, `introspectionFromSchema` and `buildClientSchema`. It needs `gql_language`, `gql_schema`, `gql_json` and `gql_stream`.
+`gql_execution` runs a GraphQL operation against a schema and gives the result as JSON. It is a port of graphql-js 16.14.2 `src/execution`, `subscribe` included, `src/type/introspection.ts`, `getIntrospectionQuery`, `introspectionFromSchema` and `buildClientSchema`. Incremental delivery, `@defer` and `@stream`, is a port of graphql-js 17.0.2 (`71606d73`). It needs `gql_language`, `gql_schema`, `gql_json` and `gql_stream`.
 
 ```mojo
 from gql_execution.execute import ExecutionArgs, ResolveInfo, execute
@@ -38,6 +38,7 @@ Execution does not validate the document. Validate it first with `gql_validation
 | `execute(schema, document)` | `executeSync({ schema, document })` | `ExecutionResult` |
 | `execute_sync(schema, document, args)` | `executeSync(args)` | `ExecutionResult` |
 | `subscribe(schema, document, args)` | `subscribe(args)` | `Subscription` |
+| `experimental_execute_incrementally(schema, document, args)` | `experimentalExecuteIncrementally(args)` (17.0.2) | `ExperimentalIncrementalExecutionResults` |
 | `create_source_event_stream(schema, document, args)` | `createSourceEventStream(args)` | `SourceEventStream` |
 | `get_variable_values(schema, document, operation, values, inputs, max_errors)` | `getVariableValues` | `CoercedVariables` |
 | `get_argument_values(schema, owner, definition, document, node, values, variables)` | `getArgumentValues` | An object of `Values` |
@@ -162,6 +163,103 @@ The execution of an event uses the arena of the subscription. The values of the 
 
 `create_source_event_stream` returns a `SourceEventStream`. It holds the source event stream, or the result with the errors.
 
+## Incremental delivery
+
+`gql_execution.incremental` executes an operation with `@defer` and `@stream`. It is a port of graphql-js 17.0.2 `experimentalExecuteIncrementally`, with its `IncrementalExecutor`, `IncrementalPublisher`, `WorkQueue` and `buildExecutionPlan`. The payloads have the JSON of graphql-js 17 and of the incremental delivery RFC: `pending`, `incremental`, `completed` and `hasNext`.
+
+```mojo
+from gql_execution.execute import ExecutionArgs
+from gql_execution.incremental import experimental_execute_incrementally
+from gql_language.parser import parse
+from gql_schema.build import build_schema
+from gql_stream.waker import Waker
+
+
+def main() raises:
+    var schema = build_schema("type Hero { id: ID name: String } type Query { hero: Hero }")
+    var args = ExecutionArgs()
+    var root = args.values.add_object()
+    var hero = args.values.add_object()
+    args.values.add_member(hero, "id", args.values.add_string("1"))
+    args.values.add_member(hero, "name", args.values.add_string("Luke"))
+    args.values.add_member(root, "hero", hero)
+    args.root_value = root
+    var results = experimental_execute_incrementally(
+        schema, parse("{ hero { id ... @defer { name } } }"), args^
+    )
+    print(results.to_json())
+    # {"data":{"hero":{"id":"1"}},"pending":[{"id":"0","path":["hero"]}],"hasNext":true}
+    var stream = results.take_subsequent_results()
+    var waker = Waker.noop()
+    print(stream.poll_next(waker).value().to_json())
+    # {"hasNext":false,"incremental":[{"id":"0","data":{"name":"Luke"}}],"completed":[{"id":"0"}]}
+```
+
+`experimental_execute_incrementally(schema, document, args)` returns an `ExperimentalIncrementalExecutionResults`:
+
+| Member | graphql-js | Use |
+| --- | --- | --- |
+| `is_incremental()` | `'initialResult' in result` | True when payloads follow |
+| `result` | An `ExecutionResult` | The single result, when there is nothing to deliver later |
+| `initial_result` | `initialResult` | An `InitialIncrementalExecutionResult`: `data`, `errors`, `pending` and `hasNext` |
+| `take_subsequent_results()` | `subsequentResults` | The `SubsequentResultStream` |
+| `to_json()` | `JSON.stringify` | The JSON of the single result or of the initial result |
+
+The result is single when the operation has no deferred fragment and no stream to deliver, as in graphql-js. A deferred fragment that has no field of its own is not delivered.
+
+A `SubsequentResultStream` is a `gql_stream` `EventStream`. Each event is the JSON of one `SubsequentIncrementalExecutionResult`. After the payload with `"hasNext":false`, the stream is `DONE`. `poll_payload(waker)` gives the payload as a struct, with `pending`, `incremental`, `completed`, `has_next` and `to_json()`. `is_done()` tells when no payload follows. `close()` ends the stream and closes the event streams of `@stream`.
+
+The schema does not have to define `@defer` and `@stream`. Execution reads them with the graphql-js 17 definitions:
+
+```graphql
+directive @defer(if: Boolean! = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @stream(initialCount: Int! = 0, if: Boolean! = true, label: String) on FIELD
+```
+
+Validation refuses an unknown directive. Thus a server must add these definitions to its schema, and it can turn on the [`@defer` and `@stream` rules](Validation).
+
+### Ticks
+
+graphql-js gives the work of one turn of its event loop as one payload. Execution here is synchronous, so a poll runs one tick:
+
+- The first tick executes the deferred fragments of the initial result. A child fragment that its parent releases executes in the same tick.
+- A stream that starts in a tick gives its first items in the next tick. One tick gives at most 100 items of a stream, the capacity of the graphql-js stream queue.
+- An item that fails a stream ends the batch of the stream. The failure comes in the next tick, after the items before it.
+- A tick with no event gives no payload. A poll returns `PENDING` when only event streams remain and no item is ready. Each event stream keeps the waker.
+
+With resolvers that do not return promises, graphql-js 17 gives the same payloads. The tests compare each payload with graphql-js 17.0.2.
+
+### Abort and early execution
+
+An abort stops the subsequent results. Set `ExecutionArgs.abort_signal` to the signal of an `AbortController` from `gql_execution.abort`:
+
+```mojo
+var controller = AbortController()
+args.abort_signal = controller.signal()
+var results = experimental_execute_incrementally(schema, document, args^)
+var stream = results.take_subsequent_results()
+controller.abort()
+# The next poll is ERROR "This operation was aborted", and then DONE.
+```
+
+- A signal that aborted before the execution makes `experimental_execute_incrementally` raise the reason.
+- An abort after the initial result closes the event streams of `@stream`. The next poll gives the reason one time: `poll_next` returns `ERROR`, and `poll_payload` raises. Each later poll is `DONE`.
+- `controller.abort(reason)` sets the message. A second abort changes nothing.
+- `SubsequentResultStream.abort(reason)` aborts the stream with no signal.
+- An abort after the last payload changes nothing.
+
+`ExecutionArgs.enable_early_execution` is graphql-js `enableEarlyExecution`. The deferred fragments of the initial result execute before `experimental_execute_incrementally` returns, not at the first poll. The payloads do not change.
+
+### Streams
+
+`@stream` streams a list, or an event stream that `Values.add_stream` made. An event stream is the Mojo form of an async iterable, as for subscriptions. Each event of the stream is one item: a JSON value.
+
+- Before `initialCount`, execution polls the event stream. An item that is not ready starts the stream at that index, so the initial result can have fewer items.
+- After the stream starts, each tick takes the items that are ready.
+- An `ERROR` of the event stream fails the stream, with the message of the error.
+- A list field whose resolver returns an event stream, with no `@stream`, must have each item ready. Otherwise the field fails: `The event stream of field "Query.items" has no item ready; use @stream to stream it.`
+
 ## Introspection
 
 The meta fields `__typename`, `__schema` and `__type` and the fields of the introspection types use their own resolvers, as in graphql-js. They read the arenas of the `Schema` directly. They write the introspection result into the response without making arena values.
@@ -197,11 +295,25 @@ These things differ from graphql-js `buildClientSchema`:
 - graphql-js `CollectedErrors` drops an error under a response path that is already `null`. Only a promise that settles late can cause that, so this port has no such step.
 - An error of execution has no source excerpt, so `String(error)` gives only the message. The JSON of a response has no excerpt in graphql-js either.
 - A default value that is not valid for its type gives a field error when execution uses it. graphql-js `buildSchema` coerces each default value when it builds the schema, and it can raise there.
+- Incremental delivery is a port of graphql-js 17.0.2, not of 16.14.2, because graphql-js 16 has no `@defer` and no `@stream`. `execute` ignores both directives, as graphql-js 16 does.
+- `experimental_execute_incrementally` returns at once, and the subsequent results are a pull-based `EventStream`, not an `AsyncGenerator`. `close()` is `return()`. There is no `throw()`.
+- A deferred fragment executes when it is released, or before the initial result returns with `enable_early_execution`. A nested fragment executes in the tick that releases it, with or without the flag.
+- Execution reads the abort signal before the root fields and at each poll, not during a tick. An abort cannot stop a resolver, because the resolvers are synchronous. The reason is a message, not any value.
+- `legacyExecuteIncrementally`, the graphql-js 17 form of the older payload format, is not ported.
+- A list item of `@stream` that comes from an event stream, and is not ready before `initialCount`, starts the stream early. graphql-js waits for it.
+- The arena of an incremental execution stays with the `SubsequentResultStream` until the stream is dropped, because the deferred fields read it.
+- `field_timing` records no timing in an incremental execution.
 - `field_timing` is an addition for the inline trace plugin of `gql_server`. When it is set, execution records a `FieldTiming` for each resolved field in `ExecutionResult.field_timings`. A timing has the path, the field name, the type, the parent type and the times of the resolver. The fields are those that Apollo Server wraps: the fields of the object types whose names do not start with `__`. Meta fields and introspection fields have no timing. When `field_timing` is False, execution does not record anything.
 
 ## Tests
 
 The tests are in `tests/gql_execution/`. They port the graphql-js tests of `src/execution/__tests__`, `subscribe-test.ts` included, `src/type/__tests__/introspection-test.ts`, `getIntrospectionQuery-test.ts`, `introspectionFromSchema-test.ts`, `buildClientSchema-test.ts`, `coerceInputValue-test.ts`, `valueFromAST-test.ts` and `valueFromASTUntyped-test.ts`. Each module docstring lists the upstream cases that are not ported, and why.
+
+`test_defer.mojo` and `test_stream.mojo` port graphql-js 17.0.2 `src/execution/incremental/__tests__/defer-test.ts` and `stream-test.ts`. `test_incremental_streams.mojo` tests the rules of `IncrementalPublisher.ts` and `WorkQueue.ts`, the event streams and the API. Each case uses a synchronous root value. A promise becomes its value, and an async iterable becomes an event stream. A resolver that throws becomes a property that `throwing_resolver` raises.
+
+`test_incremental_cancel.mojo` ports the upstream cases of the abort signal, `return()` and early execution. Its `ProbeStream` counts the polls and the closes, as the upstream spies on `next()` and `return()`.
+
+The expected payloads are the output of graphql-js 17.0.2, run in Node.js on the same root value. The module docstrings list the upstream cases that are not ported, and why.
 
 Many expected results come from graphql-js 16.14.2 itself, run in Node.js with the same SDL, document and values. That includes each upstream execution of `variables-test.ts` and `introspection-test.ts`, and the serialization of more than 400 values.
 
@@ -214,5 +326,10 @@ Many expected results come from graphql-js 16.14.2 itself, run in Node.js with t
 - `buildClientSchema-benchmark.js`, "Build Schema from Introspection", is `graphql-js/build-client-schema`. It builds the GitHub schema from its introspection result.
 
 `bench/gql_execution/subscribe.mojo` runs `stream/subscribe-publish-100`. It subscribes to an operation, then publishes 100 events to a `PubSub` and reads the 100 responses. The baseline in `bench/baselines/js-stream` runs graphql-js `subscribe` with a graphql-subscriptions `PubSub` in Node.js.
+
+`bench/gql_execution/incremental.mojo` runs two workloads of incremental delivery. The baseline in `bench/baselines/js-incremental` runs graphql-js 17.0.2 `experimentalExecuteIncrementally` in Node.js with the same workload:
+
+- `incremental/defer-100` executes `{ friends { id ... @defer { name } } }` on a list of 100 objects, and reads each payload.
+- `incremental/stream-1000` executes `{ friends @stream(initialCount: 10) { id name } }` on a list of 1000 objects, and reads each payload.
 
 The [Benchmarks](Benchmarks) page tells how the project measures and gives the numbers.

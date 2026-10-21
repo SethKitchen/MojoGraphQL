@@ -147,6 +147,48 @@ def test_schema() raises -> Schema:
     return build_schema(TEST_SCHEMA)
 
 
+comptime DEFER_STREAM_SDL = """
+  directive @defer(if: Boolean! = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+  directive @stream(initialCount: Int! = 0, if: Boolean! = true, label: String) on FIELD
+"""
+"""The SDL of graphql-js v17.0.2 `GraphQLDeferDirective` and
+`GraphQLStreamDirective`, which are not specified directives."""
+
+
+def incremental_test_schema() raises -> Schema:
+    """Build graphql-js v17.0.2 `testSchema`, with `@defer` and `@stream`.
+
+    The 17 schema differs from the 16 schema in two places:
+    `Human.relatives` is `[Human]!`, and `Dog` has the field
+    `distanceFrom(loc: GeoPoint): Float` of the scalar `GeoPoint`. The
+    `@defer` and `@stream` rules do not need the directives in the schema,
+    but a client schema defines them.
+
+    Returns:
+        The schema.
+
+    Raises:
+        Error: Never; the SDL is valid.
+    """
+    var sdl = (
+        String(TEST_SCHEMA)
+        .replace("relatives: [Human]\n", "relatives: [Human]!\n")
+        .replace(
+            "  type Dog implements",
+            "  scalar GeoPoint\n\n  type Dog implements",
+        )
+        .replace(
+            "    isAtLocation(x: Int, y: Int): Boolean\n",
+            (
+                "    isAtLocation(x: Int, y: Int): Boolean\n"
+                "    distanceFrom(loc: GeoPoint): Float\n"
+            ),
+        )
+    )
+    return build_schema(sdl + DEFER_STREAM_SDL)
+
+
 def schema_of(sdl: String) raises -> Schema:
     """Build a schema from SDL, as graphql-js `buildSchema`.
 

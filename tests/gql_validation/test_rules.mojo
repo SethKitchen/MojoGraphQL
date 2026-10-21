@@ -4,10 +4,13 @@
 # See LICENSE, LICENSE-COMMERCIAL.md and THIRD-PARTY-NOTICES.md.
 
 """Tests for `gql_validation.rules`, beyond upstream: the rule names and the
-rule lists of graphql-js 16.14.2 `src/validation/specifiedRules.ts`."""
+rule lists of graphql-js 16.14.2 `src/validation/specifiedRules.ts`, and the
+`@defer` and `@stream` rules of graphql-js v17.0.2, which are not in
+`specified_rules()`."""
 
 from gql_validation.rules import (
     ValidationRule,
+    incremental_rules,
     recommended_rules,
     specified_rules,
 )
@@ -34,8 +37,21 @@ def test_custom_and_invalid_rules() raises:
         "NoSchemaIntrospectionCustomRule",
     )
     assert_true(ValidationRule.NO_DEPRECATED_CUSTOM.is_valid())
-    assert_false(ValidationRule(29).is_valid())
-    assert_equal(ValidationRule(29).text(), "<invalid>")
+    assert_false(ValidationRule(33).is_valid())
+    assert_equal(ValidationRule(33).text(), "<invalid>")
+
+
+def test_incremental_rules() raises:
+    var rules = incremental_rules()
+    assert_equal(len(rules), 4)
+    assert_equal(String(rules[0]), "DeferStreamDirectiveOnRootFieldRule")
+    assert_equal(String(rules[1]), "DeferStreamDirectiveOnValidOperationsRule")
+    assert_equal(String(rules[2]), "DeferStreamDirectiveLabelRule")
+    assert_equal(String(rules[3]), "StreamDirectiveOnListFieldRule")
+    for rule in rules:
+        assert_true(rule.is_valid())
+        for specified in specified_rules():
+            assert_false(rule == specified)
 
 
 def main() raises:

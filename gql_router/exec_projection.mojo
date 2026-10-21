@@ -38,8 +38,13 @@ from gql_json.value import (
 )
 from gql_router.exec_projection_plan import (
     ALWAYS,
+    FIELD_CHECKED,
+    FIELD_CHILDREN,
+    FIELD_NON_NULL,
+    FIELD_TYPENAME,
     NO_SET,
     CondKind,
+    KeyTable,
     ProjectionPlan,
 )
 from gql_router.exec_value import (
@@ -87,14 +92,10 @@ struct Outcome(Equatable, ImplicitlyCopyable, Movable):
         return self.value <= 4
 
 
-comptime _NON_NULL: UInt8 = 1
-"""The field bit of a non-null field: a `null` bubbles to the parent."""
-comptime _TYPENAME: UInt8 = 2
-"""The field bit of `__typename`."""
-comptime _CHILDREN: UInt8 = 4
-"""The field bit of a field with child fields."""
-comptime _CHECKED: UInt8 = 8
-"""The field bit of a field with a parent scope or a condition."""
+comptime _NON_NULL = FIELD_NON_NULL
+comptime _TYPENAME = FIELD_TYPENAME
+comptime _CHILDREN = FIELD_CHILDREN
+comptime _CHECKED = FIELD_CHECKED
 
 
 @fieldwise_init
@@ -131,7 +132,8 @@ def project_by_operation(
         data: The data object, or `NO_NODE` for `null`.
         errors: The errors of the response.
         operation_type_name: The root type of the operation.
-        plan: The projection plan.
+        plan: The projection plan, from `ProjectionPlan.from_operation`,
+            which makes its key table.
         variables: The coerced variables.
         response_size_estimate: The expected size, to reserve space.
         schema: The metadata of the consumer schema.
@@ -143,7 +145,8 @@ def project_by_operation(
         Error: When the schema lacks a type or a field that the plan needs.
     """
     var state = _Output(
-        plan,
+        Pointer(to=plan.key_table).unsafe_origin_cast[ImmUntrackedOrigin](),
+        len(plan.fields),
         errors^,
         response_size_estimate + response_size_estimate // 4 + 64,
     )
@@ -200,24 +203,21 @@ struct _Output(Movable):
     as upstream `indexes` but kept for the whole walk."""
     var failure: String
     """The first failure, or empty; the projection raises it at the end."""
-    var keys: List[UInt8]
-    """For each plan field, `"key":`, one after the other."""
-    var key_starts: List[Int]
-    """Where the `"key":` of each plan field starts in `keys`."""
-    var bits: List[UInt8]
-    """The `_NON_NULL`, `_TYPENAME`, `_CHILDREN` and `_CHECKED` bits of
-    each plan field."""
+    var table: Pointer[KeyTable, ImmUntrackedOrigin]
+    """The `"key":` text and the bits of each plan field."""
 
     def __init__(
         out self,
-        plan: ProjectionPlan,
+        table: Pointer[KeyTable, ImmUntrackedOrigin],
+        field_count: Int,
         var errors: List[GraphQLError],
         capacity: Int,
     ):
-        """Start an empty output, with the field table of a plan.
+        """Start an empty output.
 
         Args:
-            plan: The projection plan.
+            table: The key table of the plan.
+            field_count: How many fields the plan has.
             errors: The errors so far.
             capacity: The expected size of the response.
         """
@@ -225,31 +225,9 @@ struct _Output(Movable):
         self.errors = errors^
         self.cells = List[_TypeCell](capacity=32)
         self.members = List[Int](capacity=256)
-        self.hints = List[Int](length=len(plan.fields), fill=-1)
+        self.hints = List[Int](length=field_count, fill=-1)
         self.failure = String()
-        var count = len(plan.fields)
-        self.keys = List[UInt8](capacity=count * 12)
-        self.key_starts = List[Int](capacity=count + 1)
-        self.bits = List[UInt8](capacity=count)
-        for ref field in plan.fields:
-            self.key_starts.append(len(self.keys))
-            self.keys.append(UInt8(ord('"')))
-            append_text(self.keys, field.response_key)
-            self.keys.append(UInt8(ord('"')))
-            self.keys.append(UInt8(ord(":")))
-            var bits: UInt8 = 0
-            if field.is_non_null():
-                bits |= _NON_NULL
-            if field.is_typename:
-                bits |= _TYPENAME
-            if field.has_children:
-                bits |= _CHILDREN
-            if field.parent_scope != NO_SET or field.condition != ALWAYS:
-                bits |= _CHECKED
-            self.bits.append(bits)
-        self.key_starts.append(len(self.keys))
-        # Padding, so that a key copy can load 16 bytes at once.
-        self.keys.resize(len(self.keys) + 16, 0)
+        self.table = table
 
     def take_buffer(deinit self) -> List[UInt8]:
         """Return the response bytes.
@@ -345,8 +323,8 @@ struct _Projector[
             field: The plan field.
         """
         ref out = self.out[]
-        var start = out.key_starts.unsafe_get(field)
-        var length = out.key_starts.unsafe_get(field + 1) - start
+        var start = out.table[].key_starts.unsafe_get(field)
+        var length = out.table[].key_starts.unsafe_get(field + 1) - start
         var size = len(out.buffer)
         if size + length + 17 > out.buffer.capacity():
             out.buffer.reserve(
@@ -355,7 +333,7 @@ struct _Projector[
         var target = out.buffer.unsafe_ptr().unsafe_offset(size)
         target[] = UInt8(ord("{")) if first else UInt8(ord(","))
         first = False
-        var source = out.keys.unsafe_ptr().unsafe_offset(start)
+        var source = out.table[].keys.unsafe_ptr().unsafe_offset(start)
         if length > 16:
             unsafe_memcpy(
                 dest=target.unsafe_offset(1), src=source, count=length
@@ -377,8 +355,8 @@ struct _Projector[
             Whether the decoded key equals the response key.
         """
         ref out = self.out[]
-        var start = out.key_starts.unsafe_get(field) + 1
-        var length = out.key_starts.unsafe_get(field + 1) - start - 2
+        var start = out.table[].key_starts.unsafe_get(field) + 1
+        var length = out.table[].key_starts.unsafe_get(field + 1) - start - 2
         var node = self.document[].nodes.unsafe_ptr().unsafe_offset(member)
         if node[].flags & FLAG_KEY_ESCAPED != 0:
             return key_is(
@@ -389,7 +367,7 @@ struct _Projector[
             return False
         return bytes_equal(
             self.document[].bytes.unsafe_ptr().unsafe_offset(key_start),
-            out.keys.unsafe_ptr().unsafe_offset(start),
+            out.table[].keys.unsafe_ptr().unsafe_offset(start),
             length,
         )
 
@@ -641,7 +619,7 @@ struct _Projector[
             True when a `null` must bubble to the parent.
         """
         var cursor = 0
-        var bits_table = self.out[].bits.unsafe_ptr()
+        var bits_table = self.out[].table[].bits.unsafe_ptr()
         for index in fields:
             var bits = bits_table[unsafe_offset=index]
             var outcome = Outcome.OK

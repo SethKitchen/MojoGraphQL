@@ -1,0 +1,3 @@
+[
+{"subgraph":"products","query":"query($representations:[_Any!]!){_entities(representations: $representations){...on Product{name}}}","variables":{"representations":[{"__typename":"Product","upc":"1"}]},"response":{"data":{"_entities":[{"name":"Table"}]}}}
+]

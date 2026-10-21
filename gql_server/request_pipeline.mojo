@@ -15,8 +15,13 @@ parse, validation, the operation, the plugin hooks, execution, the error
 codes and the HTTP status.
 
 **Differences from upstream.**
-- Execution is `gql_execution.execute`, which is synchronous. Incremental
-  delivery and the gateway executor are not ported.
+- Execution is `gql_execution.execute`, which is synchronous. A document
+  with `@defer` or `@stream` runs with `experimental_execute_incrementally`
+  instead; see `gql_server.incremental`. The gateway executor is not
+  ported.
+- In a batch, an operation with `@defer` or `@stream` gets an empty
+  object as its context value: its execution keeps its arena, and the
+  other operations of the batch share the arena of the context value.
 - `willResolveField` is `GraphQLRequestContext.will_resolve_field`: when
   a plugin sets it, execution records the `FieldTiming` of each field in
   `GraphQLRequestContext.field_timings`. Only the inline trace plugin
@@ -40,11 +45,18 @@ from std.time import perf_counter_ns
 
 from gql_execution.execute import ExecutionArgs, ExecutionResult, Resolvers
 from gql_execution.execute import execute
+from gql_execution.incremental import (
+    ExperimentalIncrementalExecutionResults,
+    experimental_execute_incrementally,
+)
 from gql_execution.value import Values
+from gql_server.negotiator import preferred_media_type
+from gql_stream.poll import PollState
+from gql_stream.waker import Waker
 from gql_json.value import NO_NODE as NO_JSON
 from gql_json.value import JsonDocument, JsonKind
 from gql_language.ast import NO_NODE, Document, Kind, OperationType
-from gql_language.error import GraphQLError
+from gql_language.error import GraphQLError, quote_json_string
 from gql_language.get_operation_ast import get_operation_ast
 from gql_language.parser import ParseOptions, parse
 from gql_schema.definition import Schema
@@ -70,6 +82,16 @@ from gql_server.errors import (
     validation_error,
 )
 from gql_server.http_types import HTTPGraphQLHead, merge_http_graphql_head
+from gql_server.incremental import (
+    LEGACY_NOT_SUPPORTED_MESSAGE,
+    MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2,
+    MULTIPART_MIXED_EXPERIMENTAL_ALPHA_9,
+    IncrementalResults,
+    SubsequentPayload,
+    TestingIncrementalResults,
+    uses_incremental_delivery,
+    write_entry,
+)
 from gql_server.inline_trace import InlineTraceOptions, InlineTracePlugin
 from gql_server.lru import InMemoryLRUCache
 from gql_server.plugin import ServerPlugin
@@ -152,6 +174,14 @@ struct ServerInternals(Movable):
     var inline_trace: InlineTracePlugin
     """The inline trace plugin, which upstream installs after the other
     plugins."""
+    var shared_schema: Optional[ArcPointer[Schema]]
+    """A copy of `schema` that incremental results share; made by the
+    first incremental execution."""
+    var shared_resolvers: Optional[ArcPointer[Resolvers]]
+    """A copy of `resolvers` that incremental results share; made with
+    `shared_schema`."""
+    var testing_incremental: Optional[TestingIncrementalResults]
+    """The `__testing_incrementalExecutionResults` option."""
 
     def __init__(out self, var schema: Schema, var resolvers: Resolvers):
         """Make the internals of a server with the upstream defaults of
@@ -190,6 +220,9 @@ struct ServerInternals(Movable):
         self.inline_trace = InlineTracePlugin(
             InlineTraceOptions.only_if_subgraph()
         )
+        self.shared_schema = None
+        self.shared_resolvers = None
+        self.testing_incremental = None
 
 
 def js_truthy(json: JsonDocument, node: Int) -> Bool:
@@ -361,12 +394,14 @@ def _will_send_response[
     var header = cache_control_header(
         ctx.response.http.headers.get("cache-control"),
         ctx.overall_cache_policy,
-        not ctx.response.has_errors,
+        not ctx.response.has_errors and not ctx.response.is_incremental(),
         internals.calculate_http_headers,
     )
     if header:
         ctx.response.http.headers.set("cache-control", header.value())
-    internals.inline_trace.will_send_response(ctx, internals.schema)
+    # Upstream has no inline traces for incremental delivery.
+    if not ctx.response.is_incremental():
+        internals.inline_trace.will_send_response(ctx, internals.schema)
 
 
 def _send_error_response[
@@ -429,6 +464,60 @@ def _execute(
         swap(args.values, ctx.values)
         swap(args.resolvers, internals.resolvers)
         raise e^
+
+
+def _execute_incrementally(
+    mut internals: ServerInternals, mut ctx: GraphQLRequestContext
+) raises -> ExperimentalIncrementalExecutionResults:
+    """Execute with `@defer` and `@stream`: upstream
+    `executeIncrementally` with graphql-js 17.
+
+    The results keep the arena of the request context, and share one copy
+    of the schema and of the resolvers. In a batch, the arena is shared by the other operations:
+    the execution then gets a new arena, with an empty object as its
+    context value.
+    """
+    var args = ExecutionArgs()
+    if ctx.request_is_batched:
+        args.context_value = args.values.add_object()
+    else:
+        swap(args.values, ctx.values)
+        args.context_value = ctx.context_value
+    args.assume_valid_schema = True
+    args.max_coercion_errors = internals.max_coercion_errors
+    args.operation_name = ctx.request.operation_name
+    if ctx.request.variables != NO_JSON:
+        args.variable_values = args.values.add_json(
+            ctx.request.json, ctx.request.variables
+        )
+    var stored = ctx.document.value()
+    if internals.root_value:
+        args.root_value = internals.root_value.value()(args.values, stored[])
+    if not internals.shared_schema:
+        internals.shared_schema = ArcPointer(internals.schema.copy())
+        internals.shared_resolvers = ArcPointer(internals.resolvers.copy())
+    return experimental_execute_incrementally(
+        internals.shared_schema.value(),
+        stored,
+        internals.shared_resolvers.value(),
+        args^,
+    )
+
+
+def _wants_legacy(ctx: GraphQLRequestContext) -> Bool:
+    """Whether `accept` prefers the legacy format: upstream
+    `useLegacyIncremental`."""
+    var accept: Optional[String] = None
+    if ctx.request.http:
+        accept = ctx.request.http.value().headers.get("accept")
+    var available: List[String] = [
+        MULTIPART_MIXED_EXPERIMENTAL_ALPHA_9,
+        MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2,
+    ]
+    var chosen = preferred_media_type(accept, available)
+    return (
+        Bool(chosen) and chosen.value() == MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2
+    )
 
 
 def process_graphql_request[
@@ -656,22 +745,73 @@ def _run_operation[
         _will_send_response(internals, plugin, ctx)
         return
     plugin.execution_did_start(ctx)
-    var result: ExecutionResult
+    if internals.testing_incremental:
+        _complete_testing(internals, plugin, ctx)
+        return
+    var incremental = uses_incremental_delivery(document)
+    if incremental and _wants_legacy(ctx):
+        _fail_execution(
+            internals,
+            plugin,
+            ctx,
+            bad_request_error(
+                LEGACY_NOT_SUPPORTED_MESSAGE, HTTPGraphQLHead(406)
+            ),
+        )
+        return
+    if not incremental:
+        # The hot path: no wrapper of incremental results.
+        var result: ExecutionResult
+        try:
+            result = _execute(internals, ctx)
+        except e:
+            _fail_execution(internals, plugin, ctx, ensure_graphql_error(e))
+            return
+        if ctx.operation == NO_NODE:
+            _fail_execution(
+                internals,
+                plugin,
+                ctx,
+                operation_resolution_error(
+                    ServerError.from_graphql_error(result.errors[0])
+                ),
+            )
+            return
+        _complete(internals, plugin, ctx, result^)
+        return
+    var full: ExperimentalIncrementalExecutionResults
     try:
-        result = _execute(internals, ctx)
+        full = _execute_incrementally(internals, ctx)
     except e:
-        var error = ensure_graphql_error(e)
-        plugin.execution_did_end(ctx, error.copy())
-        _send_error_response(internals, plugin, ctx, _one(error^))
+        _fail_execution(internals, plugin, ctx, ensure_graphql_error(e))
         return
     if ctx.operation == NO_NODE:
-        var error = operation_resolution_error(
-            ServerError.from_graphql_error(result.errors[0])
+        _fail_execution(
+            internals,
+            plugin,
+            ctx,
+            operation_resolution_error(
+                ServerError.from_graphql_error(full.result.value().errors[0])
+            ),
         )
-        plugin.execution_did_end(ctx, error.copy())
-        _send_error_response(internals, plugin, ctx, _one(error^))
         return
-    _complete(internals, plugin, ctx, result^)
+    if full.is_incremental():
+        _complete_incremental(internals, plugin, ctx, full^)
+        return
+    _complete(internals, plugin, ctx, full.result.take())
+
+
+def _fail_execution[
+    P: ServerPlugin
+](
+    mut internals: ServerInternals,
+    mut plugin: P,
+    mut ctx: GraphQLRequestContext,
+    var error: ServerError,
+) raises:
+    """End the execution with an error, and send the error response."""
+    plugin.execution_did_end(ctx, error.copy())
+    _send_error_response(internals, plugin, ctx, _one(error^))
 
 
 def _complete[
@@ -684,8 +824,71 @@ def _complete[
 ) raises:
     """Turn the result of execution into the response."""
     swap(ctx.field_timings, result.field_timings)
+    _record_errors(internals, plugin, ctx, result.errors, result.has_data())
+    ctx.response.data = result^.take_data()
+    plugin.execution_did_end(ctx, None)
+    _will_send_response(internals, plugin, ctx)
+
+
+def _complete_incremental[
+    P: ServerPlugin
+](
+    mut internals: ServerInternals,
+    mut plugin: P,
+    mut ctx: GraphQLRequestContext,
+    var full: ExperimentalIncrementalExecutionResults,
+) raises:
+    """Turn the initial result into the response, with an `incremental`
+    body."""
+    var initial = full.initial_result.take()
+    _record_errors(internals, plugin, ctx, initial.errors, True)
+    swap(ctx.response.data, initial.data)
+    var pending = String("[")
+    var index = 0
+    while index < len(initial.pending):
+        if index > 0:
+            pending += ","
+        initial.pending[index].write_json(pending)
+        index += 1
+    ctx.response.pending = pending + "]"
+    ctx.response.subsequent_results = ArcPointer(
+        IncrementalResults(full.take_subsequent_results())
+    )
+    plugin.execution_did_end(ctx, None)
+    _will_send_response(internals, plugin, ctx)
+
+
+def _complete_testing[
+    P: ServerPlugin
+](
+    mut internals: ServerInternals,
+    mut plugin: P,
+    mut ctx: GraphQLRequestContext,
+) raises:
+    """Answer with the results of the testing option: upstream
+    `__testing_incrementalExecutionResults`."""
+    ref testing = internals.testing_incremental.value()
+    ctx.response.initial_json = testing.initial_result
+    ctx.response.subsequent_results = ArcPointer(
+        IncrementalResults(testing.subsequent_results())
+    )
+    plugin.execution_did_end(ctx, None)
+    _will_send_response(internals, plugin, ctx)
+
+
+def _record_errors[
+    P: ServerPlugin
+](
+    mut internals: ServerInternals,
+    mut plugin: P,
+    mut ctx: GraphQLRequestContext,
+    result_errors: List[GraphQLError],
+    has_data: Bool,
+) raises:
+    """Format the errors of the initial result, run `didEncounterErrors`,
+    and set the HTTP status that they give."""
     var errors = List[ServerError]()
-    for ref error in result.errors:
+    for ref error in result_errors:
         var converted = ServerError.from_graphql_error(
             error, "Error" if len(error.path) > 0 else "GraphQLError"
         )
@@ -701,7 +904,6 @@ def _complete[
         swap(ctx.response.errors, normalized.formatted_errors)
         ctx.response.has_errors = True
         swap(http_from_errors, normalized.http_from_errors)
-    var has_data = result.has_data()
     if (
         internals.status400_for_variable_coercion_errors
         and len(errors) > 0
@@ -711,9 +913,6 @@ def _complete[
         # of execution has no `http` extension here, so it always is.
         http_from_errors.status = 400
     merge_http_graphql_head(ctx.response.http, http_from_errors)
-    ctx.response.data = result^.take_data()
-    plugin.execution_did_end(ctx, None)
-    _will_send_response(internals, plugin, ctx)
 
 
 def internal_execute_operation[
@@ -771,3 +970,139 @@ def internal_execute_operation[
         raise Error("Internal server error")
     swap(ctx.values, values)
     return ctx^.take_response()
+
+
+def _format_subsequent_errors(
+    internals: ServerInternals,
+    errors: List[GraphQLError],
+    mut originals: List[ServerError],
+) raises -> String:
+    """Format the errors of an entry of a subsequent payload, as upstream
+    `formatErrors` does, and write them as a JSON array. `originals` gets
+    the errors, for `did_encounter_subsequent_errors`."""
+    # Each error of a subsequent payload comes from a field, with a path:
+    # upstream wraps the original `Error`. The callers pass only an entry
+    # with errors, so the list is never empty.
+    for ref error in errors:  # pragma: no branch
+        originals.append(ServerError.from_graphql_error(error, "Error"))
+    var normalized = _format_errors(internals, originals)
+    var out = String("[")
+    var index = 0
+    while index < len(normalized.formatted_errors):
+        if index > 0:
+            out += ","
+        out += normalized.formatted_errors[index].to_json()
+        index += 1
+    return out + "]"
+
+
+def next_subsequent_payload[
+    P: ServerPlugin
+](
+    mut internals: ServerInternals,
+    mut plugin: P,
+    mut results: IncrementalResults,
+    mut waker: Waker,
+) raises -> Optional[SubsequentPayload]:
+    """Poll the next subsequent payload, formatted: upstream
+    `formatErrorsInSubsequentResultsAlpha9`.
+
+    The errors of each `incremental` and `completed` entry are formatted
+    as the errors of a response. Their `http` extensions have no effect,
+    because the head has gone out. `did_encounter_subsequent_errors` gets
+    the errors of each entry, and `will_send_subsequent_payload` gets the
+    payload.
+
+    Parameters:
+        P: The type of the plugins.
+
+    Args:
+        internals: The configuration of the server.
+        plugin: The plugins.
+        results: The subsequent results of a response.
+        waker: The waker of the owner; a stream that is not ready keeps
+            it.
+
+    Returns:
+        The payload, or None when none is ready or the results are done:
+        `results.finished` tells which.
+
+    Raises:
+        Error: When the stream of the testing option fails, or a plugin
+            hook raises.
+    """
+    if results.finished:
+        return None
+    if results.testing:
+        var poll = results.testing.value().poll_next(waker)
+        if poll.state == PollState.PENDING:
+            return None
+        if poll.state != PollState.READY:
+            results.finished = True
+            if poll.state == PollState.ERROR:
+                raise Error(poll.message)
+            return None
+        ref event = poll.event.value()
+        var has_next = event.document[].find(event.root(), "hasNext")
+        var payload = SubsequentPayload(
+            event.to_json(),
+            has_next != NO_JSON and event.document[].bool_value(has_next),
+        )
+        plugin.will_send_subsequent_payload(payload)
+        return payload^
+    ref stream = results.stream.value()
+    var polled = stream.poll_payload(waker)
+    if not polled:
+        results.finished = stream.is_done()
+        return None
+    ref result = polled.value()
+    var out = String('{"hasNext":')
+    out += "true" if result.has_next else "false"
+    var index = 0
+    if result.pending:
+        out += ',"pending":['
+        while index < len(result.pending):
+            if index > 0:
+                out += ","
+            result.pending[index].write_json(out)
+            index += 1
+        out += "]"
+    if result.incremental:
+        out += ',"incremental":['
+        index = 0
+        while index < len(result.incremental):
+            if index > 0:
+                out += ","
+            ref entry = result.incremental[index]
+            var errors: Optional[String] = None
+            if entry.errors:
+                var originals = List[ServerError]()
+                errors = _format_subsequent_errors(
+                    internals, entry.errors, originals
+                )
+                plugin.did_encounter_subsequent_errors(originals)
+            write_entry(out, entry, errors)
+            index += 1
+        out += "]"
+    if result.completed:
+        out += ',"completed":['
+        index = 0
+        while index < len(result.completed):
+            if index > 0:
+                out += ","
+            ref completed = result.completed[index]
+            out += '{"id":' + quote_json_string(completed.id)
+            if completed.errors:
+                var originals = List[ServerError]()
+                out += ',"errors":' + _format_subsequent_errors(
+                    internals, completed.errors, originals
+                )
+                plugin.did_encounter_subsequent_errors(originals)
+            out += "}"
+            index += 1
+        out += "]"
+    if not result.has_next:
+        results.finished = True
+    var payload = SubsequentPayload(out + "}", result.has_next)
+    plugin.will_send_subsequent_payload(payload)
+    return payload^

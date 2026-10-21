@@ -34,9 +34,12 @@ defaults, `start`, `stop`, `executeOperation`,
   the upstream defaults.
 """
 
+from std.memory import ArcPointer
 from std.os import getenv
 
 from gql_execution.execute import Resolvers
+from gql_http.body import BodyPoll
+from gql_stream.waker import Waker
 from gql_execution.value import Values
 from gql_language.parser import ParseOptions
 from gql_schema.build import build_schema
@@ -58,6 +61,12 @@ from gql_server.http_types import (
     HTTPGraphQLRequest,
     HTTPGraphQLResponse,
 )
+from gql_server.incremental import (
+    IncrementalResults,
+    SubsequentPayload,
+    TestingIncrementalResults,
+    next_part,
+)
 from gql_server.inline_trace import InlineTraceOptions, InlineTracePlugin
 from gql_server.lru import DEFAULT_MAX_SIZE, InMemoryLRUCache
 from gql_server.plugin import NoPlugin, ServerPlugin
@@ -65,6 +74,7 @@ from gql_server.request_pipeline import (
     RootValueFunction,
     ServerInternals,
     internal_execute_operation,
+    next_subsequent_payload,
 )
 from gql_server.run_http_query import (
     APPLICATION_JSON,
@@ -191,6 +201,11 @@ struct ApolloServerOptions(Copyable, Movable):
     """`calculateHttpHeaders` of the cache control plugin."""
     var landing_page_html: Optional[String]
     """The HTML to answer a `GET` that prefers HTML with; None for none."""
+    var testing_incremental_execution_results: Optional[
+        TestingIncrementalResults
+    ]
+    """`__testing_incrementalExecutionResults`: the results of every
+    operation, for the tests of the transport."""
     var inline_trace: Optional[InlineTraceOptions]
     """The inline trace plugin. The default traces only a subgraph, as
     the plugin that upstream installs; set `InlineTraceOptions()` to trace
@@ -220,6 +235,7 @@ struct ApolloServerOptions(Copyable, Movable):
         self.status400_for_variable_coercion_errors = True
         self.calculate_http_headers = CalculateHttpHeaders.ON
         self.landing_page_html = None
+        self.testing_incremental_execution_results = None
         self.inline_trace = InlineTraceOptions.only_if_subgraph()
 
 
@@ -315,6 +331,9 @@ struct ApolloServer[P: ServerPlugin = NoPlugin](Movable):
             options.status400_for_variable_coercion_errors
         )
         internals.calculate_http_headers = options.calculate_http_headers
+        internals.testing_incremental = (
+            options.testing_incremental_execution_results.copy()
+        )
         if options.inline_trace:
             internals.inline_trace = InlineTracePlugin(
                 options.inline_trace.value().copy()
@@ -449,6 +468,65 @@ struct ApolloServer[P: ServerPlugin = NoPlugin](Movable):
         """
         var options = ExecuteOperationOptions()
         return self.execute_operation(request^, options)
+
+    def next_subsequent_payload(
+        mut self, mut response: GraphQLResponse, mut waker: Waker
+    ) raises -> Optional[SubsequentPayload]:
+        """Poll the next subsequent payload of an `incremental` response:
+        upstream `for await (const payload of body.subsequentResults)`.
+
+        Args:
+            response: A response of `execute_operation`.
+            waker: The waker of the owner; a stream that is not ready
+                keeps it.
+
+        Returns:
+            The payload, or None when none is ready now or no payload
+            follows: `finished` of `subsequent_results` tells which.
+
+        Raises:
+            Error: For a response that is not `incremental`, when the
+                results fail, or when a plugin hook raises.
+        """
+        if not response.subsequent_results:
+            raise Error("The response is not incremental")
+        return next_subsequent_payload(
+            self.internals,
+            self.plugin,
+            response.subsequent_results.value()[],
+            waker,
+        )
+
+    def poll_chunk(
+        mut self,
+        chunks: ArcPointer[IncrementalResults],
+        mut out: List[UInt8],
+    ) -> BodyPoll:
+        """Write the next part of a `chunked` body: upstream
+        `writeMultipartBody` after the first part.
+
+        Args:
+            chunks: The `chunks` of an `HTTPGraphQLResponse`.
+            out: Gets the bytes of the part.
+
+        Returns:
+            `READY` after a part, `PENDING` when no part is ready, `DONE`
+            at the end, and `ERROR` when the results or a hook fail.
+        """
+        try:
+            var waker = Waker.noop()
+            var payload = next_subsequent_payload(
+                self.internals, self.plugin, chunks[], waker
+            )
+            if payload:
+                out.extend(next_part(payload.value()).as_bytes())
+                return BodyPoll.DONE if chunks[].finished else BodyPoll.READY
+        except:
+            chunks[].close()
+            return BodyPoll.ERROR
+        if chunks[].finished:
+            return BodyPoll.DONE
+        return BodyPoll.PENDING
 
     def error_response(
         self, error: ServerError, request: HTTPGraphQLRequest

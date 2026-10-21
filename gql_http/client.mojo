@@ -470,6 +470,87 @@ struct Client(Movable, ResponseSource):
             endpoint.copy(), method, deadline, fd, False, List[UInt8]()
         )
 
+    def stream(
+        mut self, var pending: PendingRequest
+    ) raises HttpError -> ResponseStream:
+        """Read the head of a response that `start` sent, but not its content.
+
+        `read_body` reads the content in parts, as it arrives, such as the
+        events of a `text/event-stream`. The caller must read the stream to
+        its end, or give it to `close_stream`.
+
+        Args:
+            pending: The request in flight.
+
+        Returns:
+            The head, and the stream of the content.
+
+        Raises:
+            HttpError: `TIMEOUT`, `CLOSED`, `PROTOCOL`, `LIMIT` or `OS` when
+                the head does not arrive.
+        """
+        self._fd = pending.fd
+        self._got = 0
+        var response = Response()
+        var limits = self.config.limits
+        try:
+            var body = read_response_head(
+                self, pending.method, limits, pending.deadline, response
+            )
+            return ResponseStream(
+                response^, body^, pending.fd, pending.endpoint.copy()
+            )
+        except e:
+            self.sys.close(pending.fd)
+            raise e^
+
+    def read_body(
+        mut self, mut stream: ResponseStream, mut out: List[UInt8]
+    ) raises HttpError -> Bool:
+        """Append the next part of a streamed content to `out`.
+
+        Each call waits at most the timeout of the configuration. At the
+        end, the connection goes back to the pool when it can stay open.
+
+        Args:
+            stream: The stream from `stream`.
+            out: The destination of the content.
+
+        Returns:
+            True after it appends content, and False at the end.
+
+        Raises:
+            HttpError: `TIMEOUT`, `CLOSED`, `PROTOCOL` or `LIMIT`; the
+                connection is closed.
+        """
+        if stream.fd < 0:
+            return False
+        self._fd = stream.fd
+        var deadline = _now_ns() + self.config.timeout_ms * 1_000_000
+        var more: Bool
+        try:
+            more = stream.body.read(self, out, deadline)
+        except e:
+            self.close_stream(stream)
+            raise e^
+        if not more:
+            if stream.body.keep_alive:
+                self._give_back(stream.fd, stream.endpoint)
+            else:
+                self.sys.close(stream.fd)
+            stream.fd = -1
+        return more
+
+    def close_stream(mut self, mut stream: ResponseStream):
+        """Close the connection of a stream before its end.
+
+        Args:
+            stream: The stream from `stream`.
+        """
+        if stream.fd >= 0:
+            self.sys.close(stream.fd)
+            stream.fd = -1
+
     def finish(
         mut self, var pending: PendingRequest
     ) raises HttpError -> Response:
@@ -789,35 +870,7 @@ def read_response[
     """
     var data = List[UInt8]()
     var end = 0
-    var scanned = 0
-    while True:
-        if find_byte(data.unsafe_ptr(), scanned, end, LF) == end:
-            scanned = end
-            if source.read_more(data, end, deadline) == 0:
-                raise HttpError(
-                    ErrorKind.CLOSED,
-                    "the connection closed before the response",
-                    0,
-                )
-            continue
-        var head = parse_response_head(
-            data.unsafe_ptr(), end, limits, response.head
-        )
-        if head.state == ParseState.ERROR:
-            raise HttpError(ErrorKind.PROTOCOL, "invalid response head", 0)
-        if head.state == ParseState.INCOMPLETE:
-            scanned = end
-            continue
-        if not response.head.status.is_informational():
-            break
-        if response.head.status == Status.SWITCHING_PROTOCOLS:
-            raise HttpError(
-                ErrorKind.PROTOCOL, "the server switched protocols", 0
-            )
-        # Drop a 100 Continue or another interim response.
-        move_down(data.unsafe_ptr(), 0, head.size, end - head.size)
-        end -= head.size
-        scanned = 0
+    _read_head(source, limits, deadline, response, data, end)
     var head_size = response.head.head_size
     var kind = response.head.body_kind(method)
     var message_end = head_size
@@ -879,3 +932,267 @@ def read_response[
     response._body_start = head_size
     response._body_end = body_end
     return keep
+
+
+def _read_head[
+    S: ResponseSource
+](
+    mut source: S,
+    limits: Limits,
+    deadline: Int,
+    mut response: Response,
+    mut data: List[UInt8],
+    mut end: Int,
+) raises HttpError:
+    """Read the head of a final response into `data`; drop interim ones."""
+    var scanned = 0
+    while True:
+        if find_byte(data.unsafe_ptr(), scanned, end, LF) == end:
+            scanned = end
+            if source.read_more(data, end, deadline) == 0:
+                raise HttpError(
+                    ErrorKind.CLOSED,
+                    "the connection closed before the response",
+                    0,
+                )
+            continue
+        var head = parse_response_head(
+            data.unsafe_ptr(), end, limits, response.head
+        )
+        if head.state == ParseState.ERROR:
+            raise HttpError(ErrorKind.PROTOCOL, "invalid response head", 0)
+        if head.state == ParseState.INCOMPLETE:
+            scanned = end
+            continue
+        if not response.head.status.is_informational():
+            break
+        if response.head.status == Status.SWITCHING_PROTOCOLS:
+            raise HttpError(
+                ErrorKind.PROTOCOL, "the server switched protocols", 0
+            )
+        # Drop a 100 Continue or another interim response.
+        move_down(data.unsafe_ptr(), 0, head.size, end - head.size)
+        end -= head.size
+        scanned = 0
+
+
+struct ResponseStream(Movable):
+    """A response whose content comes over time: see `Client.stream`."""
+
+    var response: Response
+    """The status and the fields; the content is empty."""
+    var body: BodyStream
+    """The content."""
+    var fd: Int
+    """The connection; -1 after the end."""
+    var endpoint: Endpoint
+    """Where the request went."""
+
+    def __init__(
+        out self,
+        var response: Response,
+        var body: BodyStream,
+        fd: Int,
+        var endpoint: Endpoint,
+    ):
+        """Make a stream.
+
+        Args:
+            response: The head.
+            body: The content.
+            fd: The connection.
+            endpoint: Where the request went.
+        """
+        self.response = response^
+        self.body = body^
+        self.fd = fd
+        self.endpoint = endpoint^
+
+
+struct BodyStream(Movable):
+    """The content of a response that comes over time.
+
+    `read` gives the content in parts, as the bytes arrive. Chunked content
+    is decoded, and the buffer holds about one read, so a stream can be
+    endless.
+    """
+
+    var kind: BodyKind
+    """The framing of the content."""
+    var keep_alive: Bool
+    """Whether the connection can stay open after the content."""
+    var done: Bool
+    """Whether the content has ended."""
+    var limits: Limits
+    """The size limits: of each chunk line and of the trailer section."""
+    var _data: List[UInt8]
+    var _end: Int
+    var _remaining: Int
+    var _decoder: ChunkedDecoder
+
+    def __init__(
+        out self,
+        kind: BodyKind,
+        length: Int,
+        keep_alive: Bool,
+        limits: Limits,
+        var data: List[UInt8],
+        end: Int,
+    ):
+        """Start a stream with the bytes that came after the head.
+
+        Args:
+            kind: The framing of the content.
+            length: The `Content-Length` for `LENGTH`; else ignored.
+            keep_alive: Whether the head lets the connection stay open.
+            limits: The size limits.
+            data: The buffer; the content starts at offset 0.
+            end: The count of bytes in `data`.
+        """
+        self.kind = kind
+        self.keep_alive = keep_alive and kind != BodyKind.CLOSE
+        self.done = kind == BodyKind.NONE or (
+            kind == BodyKind.LENGTH and length == 0
+        )
+        self.limits = limits
+        self._data = data^
+        self._end = end
+        self._remaining = length
+        self._decoder = ChunkedDecoder()
+        if self.done:
+            self.keep_alive = self.keep_alive and end == 0
+
+    def read[
+        S: ResponseSource
+    ](
+        mut self, mut source: S, mut out: List[UInt8], deadline: Int
+    ) raises HttpError -> Bool:
+        """Append the next part of the content to `out`.
+
+        It returns as soon as some content is there, and reads from the
+        source only when none is.
+
+        Args:
+            source: Where the bytes come from.
+            out: The destination of the content.
+            deadline: The deadline of this call, from `perf_counter_ns`.
+
+        Returns:
+            True after it appends content, and False at the end.
+
+        Raises:
+            HttpError: `CLOSED` when the stream ends early, `PROTOCOL` for
+                invalid chunks, `LIMIT` for a chunk line or a trailer that
+                is too large, and the errors of `source`.
+
+        Parameters:
+            S: The type of the source.
+        """
+        while not self.done:
+            if self._take(out):
+                return True
+            if self.done:
+                return False
+            if source.read_more(self._data, self._end, deadline) == 0:
+                if self.kind != BodyKind.CLOSE:
+                    raise HttpError(
+                        ErrorKind.CLOSED,
+                        "the connection closed in the content",
+                        0,
+                    )
+                self.done = True
+        return False
+
+    def _take(mut self, mut out: List[UInt8]) raises HttpError -> Bool:
+        """Move the content that is in the buffer to `out`."""
+        if self._end == 0:
+            return False
+        var p = self._data.unsafe_ptr()
+        if self.kind == BodyKind.CHUNKED:
+            var result = self._decoder.feed(p, self._end, self.limits)
+            if result.state == ParseState.ERROR:
+                if result.status == Status.CONTENT_TOO_LARGE:
+                    raise HttpError(
+                        ErrorKind.LIMIT, "the chunk is too large", 0
+                    )
+                raise HttpError(
+                    ErrorKind.PROTOCOL, "invalid chunked content", 0
+                )
+            var start = self._decoder.start
+            var stop = self._decoder.write
+            out.extend(Span(self._data)[start:stop])
+            var shift = self._decoder.rebase()
+            var rest = self._end - shift
+            move_down(p, 0, shift, rest)
+            self._end = rest
+            if result.state == ParseState.COMPLETE:
+                self.done = True
+                self.keep_alive = self.keep_alive and rest == 0
+            return stop > start
+        var take = self._end
+        if self.kind == BodyKind.LENGTH:
+            take = min(take, self._remaining)
+            self._remaining -= take
+        out.extend(Span(self._data)[0:take])
+        var rest = self._end - take
+        move_down(p, 0, take, rest)
+        self._end = rest
+        if self.kind == BodyKind.LENGTH and self._remaining == 0:
+            self.done = True
+            self.keep_alive = self.keep_alive and rest == 0
+        return True
+
+
+def read_response_head[
+    S: ResponseSource
+](
+    mut source: S,
+    method: Method,
+    limits: Limits,
+    deadline: Int,
+    mut response: Response,
+) raises HttpError -> BodyStream:
+    """Read the head of a response, and return its content as a stream.
+
+    Interim responses, such as `100 Continue`, are dropped. The response
+    gets the head and an empty content.
+
+    Args:
+        source: Where the bytes come from.
+        method: The method of the request; a `HEAD` response has no
+            content.
+        limits: The size limits of the head and of the chunk lines.
+        deadline: The deadline of the head, from `perf_counter_ns`.
+        response: The response to fill with the head.
+
+    Returns:
+        The stream of the content.
+
+    Raises:
+        HttpError: `CLOSED` when the stream ends early, `PROTOCOL` for an
+            invalid head, and the errors of `source`.
+
+    Parameters:
+        S: The type of the source.
+    """
+    var data = List[UInt8]()
+    var end = 0
+    _read_head(source, limits, deadline, response, data, end)
+    var head_size = response.head.head_size
+    var kind = response.head.body_kind(method)
+    var rest = List[UInt8]()
+    rest.extend(Span(data)[head_size:end])
+    data.resize(head_size, 0)
+    response.data = data^
+    response.status = response.head.status
+    response.version = response.head.version
+    response._body_start = head_size
+    response._body_end = head_size
+    return BodyStream(
+        kind,
+        response.head.content_length,
+        response.head.keep_alive,
+        limits,
+        rest^,
+        end - head_size,
+    )

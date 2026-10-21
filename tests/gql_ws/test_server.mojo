@@ -14,7 +14,7 @@ package.
 """
 
 from _net import connect, drain, send_text, text_of
-from _server_util import KEY, Echo, Peer, Plain, config
+from _server_util import KEY, Echo, Held, Peer, Plain, config
 from _wsutil import close_frame, frames, raw, text_frame
 from gql_http.socket import Sys
 from gql_ws.frame import CloseCode, OpCode
@@ -176,6 +176,22 @@ def test_http_on_the_same_port() raises:
     bad.pump(server)
     assert_true(bad.text().startswith("HTTP/1.1 400"))
     bad.close()
+
+
+def test_a_held_http_response() raises:
+    # The loop polls a held HTTP/1.1 response on each turn, between the
+    # events of the WebSocket connections.
+    var server = listen(Echo(), Held(), config())
+    var peer = Peer(server.port)
+    peer.send("GET /stream HTTP/1.1\r\nHost: x\r\n\r\n".as_bytes())
+    peer.pump(server, 30)
+    assert_true(peer.text().startswith("HTTP/1.1 200"), peer.text())
+    assert_true(
+        peer.text().endswith("\r\n\r\n1\r\na\r\n1\r\nb\r\n0\r\n\r\n"),
+        peer.text(),
+    )
+    assert_equal(server.http1.streams(), 0)
+    peer.close()
 
 
 def test_upgrade_required() raises:

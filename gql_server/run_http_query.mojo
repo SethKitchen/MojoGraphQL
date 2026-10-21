@@ -16,7 +16,8 @@ query string is read as the WHATWG `URLSearchParams` reads it.
 - The operations of a batch run one after the other, not at the same
   time. When two of them fail with `BAD_REQUEST`, the first one in the
   batch gives the error; upstream gives the first one to fail.
-- Incremental delivery (`multipart/mixed`) is not ported.
+- The first part of a `multipart/mixed` body is `HTTPGraphQLResponse.body`.
+  The server writes the later parts from `HTTPGraphQLResponse.chunks`.
 - `stringifyResult` is not an option: the content is always upstream
   `prettyJSONStringify`.
 """
@@ -35,6 +36,14 @@ from gql_server.http_types import (
     HTTPGraphQLRequest,
     HTTPGraphQLResponse,
     HeaderMap,
+)
+from gql_server.incremental import (
+    BATCH_NOT_SUPPORTED_MESSAGE,
+    MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2,
+    MULTIPART_MIXED_EXPERIMENTAL_ALPHA_9,
+    MULTIPART_MIXED_NO_DEFER_SPEC,
+    NOT_ACCEPTED_MESSAGE,
+    first_part,
 )
 from gql_server.negotiator import mime_essence, preferred_media_type
 from gql_server.plugin import ServerPlugin
@@ -61,16 +70,6 @@ comptime APPLICATION_GRAPHQL_RESPONSE_JSON = (
 """`MEDIA_TYPES.APPLICATION_GRAPHQL_RESPONSE_JSON`."""
 comptime TEXT_HTML = "text/html"
 """`MEDIA_TYPES.TEXT_HTML`."""
-comptime MULTIPART_MIXED_NO_DEFER_SPEC = "multipart/mixed"
-"""`MEDIA_TYPES.MULTIPART_MIXED_NO_DEFER_SPEC`."""
-comptime MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2 = (
-    "multipart/mixed; deferSpec=20220824"
-)
-"""`MEDIA_TYPES.MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2`."""
-comptime MULTIPART_MIXED_EXPERIMENTAL_ALPHA_9 = (
-    "multipart/mixed; incrementalSpec=v0.2"
-)
-"""`MEDIA_TYPES.MULTIPART_MIXED_EXPERIMENTAL_ALPHA_9`."""
 
 comptime NON_PREFLIGHTED_CONTENT_TYPES = (
     "application/x-www-form-urlencoded, multipart/form-data, text/plain"
@@ -431,6 +430,43 @@ def _get_request(
     return out^
 
 
+def _incremental_response(
+    var response: GraphQLResponse, accept: Optional[String]
+) raises ServerError -> HTTPGraphQLResponse:
+    """The `chunked` response of an `incremental` body: the end of upstream
+    `runHttpQuery`, with the first part of `writeMultipartBody`."""
+    var available: List[String] = [
+        MULTIPART_MIXED_NO_DEFER_SPEC,
+        MULTIPART_MIXED_EXPERIMENTAL_ALPHA_9,
+        MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2,
+    ]
+    var preferred = preferred_media_type(accept, available)
+    if (
+        not accept
+        or not preferred
+        or (
+            preferred.value() != MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2
+            and preferred.value() != MULTIPART_MIXED_EXPERIMENTAL_ALPHA_9
+        )
+    ):
+        raise bad_request_error(NOT_ACCEPTED_MESSAGE, HTTPGraphQLHead(406))
+    # The parameter of the media type, after `multipart/mixed; `.
+    var spec = (
+        "deferSpec=20220824" if preferred.value()
+        == MULTIPART_MIXED_EXPERIMENTAL_ALPHA_2 else "incrementalSpec=v0.2"
+    )
+    response.http.headers.set(
+        "content-type", 'multipart/mixed; boundary="-"; ' + spec
+    )
+    var initial = response.to_json()
+    var has_next = initial.find('"hasNext":false') < 0
+    var head = HTTPGraphQLHead()
+    swap(head, response.http)
+    var out = HTTPGraphQLResponse(head^, first_part(initial, has_next))
+    swap(out.chunks, response.subsequent_results)
+    return out^
+
+
 def run_http_query[
     P: ServerPlugin
 ](
@@ -491,6 +527,8 @@ def run_http_query[
         )
     except e:
         raise ensure_graphql_error(e)
+    if response.is_incremental():
+        return _incremental_response(response^, accept)
     if not response.http.headers.has("content-type"):
         var content_type = _negotiate(internals, accept)
         if not content_type:
@@ -573,6 +611,9 @@ def run_potentially_batched_http_query[
         var response = run_http_query(
             internals, plugin, single^, values, context_value, shared^, True
         )
+        if response.is_chunked():
+            # Upstream throws a plain `Error`: status 500.
+            raise ServerError(String(BATCH_NOT_SUPPORTED_MESSAGE))
         if text.byte_length() > 1:
             text += ","
         text += response.body

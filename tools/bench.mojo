@@ -181,6 +181,14 @@ def baselines() -> List[Baseline]:
     )
     out.append(
         Baseline(
+            "graphql-js 17.0.2 experimentalExecuteIncrementally (Node.js)",
+            "bench/baselines/js-incremental",
+            "[ -d node_modules ] || npm ci --no-audit --no-fund",
+            "node bench.mjs",
+        )
+    )
+    out.append(
+        Baseline(
             "Apollo Client 4.3.3 InMemoryCache (Node.js)",
             "bench/baselines/js-client",
             "[ -d node_modules ] || npm ci --no-audit --no-fund",
@@ -243,7 +251,9 @@ def baselines() -> List[Baseline]:
             "bench/baselines/rust-http",
             "cargo build --release --locked --quiet && " + HTTP_LOADGEN_BUILD,
             HTTP_LOADGEN
-            + " ./target/release/hyper-server && ./target/release/httparse",
+            + " ./target/release/hyper-server && ./target/release/httparse"
+            + " && ../../../.cache/bin/http_loadgen http/chunked-16-parts"
+            + " ./target/release/hyper-server",
         )
     )
     # The TLS baseline runs its own client and server, as the Mojo one does:
@@ -290,16 +300,21 @@ def baselines() -> List[Baseline]:
         )
     )
     # The HTTP workload of Apollo Server runs under the same Mojo load
-    # generator as the gql_server one.
+    # generator as the gql_server one. `incremental/` has its own
+    # node_modules: Apollo Server runs @defer only with graphql-js
+    # 17.0.0-alpha.9.
     out.append(
         Baseline(
             "Apollo Server 5.5.1 (Node.js)",
             "bench/baselines/js-server",
-            "([ -d node_modules ] || npm ci --no-audit --no-fund) && "
+            "([ -d node_modules ] || npm ci --no-audit --no-fund) && (cd"
+            " incremental && ([ -d node_modules ] || npm ci --no-audit"
+            " --no-fund)) && "
             + HTTP_LOADGEN_BUILD,
             (
-                "node bench.mjs && ../../../.cache/bin/http_loadgen"
-                " server/http-post-small node bench.mjs server"
+                "node bench.mjs && node incremental/bench.mjs &&"
+                " ../../../.cache/bin/http_loadgen server/http-post-small"
+                " node bench.mjs server"
             ),
         )
     )
@@ -389,6 +404,16 @@ def baselines() -> List[Baseline]:
             " && node bench.mjs frames",
         )
     )
+    # graphql-sse for gql_sse, and meros for the multipart decoder of
+    # gql_http.
+    out.append(
+        Baseline(
+            "graphql-sse 2.6.3 and meros 1.3.2 (Node.js)",
+            "bench/baselines/js-sse",
+            "[ -d node_modules ] || npm ci --no-audit --no-fund",
+            "node bench.mjs sse && node bench.mjs multipart",
+        )
+    )
     return out^
 
 
@@ -404,15 +429,21 @@ directories without a dash run graphql-js, apollo-rs and graphql-go-tools,
 which hold all five."""
 
 
-comptime ALSO_SERVES: Array[StaticString, 4] = [
+comptime ALSO_SERVES: Array[StaticString, 8] = [
     "rust-tls",
     "gql_https2",
     "js-stream",
     "gql_execution",
+    "js-incremental",
+    "gql_execution",
+    "js-sse",
+    "gql_http",
 ]
 """Baseline directories that also measure another package, as pairs of the
-directory name and the package. `rust-tls` runs HTTP/2 over TLS too, and
-`js-stream` runs graphql-js `subscribe` too."""
+directory name and the package. `rust-tls` runs HTTP/2 over TLS too,
+`js-stream` runs graphql-js `subscribe` too, `js-incremental` runs
+graphql-js 17 `experimentalExecuteIncrementally`, and `js-sse` runs the
+meros multipart parser too."""
 
 
 def serves(baseline: Baseline, packages: List[String]) -> Bool:

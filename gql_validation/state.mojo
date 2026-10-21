@@ -76,6 +76,9 @@ struct Walk(Movable):
     var input_field_names: NameTable
     """`UniqueInputFieldNamesRule`: the first name node of each field,
     keyed by the object value."""
+    var defer_stream_labels: NameTable
+    """`DeferStreamDirectiveLabelRule`: the first `@defer` or `@stream`
+    with each label."""
     var in_variable_definition: Int
     """How many variable definitions the walk is in; usages there do not
     count."""
@@ -107,6 +110,7 @@ struct Walk(Movable):
         self.seen_directives = NameTable()
         self.directive_scopes = NameTable()
         self.input_field_names = NameTable()
+        self.defer_stream_labels = NameTable()
         self.in_variable_definition = 0
 
     def find_definitions(mut self, document: Document):

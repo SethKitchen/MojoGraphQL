@@ -44,6 +44,14 @@ comptime NO_SET = -1
 """The id that names no type set."""
 comptime ALWAYS = 0
 """The id of the condition that always holds."""
+comptime FIELD_NON_NULL: UInt8 = 1
+"""The field bit of a non-null field: a `null` bubbles to the parent."""
+comptime FIELD_TYPENAME: UInt8 = 2
+"""The field bit of `__typename`."""
+comptime FIELD_CHILDREN: UInt8 = 4
+"""The field bit of a field with child fields."""
+comptime FIELD_CHECKED: UInt8 = 8
+"""The field bit of a field with a parent scope or a condition."""
 
 
 @fieldwise_init
@@ -459,6 +467,55 @@ struct ProjField(Copyable, Movable):
         return self.nullability.is_non_null()
 
 
+struct KeyTable(Copyable, Movable):
+    """The `"key":` text and the bits of each field of a plan, which the
+    projection writes and tests for each value."""
+
+    var keys: List[UInt8]
+    """For each plan field, `"key":`, one after the other, and 16 bytes of
+    padding, so that a key copy can load 16 bytes at once."""
+    var key_starts: List[Int]
+    """Where the `"key":` of each plan field starts in `keys`, and the end
+    of the last one."""
+    var bits: List[UInt8]
+    """The `FIELD_*` bits of each plan field."""
+
+    def __init__(out self):
+        """Start the table of no field."""
+        self.keys = List[UInt8]()
+        self.key_starts = List[Int]()
+        self.bits = List[UInt8]()
+
+    def __init__(out self, fields: List[ProjField]):
+        """Make the table of the fields of a plan.
+
+        Args:
+            fields: The plan fields.
+        """
+        var count = len(fields)
+        self.keys = List[UInt8](capacity=count * 12 + 16)
+        self.key_starts = List[Int](capacity=count + 1)
+        self.bits = List[UInt8](capacity=count)
+        for ref field in fields:
+            self.key_starts.append(len(self.keys))
+            self.keys.append(UInt8(ord('"')))
+            self.keys.extend(field.response_key.as_bytes())
+            self.keys.append(UInt8(ord('"')))
+            self.keys.append(UInt8(ord(":")))
+            var bits: UInt8 = 0
+            if field.is_non_null():
+                bits |= FIELD_NON_NULL
+            if field.is_typename:
+                bits |= FIELD_TYPENAME
+            if field.has_children:
+                bits |= FIELD_CHILDREN
+            if field.parent_scope != NO_SET or field.condition != ALWAYS:
+                bits |= FIELD_CHECKED
+            self.bits.append(bits)
+        self.key_starts.append(len(self.keys))
+        self.keys.resize(len(self.keys) + 16, 0)
+
+
 struct ProjectionPlan(Copyable, Movable):
     """The merged fields of a client operation, as upstream
     `ProjectionPlan`."""
@@ -469,12 +526,16 @@ struct ProjectionPlan(Copyable, Movable):
     """Every field, merged or not."""
     var roots: List[Int]
     """The root fields of the plan."""
+    var key_table: KeyTable
+    """The key table of `fields`, made once by `from_operation`; empty for
+    a plan made another way."""
 
     def __init__(out self):
         """Start an empty plan."""
         self.tables = ProjectionTables()
         self.fields = List[ProjField]()
         self.roots = List[Int]()
+        self.key_table = KeyTable()
 
     def is_empty(self) -> Bool:
         """Return True if the plan has no root field.
@@ -510,6 +571,7 @@ struct ProjectionPlan(Copyable, Movable):
         )
         plan.roots = plan._merge_set(schema, collected^, root)
         plan._prune(schema, plan.roots.copy(), root)
+        plan.key_table = KeyTable(plan.fields)
         return (root^, plan^)
 
     # --- collect --------------------------------------------------------

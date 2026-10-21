@@ -41,8 +41,8 @@ use hive_router::executor::execution::operation_name::{
     OperationNameFactory, OperationNameForwardConfig,
 };
 use hive_router::executor::execution::plan::{
-    execute_query_plan, CoerceVariablesPayload, ExecutionResultExtensions, QueryPlanExecutionOpts,
-    QueryPlanExecutionResult,
+    execute_query_plan, execute_query_plan_with_data, CoerceVariablesPayload,
+    ExecutionResultExtensions, QueryPlanExecutionOpts, QueryPlanExecutionResult,
 };
 use hive_router::executor::executors::common::{
     SubgraphExecutionRequest, SubgraphExecutor, SubgraphExecutorBoxedArc,
@@ -64,13 +64,14 @@ use hive_router::executor::plugin_context::{PluginContext, PluginRequestState, R
 use hive_router::executor::plugin_trait::{RouterPlugin, RouterPluginBoxed, StartHookPayload};
 use hive_router::executor::projection::plan::ProjectionPlan;
 use hive_router::executor::request_context::SharedRequestContext;
+use hive_router::executor::response::graphql_error::GraphQLError;
 use hive_router::executor::response::subgraph_response::SubgraphResponse;
 use hive_router::http;
 use hive_router::ntex;
 use hive_router::query_planner::ast::normalization::normalize_operation;
 use hive_router::query_planner::ast::operation::OperationDefinition;
 use hive_router::query_planner::graph::PlannerOverrideContext;
-use hive_router::query_planner::planner::plan_nodes::QueryPlan;
+use hive_router::query_planner::planner::plan_nodes::{PlanNode, QueryPlan};
 use hive_router::query_planner::planner::Planner;
 use hive_router::query_planner::state::supergraph_state::OperationKind;
 use hive_router::query_planner::utils::cancellation::CancellationToken;
@@ -87,6 +88,17 @@ const OPERATION_NAME: &str = "TestQuery";
 pub const RESPONSES: &str = "hive-router-exec/responses.json";
 /// The response that the canned execution produces, byte for byte.
 pub const EXPECTED: &str = "hive-router-exec/expected_response.json";
+/// The supergraph of the subscription workload: upstream
+/// `e2e/supergraph.graphql`.
+const SUB_SUPERGRAPH: &str = "hive-router-sub/supergraph.graphql";
+/// The canned entity response of the subscription workload.
+const SUB_RESPONSES: &str = "hive-router-sub/responses.json";
+/// The subscription of the subscription workload.
+const SUB_QUERY: &str = "subscription { reviewAdded { id body product { upc name } } }";
+/// The event that the `reviews` subgraph sends.
+pub const SUB_EVENT: &str = "hive-router-sub/event.json";
+/// The response of one event, byte for byte.
+pub const SUB_EXPECTED: &str = "hive-router-sub/expected_event.json";
 
 /// One canned response of one subgraph.
 struct Canned {
@@ -298,6 +310,11 @@ pub struct Execution {
     match_info: ntex::router::Path<http::Uri>,
     jwt: Arc<JwtRequestDetails>,
     query_text: String,
+    operation_name: Option<&'static str>,
+    kind_text: &'static str,
+    /// The nodes after the `Subscription` node of a subscription plan, as
+    /// the synthetic plan of upstream `execute_query_plan`.
+    rest_plan: QueryPlan,
 }
 
 impl Execution {
@@ -306,12 +323,27 @@ impl Execution {
     /// state, as the router does at supergraph load and at request start.
     /// `live` selects the supergraph URLs; otherwise the URLs are dummies.
     fn new(mode: Mode, live: bool) -> Execution {
-        let parsed_schema = parse_schema(&fixture("hive-router-qp/supergraph.graphql"));
+        Execution::build(
+            mode,
+            live,
+            "hive-router-qp/supergraph.graphql",
+            fixture("hive-router-qp/operation.graphql"),
+            Some(OPERATION_NAME),
+        )
+    }
+
+    fn build(
+        mode: Mode,
+        live: bool,
+        supergraph: &str,
+        query_text: String,
+        operation_name: Option<&'static str>,
+    ) -> Execution {
+        let parsed_schema = parse_schema(&fixture(supergraph));
         let planner =
             Planner::new_from_supergraph(&parsed_schema, Default::default()).expect("planner");
-        let query_text = fixture("hive-router-qp/operation.graphql");
         let document = parse_operation(&query_text);
-        let operation = normalize_operation(&planner.supergraph, &document, Some(OPERATION_NAME))
+        let operation = normalize_operation(&planner.supergraph, &document, operation_name)
             .expect("normalize")
             .operation;
         let operation_kind = operation.operation_kind.clone().unwrap_or(OperationKind::Query);
@@ -363,7 +395,27 @@ impl Execution {
         ));
         let url: http::Uri = "http://localhost:4000/graphql".parse().unwrap();
         let plugin: RouterPluginBoxed = Box::new(CannedPlugin { mode });
+        // Upstream `execute_query_plan`: after a first `Subscription` node of
+        // a root `Sequence`, the other nodes run for each event.
+        let rest = match &query_plan.node {
+            Some(PlanNode::Sequence(sequence)) if sequence.nodes.len() == 2 => {
+                Some(sequence.nodes[1].clone())
+            }
+            _ => None,
+        };
+        let rest_plan = QueryPlan {
+            kind: "QueryPlan",
+            node: rest,
+        };
+        let kind_text = match operation_kind {
+            OperationKind::Subscription => "subscription",
+            OperationKind::Mutation => "mutation",
+            OperationKind::Query => "query",
+        };
         Execution {
+            operation_name,
+            kind_text,
+            rest_plan,
             query_plan,
             operation_for_plan,
             projection_plan: Arc::new(projection_plan),
@@ -391,19 +443,59 @@ impl Execution {
 
     /// The canned in-process execution of the benchmark.
     pub fn canned() -> Execution {
-        Execution::new(Mode::Canned(load_canned()), false)
+        Execution::new(Mode::Canned(load_canned(RESPONSES)), false)
+    }
+
+    /// The canned execution of the subscription workload.
+    pub fn subscription() -> Execution {
+        Execution::build(
+            Mode::Canned(load_canned(SUB_RESPONSES)),
+            false,
+            SUB_SUPERGRAPH,
+            SUB_QUERY.to_string(),
+            None,
+        )
     }
 
     /// One upstream `execute_query_plan` call. It returns the response body.
     pub async fn run(&self) -> Vec<u8> {
+        let opts = self.opts(&self.query_plan, Vec::new());
+        match execute_query_plan(opts).await.expect("execute_query_plan") {
+            QueryPlanExecutionResult::Single(output) => output.body,
+            QueryPlanExecutionResult::Stream(_) => unreachable!("TestQuery is a query"),
+        }
+    }
+
+    /// What the stream of upstream `execute_query_plan` does for one event of
+    /// a subscription: read the subgraph response, run the rest of the plan
+    /// on its data, and project. It returns the response body.
+    pub async fn run_event(&self, event: &Bytes) -> Vec<u8> {
+        let response =
+            SubgraphResponse::deserialize_from_bytes(event.clone(), None).expect("event");
+        let mut initial_errors = Vec::new();
+        if let Some(errors) = response.errors {
+            initial_errors.extend(errors);
+        }
+        let opts = self.opts(&self.rest_plan, initial_errors);
+        execute_query_plan_with_data(response.data, opts)
+            .await
+            .expect("execute_query_plan_with_data")
+            .body
+    }
+
+    fn opts<'a>(
+        &'a self,
+        query_plan: &'a QueryPlan,
+        initial_errors: Vec<GraphQLError>,
+    ) -> QueryPlanExecutionOpts<'a> {
         let client_request = Arc::new(ClientRequestDetails {
             method: &self.method,
             url: &self.url,
             headers: self.client_headers.clone(),
             operation: OperationDetails {
-                name: Some(OPERATION_NAME),
+                name: self.operation_name,
                 query: &self.query_text,
-                kind: "query",
+                kind: self.kind_text,
             },
             jwt: self.jwt.clone(),
             path_params: Default::default(),
@@ -422,8 +514,8 @@ impl Execution {
             context: self.plugin_context.clone(),
             request_context: self.request_context.clone(),
         };
-        let opts = QueryPlanExecutionOpts {
-            query_plan: &self.query_plan,
+        QueryPlanExecutionOpts {
+            query_plan,
             operation_for_plan: self.operation_for_plan.clone(),
             projection_plan: self.projection_plan.clone(),
             headers_plan: self.headers_plan.clone(),
@@ -438,20 +530,16 @@ impl Execution {
             jwt_auth_forwarding: None,
             graphql_error_recorder: None,
             demand_control_context: None,
-            initial_errors: Vec::new(),
+            initial_errors,
             span: GraphQLOperationSpan::new(),
             plugin_req_state: Some(plugin_req_state),
             operation_name_factory: OperationNameFactory::new(
                 self.operation_name_config.clone(),
-                Some(OPERATION_NAME),
+                self.operation_name,
             ),
             response_header_sink: ResponseHeaderSink::default(),
             error_masking_runtime: self.error_masking.clone(),
             connection_fingerprint: None,
-        };
-        match execute_query_plan(opts).await.expect("execute_query_plan") {
-            QueryPlanExecutionResult::Single(output) => output.body,
-            QueryPlanExecutionResult::Stream(_) => unreachable!("TestQuery is a query"),
         }
     }
 }
@@ -466,8 +554,8 @@ fn dummy_url(subgraph: &str) -> String {
 /// canned bytes are the raw text of each `response` member, which is the
 /// body that the subgraph sent, byte for byte. They are copied once here,
 /// outside the timed loop.
-fn load_canned() -> HashMap<String, SubgraphExecutorBoxedArc> {
-    let text = fixture(RESPONSES);
+fn load_canned(file: &str) -> HashMap<String, SubgraphExecutorBoxedArc> {
+    let text = fixture(file);
     let mut by_subgraph: HashMap<String, HashMap<String, Vec<Canned>>> = HashMap::new();
     for entry in sonic_rs::to_array_iter(&text) {
         let entry = entry.expect("responses.json is an array");

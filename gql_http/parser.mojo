@@ -979,6 +979,24 @@ struct ChunkedDecoder(Copyable):
         self._remaining = 0
         self._trailer_start = 0
 
+    def rebase(mut self) -> Int:
+        """Forget the decoded content, so that the buffer can shrink.
+
+        The caller takes the content from `start` to `write` first. Then
+        it moves the bytes from the old `read` offset down to offset 0, and
+        decodes on. A stream of chunks needs no larger buffer than one
+        read.
+
+        Returns:
+            The old `read` offset: the count of bytes to drop.
+        """
+        var shift = self.read
+        self._trailer_start -= shift
+        self.read = 0
+        self.write = 0
+        self.start = 0
+        return shift
+
     def decoded(self) -> Int:
         """Return how many content bytes the decoder has produced.
 

@@ -64,6 +64,16 @@ comptime REQUEST = (
     '{"query":"{hello}"}'
 )
 """The request: a small GraphQL POST."""
+comptime STREAM_REQUEST = (
+    "POST /stream HTTP/1.1\r\nHost: localhost\r\nUser-Agent: mojo-loadgen\r\n"
+    "Accept: application/graphql-response+json, application/json\r\n"
+    "Content-Type: application/json\r\nContent-Length: 19\r\n\r\n"
+    '{"query":"{hello}"}'
+)
+"""The request of a workload whose name holds `chunked`: the servers answer
+`/stream` with `STREAM_CHUNKS` chunks of `RESPONSE_BODY`."""
+comptime STREAM_CHUNKS = 16
+"""The chunks of a streamed response."""
 comptime RESPONSE_BODY = '{"data":{"hello":"world"}}'
 """The content that every server answers with."""
 
@@ -91,7 +101,8 @@ def _lower(byte: UInt8) -> UInt8:
 def _complete(p: Pointer[UInt8, _], end: Int) -> Int:
     """Return the size of the response at `p` when it is whole, else -1.
 
-    The servers answer with `Content-Length`, so that is all it reads.
+    A response with `Content-Length` ends after that many bytes. A
+    response without it is chunked, and ends with the last chunk.
     """
     var head_end = -1
     var index = 3
@@ -128,7 +139,14 @@ def _complete(p: Pointer[UInt8, _], end: Int) -> Int:
             break
         index += 1
     if length < 0:
-        return -1
+        # A chunked body ends with `\n0\r\n\r\n`: the last chunk.
+        var last = StaticString("\n0\r\n\r\n").unsafe_ptr()
+        if end - head_end < 5:
+            return -1
+        for k in range(6):
+            if p[unsafe_offset=end - 6 + k] != last[unsafe_offset=k]:
+                return -1
+        return end
     if end - head_end < length:
         return -1
     return head_end + length
@@ -149,11 +167,16 @@ def _connect(mut sys: Sys, port: Int) raises -> Int:
     return fd
 
 
-def _client(port: Int, count: Int, start: Int, out_fd: Int) raises:
+def _client(
+    port: Int, count: Int, start: Int, out_fd: Int, stream: Bool
+) raises:
     """Run one client process: drive `count` connections, then write the
-    counts per round and the latency buckets to `out_fd`."""
+    counts per round and the latency buckets to `out_fd`. With `stream`,
+    it sends `STREAM_REQUEST`."""
     var sys = Sys()
-    var request = StaticString(REQUEST)
+    var request = StaticString(STREAM_REQUEST) if stream else StaticString(
+        REQUEST
+    )
     var epoll = sys.epoll_create()
     var conns = List[_Conn]()
     var index_of = List[Int](length=65536, fill=-1)
@@ -251,7 +274,13 @@ def run_load(name: StringSlice, port: Int) raises:
             var share = CONNECTIONS // PROCESSES
             var code = 0
             try:
-                _client(port, share, start, fds[1])
+                _client(
+                    port,
+                    share,
+                    start,
+                    fds[1],
+                    String(name).find("chunked") >= 0,
+                )
             except e:
                 print("client failed:", e)
                 code = 1

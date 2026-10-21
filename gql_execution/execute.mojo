@@ -58,6 +58,12 @@ the same order, and the same errors with their locations and paths.
 - A meta field and an introspection field always use their own resolver.
   An introspection type used by a schema field, with a source that is not
   an introspection handle, uses the default field resolver.
+- Incremental delivery adds graphql-js v17.0.2: with
+  `IncrementalState.enabled`, the executor runs `incremental_fields`, the
+  port of `executeCollectedRootFields` and `executeCollectedSubfields`,
+  and completes a list with `@stream` as 17 `completeIterableValue` does.
+  `gql_execution.incremental` drives it. `execute` keeps graphql-js 16
+  and ignores `@defer` and `@stream`.
 - `ExecutionArgs.field_timing` is an addition for the Apollo Server
   inline trace plugin. Apollo Server wraps each field resolver of the
   schema to call `willResolveField` before it and the returned function
@@ -85,14 +91,30 @@ from gql_schema.definition import (
     TypeRef,
 )
 from gql_schema.validate import assert_valid_schema
+from gql_execution.abort import AbortSignal
 from gql_execution.coerce import (
     MAX_INT,
     MIN_INT,
     ScalarKind,
     is_integer,
     scalar_kind,
+    value_from_ast_untyped,
 )
-from gql_execution.collect_fields import FieldCollector, FieldGroup, FieldPlan
+from gql_execution.collect_fields import (
+    NO_DEFER,
+    FieldCollector,
+    FieldGroup,
+    FieldPlan,
+    directive_argument,
+    find_directive,
+)
+from gql_execution.incremental_graph import (
+    DeliveryGroup,
+    ExecutionGroup,
+    IncrementalState,
+    ItemStream,
+    build_execution_plan,
+)
 from gql_execution.value import UNDEFINED, ValueKind, Values, inspect
 from gql_execution.values import (
     DEFAULT_MAX_ERRORS,
@@ -102,6 +124,8 @@ from gql_execution.values import (
     get_variable_values,
 )
 from gql_schema.values import js_number_to_string, print_default
+from gql_stream.poll import Poll
+from gql_stream.stream import AnyStream
 from std.time import perf_counter_ns
 
 comptime FieldResolver = def(
@@ -409,9 +433,19 @@ struct ExecutionArgs(Movable):
     var field_timing: Bool
     """Record a `FieldTiming` for each resolved field, for the Apollo
     Server `willResolveField` hook."""
+    var abort_signal: Optional[AbortSignal]
+    """The graphql-js v17.0.2 `abortSignal`, for
+    `experimental_execute_incrementally`. `execute` does not read it, as
+    graphql-js 16 has none."""
+    var enable_early_execution: Bool
+    """The graphql-js v17.0.2 `enableEarlyExecution`, for
+    `experimental_execute_incrementally`: execute the deferred fragments of
+    the initial result before the initial result returns."""
 
     def __init__(out self):
         """Start with no values and no resolvers."""
+        self.abort_signal = None
+        self.enable_early_execution = False
         self.values = Values()
         self.root_value = UNDEFINED
         self.context_value = UNDEFINED
@@ -642,6 +676,9 @@ struct _Executor[
     # `ExecutionArgs.field_timing`, and the timings it records.
     var field_timing: Bool
     var field_timings: List[FieldTiming]
+    # The records of incremental delivery; `inc.enabled` is False for
+    # `execute`.
+    var inc: IncrementalState
 
     def __init__(
         out self,
@@ -677,6 +714,7 @@ struct _Executor[
         self.string_type = schema.type_named("String")
         self.field_timing = False
         self.field_timings = List[FieldTiming]()
+        self.inc = IncrementalState()
         self._bind(schema, resolvers)
         self._index_introspection(schema)
 
@@ -860,6 +898,8 @@ struct _Executor[
             raise located^
         self.path.resize(depth, 0)
         self.errors.append(located^)
+        if self.inc.enabled:
+            self.inc.nulled.append(List[Int32](self.path[:depth]))
         return self.data.add_null()
 
     def _info(
@@ -1106,6 +1146,13 @@ struct _Executor[
         result: Int,
     ) raises GraphQLError -> Int:
         """Return graphql-js `completeListValue`."""
+        if self.inc.enabled and (
+            self.values.kind(result) == ValueKind.LIST
+            or self.values.is_stream(result)
+        ):
+            return self._complete_list_incremental(
+                type, group, parent, field, result
+            )
         if self.values.kind(result) != ValueKind.LIST:
             raise GraphQLError(
                 'Expected Iterable, but did not find one for field "'
@@ -1377,9 +1424,395 @@ struct _Executor[
                     + inspect(self.values, result)
                     + "."
                 )
+        if self.inc.enabled:
+            return self.incremental_fields(
+                type, _Source.value(result), plan, False
+            )
         return self.execute_fields(type, _Source.value(result), plan)
 
-    # --- meta fields and introspection ----------------------------------
+    # --- incremental delivery -------------------------------------------
+
+    def incremental_fields(
+        mut self, parent: Int, source: _Source, plan: Int, root: Bool
+    ) raises GraphQLError -> Int:
+        """Return graphql-js 17 `executeCollectedRootFields` or
+        `executeCollectedSubfields`: execute the fields of the current
+        defer usages, and make an execution group for each other set.
+
+        Args:
+            parent: The object type.
+            source: The source of the fields.
+            plan: The collected plan.
+            root: True for the root fields of the operation.
+
+        Returns:
+            The result object of the fields that execute now.
+
+        Raises:
+            GraphQLError: The located error of a non-null field, or the
+                error of `@defer` in a subscription.
+        """
+        var span = self.collector.new_defers(plan)
+        if span.count > 0 and self.inc.subscription:
+            raise GraphQLError(
+                "`@defer` directive not supported on subscription operations."
+                " Disable `@defer` by setting the `if` argument to `false`."
+            )
+        if span.count == 0 and (root or self.inc.current_map < 0):
+            return self.execute_fields(parent, source, plan)
+        # getNewDeliveryGroupMap
+        var pairs = List[Int32]()
+        if self.inc.current_map >= 0:
+            pairs = self.inc.maps[self.inc.current_map].copy()
+        self.inc.maps.append(pairs^)
+        var map = len(self.inc.maps) - 1
+        var new_groups = List[Int32]()
+        var index = Int(span.start)
+        while index < Int(span.start + span.count):
+            var usage = self.collector.defer_list[index]
+            var parent_usage = self.collector.defer_usages[Int(usage)].parent
+            var parent_group = -1
+            if parent_usage != NO_DEFER:
+                parent_group = self.inc.group_of(map, parent_usage)
+            self.inc.groups.append(
+                DeliveryGroup(
+                    self.path.copy(),
+                    self.collector.defer_usages[Int(usage)].label,
+                    parent_group,
+                )
+            )
+            var id = Int32(len(self.inc.groups) - 1)
+            self.inc.maps[map].append(usage)
+            self.inc.maps[map].append(id)
+            new_groups.append(id)
+            index += 1
+        var parent_set = List[Int32]()
+        if not root:
+            parent_set = self.inc.defer_set.copy()
+        # graphql-js memoizes `buildExecutionPlan`; the plans of the
+        # initial defer usages are kept by collected plan.
+        var known = -1
+        if len(parent_set) == 0:
+            known = self.inc.initial_plans.get(plan, -1)
+        if known < 0:
+            self.inc.plans.append(
+                build_execution_plan(self.collector, plan, parent_set)
+            )
+            known = len(self.inc.plans) - 1
+            if len(parent_set) == 0:
+                self.inc.initial_plans[plan] = known
+        var fields = self.inc.plans[known].fields.copy()
+        var saved = self.inc.current_map
+        self.inc.current_map = map
+        var data: Int
+        try:
+            data = self._execute_list(parent, source, fields)
+        except e:
+            self.inc.current_map = saved
+            raise e^
+        self.inc.current_map = saved
+        self.inc.work_groups.extend(new_groups^)
+        # collectExecutionGroups
+        var at = 0
+        while at < len(self.inc.plans[known].sets):
+            var task = ExecutionGroup()
+            var usages = self.inc.plans[known].sets[at].copy()
+            var item = 0
+            while item < len(usages):
+                task.groups.append(Int32(self.inc.group_of(map, usages[item])))
+                item += 1
+            task.path = self.path.copy()
+            task.parent_type = parent
+            task.source_tag = source.tag
+            task.source_id = source.id
+            task.source_first = source.first
+            task.source_second = source.second
+            task.fields = self.inc.plans[known].set_fields[at].copy()
+            task.defer_set = usages^
+            task.delivery_map = map
+            self.inc.tasks.append(task^)
+            self.inc.work_tasks.append(Int32(len(self.inc.tasks) - 1))
+            at += 1
+        return data
+
+    def _execute_list(
+        mut self, parent: Int, source: _Source, groups: List[Int32]
+    ) raises GraphQLError -> Int:
+        """Return graphql-js `executeFields` for some groups of a plan."""
+        var object = self.data.add_object()
+        var index = 0
+        while index < len(groups):
+            var group = Int(groups[index])
+            self.path.append(Int32(group))
+            var result = self._execute_field(parent, source, group)
+            _ = self.path.pop()
+            if result != _SKIP:
+                self._add_member(object, group, result)
+            index += 1
+        return object
+
+    def run_task(mut self, task: Int) raises GraphQLError -> Int:
+        """Execute an execution group: graphql-js 17
+        `executeExecutionGroup`, in a run of its own.
+
+        Args:
+            task: The execution group.
+
+        Returns:
+            The data object of its fields, in `data`.
+
+        Raises:
+            GraphQLError: The error of a non-null field, which fails the
+                execution group.
+        """
+        ref record = self.inc.tasks[task]
+        self.path = record.path.copy()
+        var fields = record.fields.copy()
+        var source = _Source(
+            record.source_tag,
+            record.source_id,
+            record.source_first,
+            record.source_second,
+        )
+        var parent = record.parent_type
+        var map = record.delivery_map
+        var defer_set = record.defer_set.copy()
+        self.inc.begin_run(map, defer_set^)
+        var data = self._execute_list(parent, source, fields)
+        self.path.clear()
+        return data
+
+    def _stream_usage(
+        mut self, group: Int, mut label: Optional[String]
+    ) raises GraphQLError -> Int:
+        """Return graphql-js 17 `getStreamUsage` for a field group: the
+        `initialCount`, or -1 when the field is not streamed. The first
+        field node has the directive, as upstream reads it."""
+        var node = self.collector.node(Int(self.collector.group(group).start))
+        var directive = find_directive(self.document[], node, "stream")
+        if directive == NO_NODE:
+            return -1
+        ref schema = self.schema[]
+        var flag = directive_argument(
+            schema,
+            self.document[],
+            directive,
+            "if",
+            TypeRef.of(self.collector.boolean_type),
+            self.values,
+            self.variables,
+        )
+        if self.values.kind(flag) == ValueKind.BOOLEAN and not (
+            self.values.bool_value(flag)
+        ):
+            return -1
+        # A schema can lack `Int`, so `initialCount` is read untyped; a
+        # valid document gives it an `Int`.
+        var count = UNDEFINED
+        var argument = self.document[].child(directive, Role.ARGUMENT)
+        while argument != NO_NODE:
+            if self.document[].name(argument) == "initialCount":
+                count = value_from_ast_untyped(
+                    self.document[],
+                    self.document[].child(argument, Role.VALUE),
+                    self.values,
+                    self.variables,
+                )
+            argument = self.document[].next_with_role(argument)
+        var initial = 0
+        if self.values.kind(count) == ValueKind.NUMBER:
+            initial = Int(self.values.number(count))
+        if initial < 0:
+            raise GraphQLError("initialCount must be a positive integer")
+        if self.inc.subscription:
+            raise GraphQLError(
+                "`@stream` directive not supported on subscription"
+                " operations. Disable `@stream` by setting the `if` argument"
+                " to `false`."
+            )
+        var text = directive_argument(
+            schema,
+            self.document[],
+            directive,
+            "label",
+            TypeRef.of(self.collector.string_type),
+            self.values,
+            self.variables,
+        )
+        if self.values.kind(text) == ValueKind.STRING:
+            label = String(self.values.string(text))
+        return initial
+
+    def complete_item(
+        mut self,
+        list: Int,
+        item_type: TypeRef,
+        group: Int,
+        parent: Int,
+        field: Int,
+        item: Int,
+        index: Int,
+    ) raises GraphQLError:
+        """Complete one list item and append it: the loop body of
+        graphql-js `completeIterableValue`.
+
+        Args:
+            list: The result array.
+            item_type: The type of an item.
+            group: The field group of the list field.
+            parent: The object type of the field.
+            field: The field.
+            item: The item value.
+            index: The item's index.
+
+        Raises:
+            GraphQLError: The located error of a non-null item.
+        """
+        self.path.append(Int32(-index - 1))
+        var depth = len(self.path)
+        var completed: Int
+        try:
+            completed = self._complete_value(
+                item_type, group, parent, field, item
+            )
+        except e:
+            completed = self._handle_error(e^, group, item_type, depth)
+        _ = self.path.pop()
+        self.data.append(list, completed)
+
+    def _complete_list_incremental(
+        mut self,
+        type: TypeRef,
+        group: Int,
+        parent: Int,
+        field: Int,
+        result: Int,
+    ) raises GraphQLError -> Int:
+        """Return graphql-js 17 `completeIterableValue` or
+        `completeAsyncIterableValue`, with `@stream`: the items before
+        `initialCount`, and an item stream for the rest."""
+        var item_type = type.of_type()
+        var label: Optional[String] = None
+        var initial = -1
+        if self.path[len(self.path) - 1] >= 0:
+            initial = self._stream_usage(group, label)
+        var list = self.data.add_array()
+        var record = ItemStream()
+        record.path = self.path.copy()
+        record.label = label
+        record.group = group
+        record.parent_type = parent
+        record.field = field
+        record.item_type = item_type
+        var index = 0
+        if not self.values.is_stream(result):
+            var item = self.values.first(result)
+            while item != UNDEFINED:
+                if index == initial:
+                    record.next_item = item
+                    record.index = index
+                    self._add_stream(record^)
+                    return list
+                self.complete_item(
+                    list, item_type, group, parent, field, item, index
+                )
+                item = self.values.next(item)
+                index += 1
+            if index == initial:
+                record.index = index
+                self._add_stream(record^)
+            return list
+        var source = self.values.streams[self.values.id(result)].take()
+        while True:
+            var poll = Poll.pending()
+            if index != initial:
+                poll = source.poll_next(self.inc.waker.value())
+            if index == initial or (poll.is_pending() and initial >= 0):
+                record.index = index
+                record.source = source^
+                self._add_stream(record^)
+                return list
+            if poll.is_done():
+                source.close()
+                return list
+            if poll.is_error():
+                source.close()
+                raise GraphQLError(poll.message)
+            if poll.is_pending():
+                source.close()
+                raise GraphQLError(
+                    'The event stream of field "'
+                    + self.schema[].types[parent].name
+                    + "."
+                    + self._field_name(field)
+                    + '" has no item ready; use @stream to stream it.'
+                )
+            ref event = poll.event.value()
+            var item = self.values.add_json(event.document[], event.root())
+            self.complete_item(
+                list, item_type, group, parent, field, item, index
+            )
+            index += 1
+
+    def _add_stream(mut self, var record: ItemStream):
+        """Keep an item stream: graphql-js 17 `handleStream`. The items of
+        the stream complete with no defer usage, as the field details of
+        graphql-js 17 `getStreamUsage`."""
+        record.group = self.collector.streamed_group(record.group)
+        self._sync_groups()
+        self.inc.streams.append(record^)
+        self.inc.work_streams.append(Int32(len(self.inc.streams) - 1))
+
+    def swap_data(mut self, mut data: JsonDocument):
+        """Exchange the result document, for a run of its own. The keys
+        that `_add_member` wrote in the old document are forgotten.
+
+        Args:
+            data: The document to write into from now on; it gets the old
+                one.
+        """
+        swap(data, self.data)
+        var index = 0
+        while index < len(self.cache):
+            self.cache[index].key = -1
+            index += 1
+
+    def path_segments(self, path: List[Int32]) -> List[PathSegment]:
+        """Return a path of the executor as a response path.
+
+        Args:
+            path: Field groups, and `-index - 1` for a list index.
+
+        Returns:
+            The keys and the indexes.
+        """
+        var out = List[PathSegment](capacity=len(path))
+        var index = 0
+        while index < len(path):
+            var entry = Int(path[index])
+            if entry < 0:
+                out.append(PathSegment.of_index(-entry - 1))
+            else:
+                var node = Int(self.collector.group(entry).key)
+                out.append(
+                    PathSegment.of_key(String(self.document[].text(node)))
+                )
+            index += 1
+        return out^
+
+    def run_initial(mut self) -> Int:
+        """Execute the operation after `prepare`, with incremental delivery:
+        the initial run. An error of the root becomes the root position.
+
+        Returns:
+            The data: the root object, or `null`.
+        """
+        try:
+            return self._execute_operation(self.operation)
+        except e:
+            self.errors.append(e^)
+            self.inc.nulled.append(List[Int32]())
+            return self.data.add_null()
 
     def _meta_field(
         mut self, parent: Int, group: Int, field: Int
@@ -1416,6 +1849,8 @@ struct _Executor[
         """Complete an introspection object of one of the six types."""
         var type = self.intro_types[which]
         var plan = self._subfields(type, group)
+        if self.inc.enabled:
+            return self.incremental_fields(type, source, plan, False)
         return self.execute_fields(type, source, plan)
 
     def _intro_item(
@@ -1954,6 +2389,10 @@ struct _Executor[
             document.child(operation, Role.SELECTION_SET),
         )
         self._sync_groups()
+        if self.inc.enabled:
+            return self.incremental_fields(
+                root, _Source.value(self.root_value), plan, True
+            )
         return self.execute_fields(root, _Source.value(self.root_value), plan)
 
 

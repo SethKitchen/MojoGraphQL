@@ -19,6 +19,7 @@ the Elastic License 2.0. The exclusions are listed with each project.
 | Project | Repository | Pinned revision | License used | Copyright notice |
 | --- | --- | --- | --- | --- |
 | graphql-js | [graphql/graphql-js](https://github.com/graphql/graphql-js) | `v16.14.2` (`dca5b4d`) | MIT | Copyright (c) GraphQL Contributors |
+| graphql-js 17 (incremental delivery) | [graphql/graphql-js](https://github.com/graphql/graphql-js), the files that the "graphql-js 17" section lists | `v17.0.2` (`71606d7`) | MIT | Copyright (c) GraphQL Contributors |
 | graphql-subscriptions | [apollographql/graphql-subscriptions](https://github.com/apollographql/graphql-subscriptions) | `v3.0.0` (`d74107c`) | MIT | Copyright (c) 2015 - 2016 Meteor Development Group, Inc. |
 | apollo-rs | [apollographql/apollo-rs](https://github.com/apollographql/apollo-rs) | `b7eee5c` | MIT (dual MIT OR Apache-2.0) | Copyright 2021 Apollo Graph, Inc. |
 | @apollo/subgraph | [apollographql/federation](https://github.com/apollographql/federation), `subgraph-js/` only | `2.14.4` (`b95c124`) | MIT | Copyright (c) 2020- Apollo Graph, Inc.; Copyright (c) 2019-2020 Meteor Development Group, Inc. |
@@ -38,6 +39,7 @@ the Elastic License 2.0. The exclusions are listed with each project.
 | quinn-udp | [quinn-rs/quinn](https://github.com/quinn-rs/quinn), `quinn-udp/` (crate `0.5.16`) only | `quinn-proto-0.11.19` (`8192ed3`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2018 The quinn Developers |
 | tungstenite | [snapview/tungstenite-rs](https://github.com/snapview/tungstenite-rs), `src/protocol`, `src/handshake`, `src/utf8.rs`, `src/error.rs`, `src/client.rs`, `src/server.rs` and `tests/` | `v0.30.0` (`7f4aeaf`) | MIT (dual MIT OR Apache-2.0) | Copyright (c) 2017 Alexey Galakhov; Copyright (c) 2016 Jason Housley |
 | graphql-ws | [enisdenjo/graphql-ws](https://github.com/enisdenjo/graphql-ws), `src/common.ts`, `src/utils.ts`, `src/server.ts`, `src/use/ws.ts`, `src/client.ts` and `tests/` | `v6.4.1` (`7281f1b`) | MIT | Copyright (c) 2020 Denis Badurina |
+| graphql-sse | [enisdenjo/graphql-sse](https://github.com/enisdenjo/graphql-sse), `src/common.ts`, `src/parser.ts`, `src/handler.ts`, `tests/parser.test.ts` and `tests/handler.test.ts` | `v2.6.3` (`4cced455cb7a23beda9e9bf7a403aab270bd4e66`) | MIT | Copyright (c) 2021 Denis Badurina |
 
 ## Libraries loaded at run time
 
@@ -150,9 +152,21 @@ the values of the public OpenSSL headers. A program that does not import
   `src/validation/rules/`; the checks are those of `gql_validation`. The
   rules `max_depth`, `max_directives` and `max_aliases` of
   `pipeline/validation/` are not ported. The executor plugins,
-  extensions, header propagation, error masking, operation name
-  forwarding, subscriptions, SSE, WebSocket and multipart transports are
-  not ported. Of the planner tests, `generated.rs`
+  extensions, header propagation, error masking and operation name
+  forwarding are not ported. `gql_router_stream` ports the streaming parts
+  of `1a29df9`: `config/subscriptions.rs`, `config/websocket.rs`, the
+  WebSocket fields of `config/traffic_shaping.rs`, the response modes of
+  `pipeline/header.rs`, `pipeline/sse.rs`, `pipeline/multipart_subscribe.rs`,
+  `pipeline/websocket_server.rs`, `executor/executors/sse.rs`,
+  `multipart_subscribe.rs`, `websocket_pool.rs`, `websocket_client.rs` and
+  the subscribe part of `http.rs`, the subscription part of
+  `executor/execution/plan.rs`, and the cases of `e2e/src/subscriptions.rs`,
+  `websocket.rs` and `websocket_pool.rs`, with `e2e/supergraph.graphql`. It
+  also ports the `Accept` parser of headers-accept `0.3.0` (MIT), which
+  upstream calls. The HTTP callback protocol of subscriptions is not
+  ported. The benchmark baseline makes the upstream
+  `execute_query_plan_with_data` public, and changes nothing else. Of the
+  planner tests, `generated.rs`
   is excluded, because it needs the generator of `bin/differential`, and
   `preparing_a_plan_preserves_its_wire_form` of `tests/mod.rs` is excluded,
   because the port has no JSON form of a plan.
@@ -165,6 +179,15 @@ the values of the public OpenSSL headers. A program that does not import
   `Federated tracing` cases of
   `packages/integration-testsuite/src/apolloServerTests.ts`. The usage
   reporting plugin and the rest of `reports.proto` are not ported.
+  For incremental delivery, `gql_server` ports
+  `src/incrementalDeliveryPolyfill.ts`, the subsequent results part of
+  `requestPipeline.ts` and `writeMultipartBody` of `runHttpQuery.ts`; its
+  tests port `describe('tests that require graphql@17')` of
+  `packages/integration-testsuite/src/httpServerTests.ts`. It does not port
+  `legacyExperimentalExecuteIncrementally`. `gql_server_ws` ports the
+  setup of `docs/source/data/subscriptions.mdx` and
+  `src/plugin/drainHttpServer/index.ts`. It does not port
+  `src/plugin/subscriptionCallback/`.
 - **Apollo Client.** `src/react/internal/compiler-runtime/` is a separate MIT
   notice from Meta Platforms, Inc. MojoGraphQL ports no React code, so it
   does not port that directory. `gql_client` ports these MIT files of
@@ -255,6 +278,38 @@ the values of the public OpenSSL headers. A program that does not import
   `crossws`), the deprecated `subscriptions-transport-ws` protocol, the
   JSON reviver and replacer, and the lazy and retrying parts of
   `src/client.ts` are not ported.
+- **graphql-sse (gql_sse, gql_sse_execution).** `src/client.ts`, the
+  adapters of `src/use/` (`http`, `http2`, `express`, `fastify`, `koa`)
+  and the `onConnect`, `onSubscribe`, `onOperation`, `onNext` and
+  `onComplete` hooks as separate functions are not ported. `prepare` is
+  one `SseExecutor.prepare`.
+
+## graphql-js 17
+
+`gql_execution` and `gql_validation` port these files of graphql-js
+`v17.0.2` (`71606d736c79b77588a15b32b9c9497e397adae0`), under the
+MIT License. Everything else of graphql-js comes from `v16.14.2`.
+
+- `gql_execution`: `experimentalExecuteIncrementally` of
+  `src/execution/execute.ts`; the `@defer` part of
+  `src/execution/collectFields.ts`; `src/execution/getStreamUsage.ts`;
+  `src/execution/incremental/IncrementalExecutor.ts`,
+  `IncrementalPublisher.ts`, `WorkQueue.ts` and `buildExecutionPlan.ts`;
+  the `CollectedErrors.hasNulledPosition` and the stream path of
+  `completeListValue` of `src/execution/Executor.ts`; the `@defer` and
+  `@stream` definitions of `src/type/directives.ts`; the `abortSignal` and
+  `enableEarlyExecution` of `ExecutionArgs`; and the tests of
+  `src/execution/incremental/__tests__/defer-test.ts` and `stream-test.ts`.
+- `gql_validation`: `src/validation/rules/DeferStreamDirectiveLabelRule.ts`,
+  `DeferStreamDirectiveOnRootFieldRule.ts`,
+  `DeferStreamDirectiveOnValidOperationsRule.ts` and
+  `StreamDirectiveOnListFieldRule.ts`, their tests in
+  `src/validation/__tests__/`, and the `testSchema` of
+  `src/validation/__tests__/harness.ts`.
+- Not ported: `src/execution/incremental/Queue.ts` and `Computation.ts`,
+  which hold promises; `src/execution/legacyIncremental/` and its tests;
+  and the tests of `Queue-test.ts`, `WorkQueue-test.ts` and
+  `Computation-test.ts`.
 
 ## Benchmark baselines and fixtures
 
@@ -271,10 +326,19 @@ the values of the public OpenSSL headers. A program that does not import
   `16.14.2` (MIT) and `graphql-subscriptions` `3.0.0` (MIT). They run only
   as the benchmark baseline of `gql_stream` and of the subscriptions of
   `gql_execution`, and are not part of any MojoGraphQL package.
+- `bench/baselines/js-incremental/` installs the npm package `graphql`
+  `17.0.2` (MIT). It runs only as the benchmark baseline of
+  `@defer` and `@stream` in `gql_execution`, and is not part of any
+  MojoGraphQL package.
 - `bench/baselines/js-ws/` installs the npm packages `ws` `8.18.3` (MIT),
   `graphql-ws` `6.4.1` (MIT), `graphql` `16.14.2` (MIT) and
   `graphql-subscriptions` `3.0.0` (MIT). They run only as the benchmark
   baseline of `gql_ws`, and are not part of any MojoGraphQL package.
+- `bench/baselines/js-sse/` installs the npm packages `graphql-sse`
+  `2.6.3` (MIT), `graphql` `16.14.2` (MIT) and `meros` `1.3.2` (MIT,
+  Copyright (c) Marais Rossouw). They run only as the benchmark baseline
+  of `gql_sse` and of the multipart decoder of `gql_http`, and are not part
+  of any MojoGraphQL package. No meros code is ported.
 - `bench/baselines/rust-ws/` builds the crates `tungstenite` `0.30.0` and
   `tokio-tungstenite` `0.30.0` (MIT OR Apache-2.0, used under MIT), `tokio`
   and `futures-util` (MIT). They run only as the benchmark baseline of

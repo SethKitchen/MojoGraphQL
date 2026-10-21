@@ -24,18 +24,20 @@ upstream `invokeDidStartHook` does.
   `parsing_did_end`, `validation_did_end` and `execution_did_end`.
 - `responseForOperation` returns a response. Here
   `response_for_operation` fills `ctx.response` and returns True.
-- `willResolveField`, `didEncounterSubsequentErrors`,
-  `willSendSubsequentPayload`, `startupDidFail`, `renderLandingPage` and
-  the gateway hooks are not ported: `gql_execution` has no incremental
-  delivery. The inline trace plugin of `gql_server.inline_trace` gets the
-  `FieldTiming` of each field from execution in place of
-  `willResolveField`.
+- `didEncounterSubsequentErrors` gets the errors only, and
+  `willSendSubsequentPayload` gets the payload only: the request context
+  ends with the initial result here.
+- `willResolveField`, `startupDidFail`, `renderLandingPage` and the
+  gateway hooks are not ported. The inline trace plugin of
+  `gql_server.inline_trace` gets the `FieldTiming` of each field from
+  execution in place of `willResolveField`.
 - A hook raises a Mojo `Error`. `did_resolve_operation` raises a
   `ServerError`, so that it can give a code and an HTTP status, as an
   upstream hook that throws a `GraphQLError`.
 """
 
 from gql_server.errors import ServerError
+from gql_server.incremental import SubsequentPayload
 from gql_server.types import GraphQLRequestContext
 
 
@@ -211,6 +213,34 @@ trait ServerPlugin(Deinitable, Movable):
 
         Raises:
             Error: To fail the request with `Internal server error`.
+        """
+        pass
+
+    def did_encounter_subsequent_errors(
+        mut self, errors: List[ServerError]
+    ) raises:
+        """Run when a subsequent payload of incremental delivery has
+        errors: upstream `didEncounterSubsequentErrors`.
+
+        Args:
+            errors: The errors of one entry of the payload.
+
+        Raises:
+            Error: To end the body of the response.
+        """
+        pass
+
+    def will_send_subsequent_payload(
+        mut self, mut payload: SubsequentPayload
+    ) raises:
+        """Run before a subsequent payload of incremental delivery goes
+        out: upstream `willSendSubsequentPayload`.
+
+        Args:
+            payload: The payload; the plugin can change its JSON text.
+
+        Raises:
+            Error: To end the body of the response.
         """
         pass
 
@@ -456,6 +486,34 @@ struct PluginPair[A: ServerPlugin, B: ServerPlugin](ServerPlugin):
         """
         self.first.will_send_response(ctx)
         self.second.will_send_response(ctx)
+
+    def did_encounter_subsequent_errors(
+        mut self, errors: List[ServerError]
+    ) raises:
+        """Run both hooks.
+
+        Args:
+            errors: The errors.
+
+        Raises:
+            Error: When a hook raises.
+        """
+        self.first.did_encounter_subsequent_errors(errors)
+        self.second.did_encounter_subsequent_errors(errors)
+
+    def will_send_subsequent_payload(
+        mut self, mut payload: SubsequentPayload
+    ) raises:
+        """Run both hooks.
+
+        Args:
+            payload: The payload.
+
+        Raises:
+            Error: When a hook raises.
+        """
+        self.first.will_send_subsequent_payload(payload)
+        self.second.will_send_subsequent_payload(payload)
 
     def context_creation_did_fail(mut self, error: ServerError) raises:
         """Run both hooks.

@@ -24,9 +24,16 @@ CORS headers, the JSON body parser and `execute_http_graphql_request`.
 - The body must be UTF-8. A `utf-16` or `utf-32` charset gets 415, where
   upstream decodes it, and bytes that are not UTF-8 get 400.
 - A body over 50 MiB gets the 413 response of `gql_http`.
+- A `multipart/mixed` response of incremental delivery is held: its first
+  part goes out at once, and the loop of `gql_http` polls the later parts
+  each `ServerConfig.stream_poll_ms`. A client that goes away closes the
+  results.
 """
 
+from std.memory import ArcPointer
+
 from gql_execution.value import Values
+from gql_http.body import BodyPoll
 from gql_http.parser import Request
 from gql_http.server import (
     Handler,
@@ -39,6 +46,7 @@ from gql_http.status import Status
 from gql_json.parser import parse_bytes
 from gql_json.value import JsonDocument
 from gql_server.http_types import HTTPGraphQLRequest, HeaderMap, lower_ascii
+from gql_server.incremental import IncrementalResults
 from gql_server.negotiator import media_type_parameter, mime_essence
 from gql_server.plugin import ServerPlugin
 from gql_server.server import ApolloServer, ContextFunction, default_context
@@ -183,6 +191,10 @@ struct StandaloneHandler[P: ServerPlugin](Handler):
     """The GraphQL server."""
     var context: ContextFunction
     """The context function."""
+    var held_ids: List[Int]
+    """The connections of the held `multipart/mixed` responses."""
+    var held: List[ArcPointer[IncrementalResults]]
+    """The results of each held response, in the order of `held_ids`."""
 
     def __init__(
         out self,
@@ -197,6 +209,8 @@ struct StandaloneHandler[P: ServerPlugin](Handler):
         """
         self.server = server^
         self.context = context
+        self.held_ids = List[Int]()
+        self.held = List[ArcPointer[IncrementalResults]]()
 
     def handle(mut self, request: Request, mut response: ResponseWriter) raises:
         """Answer a request: CORS, the JSON body, then the GraphQL server.
@@ -245,6 +259,61 @@ struct StandaloneHandler[P: ServerPlugin](Handler):
             )
             index += 1
         response.write_text(answer.body)
+        if answer.chunks:
+            # The first part goes out now; the loop polls the later parts.
+            response.begin_chunked()
+            response.hold()
+            # `hold` holds every response but a HEAD response, and
+            # `ApolloServer` answers HEAD with 405 and no parts.
+            self.held_ids.append(response.connection())
+            self.held.append(answer.chunks.value())
+
+    def _find(self, id: Int) -> Int:
+        """Return the index of the held response of a connection, or -1."""
+        var index = 0
+        while index < len(self.held_ids):
+            if self.held_ids[index] == id:
+                return index
+            index += 1
+        return -1
+
+    def _release(mut self, index: Int):
+        """Forget a held response."""
+        var last = len(self.held_ids) - 1
+        self.held_ids[index] = self.held_ids[last]
+        self.held[index] = self.held[last].copy()
+        _ = self.held_ids.pop()
+        _ = self.held.pop()
+
+    def poll_body(mut self, id: Int, mut out: List[UInt8]) -> BodyPoll:
+        """Write the next parts of a `multipart/mixed` response.
+
+        Args:
+            id: The connection of the response.
+            out: Gets the bytes of the parts.
+
+        Returns:
+            What `ApolloServer.poll_chunk` returns; `DONE` for a
+            connection with no held response.
+        """
+        var index = self._find(id)
+        if index < 0:
+            return BodyPoll.DONE
+        var result = self.server.poll_chunk(self.held[index], out)
+        if result == BodyPoll.DONE or result == BodyPoll.ERROR:
+            self._release(index)
+        return result
+
+    def body_closed(mut self, id: Int):
+        """Stop the results of a response whose client went away.
+
+        Args:
+            id: The connection of the response.
+        """
+        var index = self._find(id)
+        if index >= 0:
+            self.held[index][].close()
+            self._release(index)
 
 
 struct StandaloneServer(Movable):

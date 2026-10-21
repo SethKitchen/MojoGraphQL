@@ -23,6 +23,7 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Http](Http): the `gql_http` package, which is the HTTP/1.1 server, client and parser.
 - [Http2](Http2): the `gql_http2` package, which is HTTP/2 and HPACK: h2c, the h2c upgrade, the HTTP/1.1 fallback, and a `Transport` for TLS.
 - [Ws](Ws): the `gql_ws` and `gql_ws_execution` packages: WebSocket servers and clients, and the GraphQL over WebSocket protocol `graphql-transport-ws` for subscriptions.
+- [Sse](Sse): the `gql_sse` and `gql_sse_execution` packages: GraphQL over Server-Sent Events as graphql-sse serves it, and incremental delivery as `multipart/mixed`.
 - [Tls](Tls): the `gql_tls` package, which is TLS 1.3 and ALPN through the system OpenSSL, and the HTTPS server and client.
 - [Https2](Https2): the `gql_https2` package, which is HTTP/2 over TLS with ALPN `h2`: the server, the client with its HTTPS/1.1 fallback, and the TLS `Transport`.
 - [Quic](Quic): the `gql_quic` package, which is the QUIC transport.
@@ -32,8 +33,9 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Client](Client): the `gql_client` package, which is the normalized cache of a GraphQL client.
 - [Composition](Composition): the `gql_composition` package, which validates Apollo Federation subgraphs.
 - [Router](Router): the `gql_router` package, which ports the Hive Router query planner.
+- [RouterStream](RouterStream): the `gql_router_stream` package, which adds subscriptions and streamed `@defer` to the router.
 - [Subgraph](Subgraph): the `gql_subgraph` package, which builds an executable Apollo Federation subgraph.
-- [Server](Server): the `gql_server` package, which is the Apollo Server port and its standalone HTTP server.
+- [Server](Server): the `gql_server` package, which is the Apollo Server port and its standalone HTTP server. The `gql_server_ws` package adds subscriptions over WebSocket on the same port.
 - [Mcp](Mcp): the `gql_mcp` package, which is the Model Context Protocol server of Apollo MCP Server.
 - [Seamstress](Seamstress): the `gql_seamstress` package and its `seamstress` program, a port of the local commands of Apollo Rover: `supergraph compose`, `subgraph introspect` and `graph introspect`.
 - [Codegen](Codegen): the `gql_codegen` package, which writes Mojo models for operations, as the Apollo Kotlin compiler writes Kotlin.

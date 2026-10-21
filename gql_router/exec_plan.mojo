@@ -33,8 +33,11 @@ flight at the same time: with `HttpTransport`, the slowest subgraph sets
 the time of the node, as upstream.
 Upstream walks the path of a flatten fetch again to merge; this port keeps
 the values that the prepare step found, and walks again only to get the
-error paths. Subscriptions are not supported: a plan with a `Subscription` node raises
-`Error`. There are no plugins, header rules, coprocessors, demand control,
+error paths. `execute` raises `Error` on a `Subscription` node and on a
+`Defer` node. A subscription runs in `execute_event`, once for each event:
+the event is the data, and the nodes after the `Subscription` node run, as
+the event loop of upstream `execute_query_plan`. `gql_router_stream` opens
+the subgraph stream. There are no plugins, header rules, coprocessors, demand control,
 extensions or error masking. The operation name is never forwarded.
 """
 
@@ -393,13 +396,92 @@ def condition_target(
     return condition.else_clause
 
 
+def subscription_node(plan: QueryPlan) -> Int:
+    """Find the `Subscription` node of a plan, as upstream
+    `execute_query_plan`.
+
+    Args:
+        plan: The query plan.
+
+    Returns:
+        The root node when it is a `Subscription`, the first child of a
+        root `Sequence` when that child is one, and `NONE` otherwise.
+    """
+    if plan.node == NONE:
+        return NONE
+    ref root = plan.nodes[plan.node]
+    if root.kind == PlanNodeKind.SUBSCRIPTION:
+        return plan.node
+    if root.kind == PlanNodeKind.SEQUENCE and len(root.nodes) > 0:
+        var first = root.nodes[0]
+        if plan.nodes[first].kind == PlanNodeKind.SUBSCRIPTION:
+            return first
+    return NONE
+
+
+def subscription_rest(plan: QueryPlan) -> List[Int]:
+    """Return the nodes that run after each subscription event.
+
+    Args:
+        plan: The query plan.
+
+    Returns:
+        The children of a root `Sequence` after its `Subscription` node,
+        in order; empty for any other plan.
+    """
+    var rest = List[Int]()
+    var first = subscription_node(plan)
+    if first == NONE or first == plan.node:
+        return rest^
+    ref children = plan.nodes[plan.node].nodes
+    var index = 1
+    while index < len(children):
+        rest.append(children[index])
+        index += 1
+    return rest^
+
+
+def subscription_request_body(
+    store: Store, plan: QueryPlan, node: Int, variables: CoerceVariablesPayload
+) -> List[UInt8]:
+    """Write the subgraph request of a `Subscription` node, as the
+    `SubgraphExecutionRequest` of upstream `execute_query_plan`.
+
+    Args:
+        store: The planner store.
+        plan: The query plan.
+        node: The `Subscription` node.
+        variables: The coerced variables.
+
+    Returns:
+        The JSON body, with the variables that the fetch uses.
+    """
+    ref fetch = plan.fetches[plan.nodes[node].fetch]
+    return _fetch_body(
+        store,
+        fetch.operation.document_str,
+        fetch.variable_usages,
+        fetch.has_variable_usages,
+        variables,
+        List[String](),
+        List[List[UInt8]](),
+    )
+
+
+comptime _LINEAR = 16
+"""Up to this many representations, a hash is found by a scan; above it,
+by a dictionary."""
+
+
 struct _Representations(Movable):
     """The representations of one `_entities` list while it is built."""
 
     var buffer: List[UInt8]
     """The JSON array."""
-    var seen: Dict[UInt64, Int]
-    """The entity index of each representation hash."""
+    var hashes: List[UInt64]
+    """The hash of each representation, by its entity index."""
+    var index: Optional[Dict[UInt64, Int]]
+    """The entity index of each hash, once there are more than `_LINEAR`."""
     var count: Int
     """How many representations the array has."""
 
@@ -407,8 +489,34 @@ struct _Representations(Movable):
         """Start an empty array."""
         self.buffer = List[UInt8]()
         self.buffer.append(UInt8(ord("[")))
-        self.seen = Dict[UInt64, Int]()
+        self.hashes = List[UInt64]()
+        self.index = None
         self.count = 0
+
+    def find(self, hash: UInt64) -> Int:
+        """Return the entity index of a hash, or -1."""
+        if self.index:
+            return self.index.value().get(hash).or_else(-1)
+        var at = 0
+        while at < len(self.hashes):
+            if self.hashes[at] == hash:
+                return at
+            at += 1
+        return -1
+
+    def add(mut self, hash: UInt64):
+        """Give the next entity index to a hash."""
+        self.hashes.append(hash)
+        self.count += 1
+        if self.index:
+            self.index.value()[hash] = self.count - 1
+        elif self.count > _LINEAR:
+            var index = Dict[UInt64, Int]()
+            var at = 0
+            while at < self.count:
+                index[self.hashes[at]] = at
+                at += 1
+            self.index = index^
 
     def take(deinit self) -> List[UInt8]:
         """Return the JSON array."""
@@ -440,9 +548,9 @@ def _collect_representations(
         var hash = requires_hash(
             store, metadata.possible_types, requires, arena, node
         )
-        var found = reps.seen.get(hash)
-        if found:
-            entities.append(found.value())
+        var found = reps.find(hash)
+        if found >= 0:
+            entities.append(found)
             continue
         var entity = node
         if len(rewrites) > 0:
@@ -460,7 +568,7 @@ def _collect_representations(
             arena,
             entity,
             reps.buffer,
-            len(reps.seen) == 0,
+            reps.count == 0,
             "",
             False,
             False,
@@ -470,9 +578,8 @@ def _collect_representations(
         if not projected:
             entities.append(-1)
             continue
-        reps.seen[hash] = reps.count
         entities.append(reps.count)
-        reps.count += 1
+        reps.add(hash)
     return targets^.take_nodes()
 
 
@@ -547,6 +654,63 @@ struct Executor[T: SubgraphTransport](Movable):
             metadata,
         )
         return PlanExecutionOutput(body^, error_count)
+
+    def execute_event(
+        mut self,
+        store: Store,
+        plan: QueryPlan,
+        metadata: SchemaMetadata,
+        keys: EntityKeys,
+        variables: CoerceVariablesPayload,
+        projection: ProjectionPlan,
+        root_type_name: String,
+        var body: List[UInt8],
+    ) raises -> PlanExecutionOutput:
+        """Run the rest of a subscription plan for one event, as the event
+        loop of upstream `execute_query_plan`.
+
+        The event is the response of the subscription fetch. Its data is
+        the start of the response, and its errors are the initial errors.
+        Then the nodes after the `Subscription` node run, such as the
+        entity fetches, and the response is projected.
+
+        Args:
+            store: The planner store.
+            plan: The executable plan, with a `Subscription` node first.
+            metadata: The metadata of the consumer schema.
+            keys: The entity keys of each subgraph.
+            variables: The coerced variables.
+            projection: The projection plan of the client operation.
+            root_type_name: The root type of the operation.
+            body: The JSON of the event.
+
+        Returns:
+            The response body of the event.
+
+        Raises:
+            Error: When the event is not a GraphQL response, or when the
+                projection fails.
+        """
+        var arena = JsonDocument()
+        var response = read_subgraph_response(arena, body^)
+        var start = response.data
+        if start == NO_NODE:
+            start = arena.add_object()
+        var ctx = ExecutionContext(arena^, start, response.errors.copy())
+        for node in subscription_rest(plan):
+            self._run(ctx, store, plan, metadata, keys, variables, node)
+        var error_count = len(ctx.errors)
+        var out = project_by_operation(
+            ctx.arena,
+            ctx.data,
+            ctx.errors.copy(),
+            root_type_name,
+            projection,
+            variables,
+            ctx.response_bytes,
+            metadata,
+        )
+        return PlanExecutionOutput(out^, error_count)
 
     def _run(
         mut self,
@@ -741,12 +905,11 @@ struct Executor[T: SubgraphTransport](Movable):
         upstream `process_job_result`."""
         if job.kind == JobKind.NONE:
             return
-        var affected = String()
-        if job.kind == JobKind.FLATTEN_FETCH or job.has_merge_path:
-            affected = plan.nodes[job.plan_node].path.text(store)
         var result = self.transport.finish()
         if result.failure != SubgraphFailure.NONE:
-            ctx.errors.append(failure_error(result, job.subgraph, affected))
+            ctx.errors.append(
+                failure_error(result, job.subgraph, _affected(store, plan, job))
+            )
             return
         if len(result.body) == 0:
             ctx.errors.append(
@@ -756,7 +919,7 @@ struct Executor[T: SubgraphTransport](Movable):
                     + '"',
                     "SUBGRAPH_RESPONSE_BODY_EMPTY",
                     job.subgraph,
-                    affected,
+                    _affected(store, plan, job),
                 )
             )
             return
@@ -772,7 +935,7 @@ struct Executor[T: SubgraphTransport](Movable):
                     + "'",
                     "SUBREQUEST_MALFORMED_RESPONSE",
                     job.subgraph,
-                    affected,
+                    _affected(store, plan, job),
                 )
             )
             return
@@ -787,18 +950,36 @@ struct Executor[T: SubgraphTransport](Movable):
                     String(e),
                     "SUBREQUEST_MALFORMED_RESPONSE",
                     job.subgraph,
-                    affected,
+                    _affected(store, plan, job),
                 )
             )
             return
         if status < 200 or status > 299:
             response.append_error(http_status_error(status, job.subgraph))
         if job.kind == JobKind.FETCH:
-            _merge_fetch(ctx, store, plan, metadata, job, response^, affected)
+            _merge_fetch(ctx, store, plan, metadata, job, response^)
         elif job.kind == JobKind.FLATTEN_FETCH:
-            _merge_flatten(ctx, store, plan, metadata, job, response^, affected)
+            _merge_flatten(ctx, store, plan, metadata, job, response^)
         else:
             _merge_batch(ctx, store, plan, metadata, job, response^)
+
+
+def _affected(store: Store, plan: QueryPlan, job: Job) -> String:
+    """Return the path of the flatten node of a job, for its errors, as the
+    `LazyPlanContext` of upstream: only an error makes the text."""
+    if job.kind == JobKind.FLATTEN_FETCH or job.has_merge_path:
+        return plan.nodes[job.plan_node].path.text(store)
+    return String()
+
+
+def _errors_affected(
+    store: Store, plan: QueryPlan, job: Job, response: SubgraphResponse
+) -> String:
+    """Return the affected path of a response that has errors, and empty
+    for a response without errors, which needs none."""
+    if len(response.errors) == 0:
+        return String()
+    return _affected(store, plan, job)
 
 
 def _fetch_body(
@@ -900,9 +1081,9 @@ def _merge_fetch(
     metadata: SchemaMetadata,
     job: Job,
     var response: SubgraphResponse,
-    affected: String,
 ):
     """Merge a root fetch or a root re-entry fetch."""
+    var affected = _errors_affected(store, plan, job, response)
     ref fetch = plan.fetches[job.fetch]
     if response.data != NO_NODE:
         for rewrite in fetch.output_rewrites:
@@ -1025,10 +1206,10 @@ def _merge_flatten(
     metadata: SchemaMetadata,
     job: Job,
     var response: SubgraphResponse,
-    affected: String,
 ):
     """Merge the entities of a flatten fetch, as upstream does for
     `ExecutionJob::FlattenFetch`."""
+    var affected = _errors_affected(store, plan, job, response)
     var array = _take_entities(ctx.arena, response.data, "_entities")
     if array == NO_NODE:
         ctx.handle_errors(

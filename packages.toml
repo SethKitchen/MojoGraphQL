@@ -27,6 +27,7 @@ upstream = ["RFC 8259; serialization as ECMAScript JSON.stringify, which graphql
 [packages.gql_http]
 summary = "HTTP/1.1 server and client over POSIX sockets"
 depends = []
+test_depends = ["gql_json"]
 upstream = ["RFC 9110 and RFC 9112; the GraphQL over HTTP specification"]
 
 [packages.gql_http2]
@@ -63,7 +64,7 @@ upstream = ["graphql-js 16.14.2 src/type and src/utilities (MIT)"]
 [packages.gql_validation]
 summary = "Validation of executable documents against a schema: TypeInfo and every specified rule"
 depends = ["gql_language", "gql_schema"]
-upstream = ["graphql-js 16.14.2 src/validation and src/utilities/TypeInfo.ts (MIT)"]
+upstream = ["graphql-js 16.14.2 src/validation and src/utilities/TypeInfo.ts (MIT)", "graphql-js 17.0.2 (71606d7) src/validation/rules DeferStreamDirectiveLabelRule, DeferStreamDirectiveOnRootFieldRule, DeferStreamDirectiveOnValidOperationsRule and StreamDirectiveOnListFieldRule, and their tests (MIT)"]
 
 [packages.gql_normalization]
 summary = "Operation normalization, minification and variables validation of graphql-go-tools v2"
@@ -76,9 +77,9 @@ depends = ["gql_json"]
 upstream = ["graphql-subscriptions 3.0.0 (d74107c) src/pubsub.ts, src/pubsub-engine.ts, src/pubsub-async-iterable-iterator.ts, src/with-filter.ts and src/test (MIT); graphql-js 16.14.2 src/execution/mapAsyncIterator.ts (MIT)"]
 
 [packages.gql_execution]
-summary = "Execution of operations with resolvers, subscriptions, and introspection"
+summary = "Execution of operations with resolvers, subscriptions, @defer and @stream, and introspection"
 depends = ["gql_language", "gql_schema", "gql_json", "gql_stream"]
-upstream = ["graphql-js 16.14.2 src/execution (subscribe.ts included), src/type/introspection.ts and the introspection utilities of src/utilities (MIT)"]
+upstream = ["graphql-js 16.14.2 src/execution (subscribe.ts included), src/type/introspection.ts and the introspection utilities of src/utilities (MIT)", "graphql-js 17.0.2 (71606d7) experimentalExecuteIncrementally: src/execution/collectFields.ts (@defer), getStreamUsage.ts, incremental/IncrementalExecutor.ts, IncrementalPublisher.ts, WorkQueue.ts and buildExecutionPlan.ts, the @defer and @stream definitions of src/type/directives.ts, and incremental/__tests__/defer-test.ts and stream-test.ts, with the abortSignal and enableEarlyExecution of ExecutionArgs (MIT)"]
 
 [packages.gql_client]
 summary = "Normalized client cache: InMemoryCache, type and field policies"
@@ -98,17 +99,17 @@ upstream = ["Apollo MCP Server 2.0.0 (04e4e6e) crates/apollo-mcp-server/src: ope
 [packages.gql_subgraph]
 summary = "Apollo Federation subgraphs: buildSubgraphSchema, printSubgraphSchema and entity resolution"
 depends = ["gql_language", "gql_schema", "gql_execution", "gql_json"]
-test_depends = ["gql_server"]
+test_depends = ["gql_server", "gql_stream"]
 upstream = ["@apollo/subgraph 2.14.4 (b95c124) subgraph-js/src: buildSubgraphSchema.ts, printSubgraphSchema.ts, types.ts, schema-helper/buildSchemaFromSDL.ts (MIT); the Apollo Federation subgraph specification and federation/v2.x specifications; Hive Federation Composition v0.27.0 (MIT) as the reference for the federation-internals behavior"]
 
 [packages.gql_router]
 summary = "Hive Router: the query planner, the executor, the request pipeline and an HTTP server"
 depends = ["gql_language", "gql_json", "gql_http", "gql_schema", "gql_validation"]
-upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, consumer_schema, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, http_utils/probes.rs, pipeline (mod.rs, parser.rs, validation/mod.rs, normalize.rs, coerce_variables.rs, query_plan.rs, execution.rs, error.rs, execution_request.rs, header.rs, authorization), executor (execution, projection, variables, response, utils/traverse.rs, introspection, executors/http.rs, operation_filter.rs, and their tests), and lib/graphql-tools src/validation (the default rule list, the error codes, messages and locations); tests/generated.rs, the executor plugins, extensions, header propagation, error masking, operation name forwarding, subscriptions and apollo-router-workspace are excluded"]
+upstream = ["Hive Router 1a29df9 (MIT) bin/router/src/query_planner (ast, federation_spec, graph, planner, state, utils, consumer_schema, and the tests with bin/router/fixture), cache_state.rs, config/cache.rs, http_utils/headers.rs, http_utils/probes.rs, pipeline (mod.rs, parser.rs, validation/mod.rs, normalize.rs, coerce_variables.rs, query_plan.rs, execution.rs, error.rs, execution_request.rs, header.rs, authorization), executor (execution, projection, variables, response, utils/traverse.rs, introspection, executors/http.rs, operation_filter.rs, and their tests), and lib/graphql-tools src/validation (the default rule list, the error codes, messages and locations); tests/generated.rs, the executor plugins, extensions, header propagation, error masking, operation name forwarding and apollo-router-workspace are excluded; gql_router_stream has the subscription transports"]
 
 [packages.gql_server]
 summary = "GraphQL server: the Apollo Server request pipeline, HTTP handling and a standalone server"
-depends = ["gql_language", "gql_json", "gql_schema", "gql_validation", "gql_execution", "gql_http"]
+depends = ["gql_language", "gql_json", "gql_schema", "gql_validation", "gql_execution", "gql_http", "gql_stream"]
 upstream = ["Apollo Server 5.5.1 (0c22029) packages/server/src: ApolloServer.ts, requestPipeline.ts, runHttpQuery.ts, httpBatching.ts, preventCsrf.ts, errorNormalize.ts, internalErrorClasses.ts, errors/index.ts, cachePolicy.ts, utils/HeaderMap.ts, validationRules/NoIntrospection.ts, the header part of plugin/cacheControl, plugin/disableSuggestions, plugin/inlineTrace, plugin/traceTreeBuilder.ts, plugin/schemaIsSubgraph.ts, the inline trace part of plugin/disabled, standalone/index.ts, and the Trace message of packages/usage-reporting-protobuf/src/reports.proto (MIT); negotiator 1.1.0, content-type 2.1.0, whatwg-mimetype 4.0.0, cors 2.8.6, body-parser 2.3.0, finalhandler 2.1.1 and @apollo/utils.keyvaluecache 4.0.0, as Apollo Server uses them (MIT)"]
 
 [packages.gql_codegen]
@@ -136,3 +137,26 @@ upstream = ["tungstenite 0.30.0 (7f4aeaf) src/protocol (mod.rs, message.rs, fram
 summary = "graphql-transport-ws on gql_execution: parse, validate, execute and subscribe for the gql_ws transport server"
 depends = ["gql_ws", "gql_execution", "gql_language", "gql_schema", "gql_validation", "gql_json", "gql_stream"]
 upstream = ["graphql-ws 6.4.1 (7281f1b) src/server.ts: the parse, validate, getOperationAST, roots, execute and subscribe path of makeServer, and tests/server.test.ts (MIT)"]
+
+[packages.gql_server_ws]
+summary = "Apollo Server subscriptions over graphql-transport-ws, on the port of its HTTP server, with a drain on stop"
+depends = ["gql_server", "gql_ws", "gql_ws_execution", "gql_http"]
+test_depends = ["gql_execution", "gql_schema", "gql_stream", "gql_json", "gql_language"]
+upstream = ["Apollo Server 5.5.1 (0c22029) docs/source/data/subscriptions.mdx (useServer of graphql-ws on the HTTP server, the drainServer plugin) and packages/server/src/plugin/drainHttpServer/index.ts (MIT); plugin/subscriptionCallback is excluded"]
+
+[packages.gql_sse]
+summary = "GraphQL over Server-Sent Events (graphql-sse): distinct connections and single connection modes on gql_http held responses"
+depends = ["gql_http", "gql_json", "gql_stream"]
+test_depends = ["gql_sse_execution"]
+upstream = ["graphql-sse 2.6.3 (4cced45) src/common.ts, src/parser.ts, src/handler.ts and tests/parser.test.ts, tests/handler.test.ts (MIT)"]
+
+[packages.gql_sse_execution]
+summary = "graphql-sse on gql_execution: parse, validate, execute and subscribe for the gql_sse handler"
+depends = ["gql_sse", "gql_http", "gql_execution", "gql_language", "gql_schema", "gql_validation", "gql_json", "gql_stream"]
+upstream = ["graphql-sse 2.6.3 (4cced45) src/handler.ts: the parse, getOperationAST, validate, execute and subscribe path of prepare (MIT)"]
+
+[packages.gql_router_stream]
+summary = "Hive Router streaming: subscriptions over WebSocket, SSE and multipart HTTP, subgraph streams, and streamed @defer"
+depends = ["gql_router", "gql_http", "gql_json", "gql_stream", "gql_ws", "gql_language"]
+test_depends = ["gql_ws_execution", "gql_execution", "gql_schema", "gql_validation", "gql_sse", "gql_sse_execution"]
+upstream = ["Hive Router 1a29df9 (MIT) bin/router/src: config/subscriptions.rs, config/websocket.rs, the websocket fields of config/traffic_shaping.rs, pipeline/header.rs (response mode negotiation), pipeline/sse.rs, pipeline/multipart_subscribe.rs, pipeline/websocket_server.rs, executor/executors/sse.rs, multipart_subscribe.rs, websocket_pool.rs and the subscribe part of http.rs, the subscription part of executor/execution/plan.rs, and the subscription tests of e2e/src (subscriptions.rs, websocket.rs, websocket_pool.rs), with e2e/supergraph.graphql; the Accept parser of headers-accept 0.3.0 (MIT)"]

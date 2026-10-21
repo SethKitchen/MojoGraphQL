@@ -17,7 +17,9 @@ Port of Apollo Server 5.5.1 `externalTypes/graphql.ts` (`GraphQLRequest`,
   context, as `gql_execution` resolvers read it.
 - The request context has no `logger`, `cache` or `schema`; a plugin
   holds what it needs.
-- A response has one result. Incremental delivery is not ported.
+- An `incremental` body is a response with `subsequent_results`. The
+  initial result is the `data`, the `errors` and the `pending` of the
+  response.
 - The request context has three fields for the inline trace plugin:
   `will_resolve_field`, `field_timings` and `inline_trace`. Upstream
   keeps that state in the plugin and in the `willResolveField` hook.
@@ -36,6 +38,7 @@ from gql_server.cache_policy import CachePolicy
 from gql_server.error_normalize import FormattedError
 from gql_server.errors import ServerError
 from gql_server.http_types import HTTPGraphQLHead, HTTPGraphQLRequest
+from gql_server.incremental import IncrementalResults
 from gql_server.trace_tree_builder import TraceTreeBuilder
 
 
@@ -120,6 +123,15 @@ struct GraphQLResponse(Copyable, Movable):
     """Whether the result has an `errors` key."""
     var extensions: Optional[String]
     """The JSON text of the `extensions` of the result, if any."""
+    var pending: Optional[String]
+    """For an `incremental` body: the JSON array of the `pending` of the
+    initial result."""
+    var initial_json: Optional[String]
+    """For an `incremental` body of the testing option: the JSON text of
+    the initial result, sent as it is."""
+    var subsequent_results: Optional[ArcPointer[IncrementalResults]]
+    """For an `incremental` body: the subsequent results. Copies of the
+    response share them."""
 
     def __init__(out self, var http: HTTPGraphQLHead = HTTPGraphQLHead()):
         """Make a response with no result.
@@ -132,6 +144,18 @@ struct GraphQLResponse(Copyable, Movable):
         self.errors = List[FormattedError]()
         self.has_errors = False
         self.extensions = None
+        self.pending = None
+        self.initial_json = None
+        self.subsequent_results = None
+
+    def is_incremental(self) -> Bool:
+        """Return True for an `incremental` body: upstream
+        `body.kind === 'incremental'`.
+
+        Returns:
+            Whether subsequent results follow the initial result.
+        """
+        return Bool(self.subsequent_results)
 
     def has_data(self) -> Bool:
         """Return True if the result has a `data` key.
@@ -146,8 +170,11 @@ struct GraphQLResponse(Copyable, Movable):
         `orderExecutionResultFields` and `JSON.stringify` write it.
 
         Returns:
-            Such as `{"errors":[...],"data":{...}}`.
+            Such as `{"errors":[...],"data":{...}}`. The initial result
+            of an `incremental` body also has `pending` and `hasNext`.
         """
+        if self.initial_json:
+            return self.initial_json.value()
         var out = String("{")
         if self.has_errors:
             out += '"errors":['
@@ -161,6 +188,8 @@ struct GraphQLResponse(Copyable, Movable):
         if self.has_data():
             out += "," if self.has_errors else ""
             out += '"data":' + stringify(self.data, self.data.root)
+        if self.pending:
+            out += ',"pending":' + self.pending.value() + ',"hasNext":true'
         if self.extensions:
             out += "," if out.byte_length() > 1 else ""
             out += '"extensions":' + self.extensions.value()

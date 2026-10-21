@@ -16,14 +16,101 @@ group is a run of field nodes. A group's index is unique in the
 collector, so the executor can memoize `collectSubfields` on a type and a
 group, as graphql-js memoizes it on a type and a field node array.
 
+**Incremental delivery.** With `defer_enabled`, the collector also ports
+the `@defer` part of graphql-js v17.0.2 `collectFields.ts`: each
+field node has a `DeferUsage`, or none, in `node_defers`; each plan has
+the new defer usages of its selection set in `plan_defers`; and a
+fragment spread that was visited as deferred is visited again when it is
+not deferred. `collect_subfields` starts each field node's selection set
+with the node's defer usage, as upstream passes `fieldDetail.deferUsage`.
+The `@defer` arguments are read with the upstream definition,
+`@defer(if: Boolean! = true, label: String)`, so a schema does not need
+to define the directive.
+
 **Differences from upstream.** None in behavior.
 """
 
 from gql_language.ast import NO_NODE, Document, Kind, Role
 from gql_language.error import GraphQLError
-from gql_schema.definition import NO_TYPE, Schema, TypeKind
+from gql_schema.definition import NO_TYPE, Schema, TypeKind, TypeRef
 from gql_execution.value import UNDEFINED, ValueKind, Values
-from gql_execution.values import get_directive_values
+from gql_execution.values import coerce_argument, get_directive_values
+
+comptime NO_DEFER: Int32 = -1
+"""The defer usage of a field node that is not deferred."""
+
+
+@fieldwise_init
+struct DeferUsage(Copyable, Movable):
+    """One `@defer` of a fragment: graphql-js 17 `DeferUsage`."""
+
+    var label: Optional[String]
+    """The `label` argument, when it is a string."""
+    var parent: Int32
+    """The defer usage that holds this fragment, or `NO_DEFER`."""
+
+
+def directive_argument(
+    schema: Schema,
+    document: Document,
+    directive: Int,
+    name: String,
+    type: TypeRef,
+    mut values: Values,
+    variables: Int,
+) raises GraphQLError -> Int:
+    """Coerce one argument of a directive node, with no default value.
+
+    Args:
+        schema: The schema.
+        document: The document.
+        directive: The `Directive` node.
+        name: The argument's name.
+        type: The argument's type; a nullable type, so that a missing
+            value is `UNDEFINED`.
+        values: Where the value goes; the variable values are there too.
+        variables: The coerced variable values, or `UNDEFINED`.
+
+    Returns:
+        The value, or `UNDEFINED` when the argument or its variable is
+        missing.
+
+    Raises:
+        GraphQLError: As `coerce_argument` raises for a value that is not
+            valid.
+    """
+    var target = values.add_object()
+    coerce_argument(
+        schema,
+        name,
+        type,
+        NO_TYPE,
+        document,
+        directive,
+        values,
+        variables,
+        target,
+    )
+    return values.get(target, name)
+
+
+def find_directive(document: Document, node: Int, name: StringSlice) -> Int:
+    """Return the first directive of a node with a name.
+
+    Args:
+        document: The document.
+        node: A node that can have directives.
+        name: The directive's name.
+
+    Returns:
+        The `Directive` node, or `NO_NODE`.
+    """
+    var current = document.child(node, Role.DIRECTIVE)
+    while current != NO_NODE:
+        if document.name(current) == name:
+            return current
+        current = document.next_with_role(current)
+    return NO_NODE
 
 
 @fieldwise_init
@@ -63,9 +150,28 @@ struct FieldCollector(Movable):
     """The index of `@skip` in the schema, or `NO_TYPE`."""
     var include: Int
     """The index of `@include` in the schema, or `NO_TYPE`."""
+    var defer_enabled: Bool
+    """Read `@defer`: True for incremental delivery."""
+    var node_defers: List[Int32]
+    """The defer usage of each field node of `nodes`, with
+    `defer_enabled`."""
+    var defer_usages: List[DeferUsage]
+    """Each defer usage, by index."""
+    var plan_defers: List[FieldPlan]
+    """For each plan, with `defer_enabled`, its run of `defer_list`."""
+    var defer_list: List[Int32]
+    """The new defer usages of every plan."""
+    var boolean_type: Int
+    """The `Boolean` type."""
+    var string_type: Int
+    """The `String` type."""
     var _pending: List[Int32]
     var _links: List[Int32]
+    var _link_defers: List[Int32]
     var _visited: List[String]
+    var _visited_deferred: List[Bool]
+    var _defer: Int32
+    var _new_defers_start: Int
 
     def __init__(out self, schema: Schema, document: Document):
         """Start a collector for a document.
@@ -81,9 +187,20 @@ struct FieldCollector(Movable):
         self.fragments = Dict[String, Int]()
         self.skip = schema.directive_named("skip")
         self.include = schema.directive_named("include")
+        self.defer_enabled = False
+        self.node_defers = List[Int32]()
+        self.defer_usages = List[DeferUsage]()
+        self.plan_defers = List[FieldPlan]()
+        self.defer_list = List[Int32]()
+        self.boolean_type = schema.type_named("Boolean")
+        self.string_type = schema.type_named("String")
         self._pending = List[Int32](capacity=48)
         self._links = List[Int32](capacity=32)
+        self._link_defers = List[Int32]()
         self._visited = List[String]()
+        self._visited_deferred = List[Bool]()
+        self._defer = NO_DEFER
+        self._new_defers_start = 0
         var definition = document.child(document.root, Role.DEFINITION)
         while definition != NO_NODE:
             if document.kind(definition) == Kind.FRAGMENT_DEFINITION:
@@ -152,10 +269,56 @@ struct FieldCollector(Movable):
                 `@include`.
         """
         self._start()
+        self._defer = NO_DEFER
         self._collect(
             schema, document, values, variables, runtime_type, selection_set
         )
         return self._finish()
+
+    def new_defers(self, plan: Int) -> FieldPlan:
+        """Return the run of `defer_list` that holds the new defer usages
+        of a plan: graphql-js 17 `newDeferUsages`.
+
+        Args:
+            plan: The plan's index; `defer_enabled` must be set.
+
+        Returns:
+            The run: its `start` and `count`.
+        """
+        return self.plan_defers[plan]
+
+    def node_defer(self, index: Int) -> Int:
+        """Return the defer usage of a field node of a group.
+
+        Args:
+            index: The index in `nodes`; `defer_enabled` must be set.
+
+        Returns:
+            The defer usage, or `NO_DEFER`.
+        """
+        return Int(self.node_defers[index])
+
+    def streamed_group(mut self, group: Int) -> Int:
+        """Return a copy of a group whose field nodes have no defer usage:
+        the `fieldDetailsList` of graphql-js 17 `getStreamUsage`. The items
+        of a stream are not in a deferred fragment, even when the list
+        field is.
+
+        Args:
+            group: The group's index; `defer_enabled` must be set.
+
+        Returns:
+            The index of the copy.
+        """
+        var found = self.group(group)
+        var start = len(self.nodes)
+        var index = Int(found.start)
+        while index < Int(found.start + found.count):
+            self.nodes.append(self.nodes[index])
+            self.node_defers.append(Int32(NO_DEFER))
+            index += 1
+        self.groups.append(FieldGroup(found.key, Int32(start), found.count))
+        return len(self.groups) - 1
 
     def collect_subfields(
         mut self,
@@ -194,6 +357,8 @@ struct FieldCollector(Movable):
                 self.node(index), Role.SELECTION_SET
             )
             if selection_set != NO_NODE:
+                if self.defer_enabled:
+                    self._defer = self.node_defers[index]
                 self._collect(
                     schema,
                     document,
@@ -208,7 +373,10 @@ struct FieldCollector(Movable):
         """Start a plan: no pending groups, no visited fragments."""
         self._pending.clear()
         self._links.clear()
+        self._link_defers.clear()
         self._visited.clear()
+        self._visited_deferred.clear()
+        self._new_defers_start = len(self.defer_list)
 
     def _finish(mut self) -> Int:
         """Move the pending groups into a plan; return its index.
@@ -224,6 +392,8 @@ struct FieldCollector(Movable):
             var link = Int(self._pending[3 * index + 1])
             while link >= 0:
                 self.nodes.append(self._links[2 * link])
+                if self.defer_enabled:
+                    self.node_defers.append(self._link_defers[link])
                 link = Int(self._links[2 * link + 1])
             self.groups.append(
                 FieldGroup(
@@ -234,6 +404,13 @@ struct FieldCollector(Movable):
             )
             index += 1
         self.plans.append(FieldPlan(Int32(first_group), Int32(count)))
+        if self.defer_enabled:
+            self.plan_defers.append(
+                FieldPlan(
+                    Int32(self._new_defers_start),
+                    Int32(len(self.defer_list) - self._new_defers_start),
+                )
+            )
         return len(self.plans) - 1
 
     def _add_field(mut self, document: Document, field: Int):
@@ -245,6 +422,8 @@ struct FieldCollector(Movable):
         var link = len(self._links) // 2
         self._links.append(Int32(field))
         self._links.append(-1)
+        if self.defer_enabled:
+            self._link_defers.append(self._defer)
         var count = len(self._pending) // 3
         var index = 0
         while index < count:
@@ -278,9 +457,18 @@ struct FieldCollector(Movable):
             elif kind == Kind.FIELD:
                 self._add_field(document, selection)
             elif kind == Kind.INLINE_FRAGMENT:
-                if _condition_matches(
+                if not _condition_matches(
                     schema, document, selection, runtime_type
                 ):
+                    pass
+                elif self.defer_enabled:
+                    var outer = self._defer
+                    var usage = self._defer_usage(
+                        schema, document, values, variables, selection
+                    )
+                    if usage != NO_DEFER:
+                        self.defer_list.append(usage)
+                        self._defer = usage
                     self._collect_more(
                         schema,
                         document,
@@ -289,11 +477,120 @@ struct FieldCollector(Movable):
                         runtime_type,
                         document.child(selection, Role.SELECTION_SET),
                     )
+                    self._defer = outer
+                else:
+                    self._collect_more(
+                        schema,
+                        document,
+                        values,
+                        variables,
+                        runtime_type,
+                        document.child(selection, Role.SELECTION_SET),
+                    )
+            elif self.defer_enabled:
+                self._spread_deferred(
+                    schema, document, values, variables, runtime_type, selection
+                )
             else:
                 self._spread(
                     schema, document, values, variables, runtime_type, selection
                 )
             selection = document.next_with_role(selection)
+
+    def _defer_usage(
+        mut self,
+        schema: Schema,
+        document: Document,
+        mut values: Values,
+        variables: Int,
+        node: Int,
+    ) raises GraphQLError -> Int32:
+        """Return graphql-js 17 `getDeferUsage`: a new defer usage under
+        the current one, or `NO_DEFER` when there is no `@defer` or its
+        `if` is false."""
+        var directive = find_directive(document, node, "defer")
+        if directive == NO_NODE:
+            return NO_DEFER
+        var flag = directive_argument(
+            schema,
+            document,
+            directive,
+            "if",
+            TypeRef.of(self.boolean_type),
+            values,
+            variables,
+        )
+        if values.kind(flag) == ValueKind.BOOLEAN and not values.bool_value(
+            flag
+        ):
+            return NO_DEFER
+        var label_value = directive_argument(
+            schema,
+            document,
+            directive,
+            "label",
+            TypeRef.of(self.string_type),
+            values,
+            variables,
+        )
+        var label: Optional[String] = None
+        if values.kind(label_value) == ValueKind.STRING:
+            label = String(values.string(label_value))
+        self.defer_usages.append(DeferUsage(label, self._defer))
+        return Int32(len(self.defer_usages) - 1)
+
+    def _spread_deferred(
+        mut self,
+        schema: Schema,
+        document: Document,
+        mut values: Values,
+        variables: Int,
+        runtime_type: Int,
+        spread: Int,
+    ) raises GraphQLError:
+        """Collect the fields of a fragment spread as graphql-js 17 does:
+        a deferred spread is visited once; a spread that is not deferred
+        is visited again after a deferred visit."""
+        var name = String(document.name(spread))
+        var fragment = self.fragments.get(name, NO_NODE)
+        if fragment == NO_NODE or not _condition_matches(
+            schema, document, fragment, runtime_type
+        ):
+            return
+        var usage = self._defer_usage(
+            schema, document, values, variables, spread
+        )
+        var seen = -1
+        var index = 0
+        while index < len(self._visited):
+            if self._visited[index] == name:
+                seen = index
+            index += 1
+        var outer = self._defer
+        if usage == NO_DEFER:
+            if seen >= 0 and not self._visited_deferred[seen]:
+                return
+            if seen >= 0:
+                self._visited_deferred[seen] = False
+            else:
+                self._visited.append(name)
+                self._visited_deferred.append(False)
+        else:
+            if seen >= 0:
+                return
+            self._visited.append(name)
+            self._visited_deferred.append(True)
+            self.defer_list.append(usage)
+            self._defer = usage
+        self._collect_more(
+            schema,
+            document,
+            values,
+            variables,
+            runtime_type,
+            document.child(fragment, Role.SELECTION_SET),
+        )
+        self._defer = outer
 
     def _spread(
         mut self,

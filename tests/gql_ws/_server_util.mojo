@@ -7,6 +7,7 @@
 server suites."""
 
 from _net import connect, drain, send_all
+from gql_http.body import BodyPoll
 from gql_http.parser import Request
 from gql_http.server import Handler, ResponseWriter
 from gql_http.socket import IPv4Address, Sys
@@ -111,6 +112,29 @@ struct Plain(Handler):
     def handle(mut self, request: Request, mut response: ResponseWriter) raises:
         response.write_text("http ")
         response.write_text(request.target())
+
+
+struct Held(Handler):
+    """Holds each response, and sends `a`, nothing for two polls, and `b`."""
+
+    var turn: Int
+
+    def __init__(out self):
+        self.turn = 0
+
+    def handle(mut self, request: Request, mut response: ResponseWriter) raises:
+        response.begin_chunked()
+        response.hold()
+
+    def poll_body(mut self, id: Int, mut out: List[UInt8]) raises -> BodyPoll:
+        self.turn += 1
+        if self.turn == 1:
+            out.extend("a".as_bytes())
+            return BodyPoll.READY
+        if self.turn <= 3:
+            return BodyPoll.PENDING
+        out.extend("b".as_bytes())
+        return BodyPoll.DONE
 
 
 def config() -> ServerConfig:
