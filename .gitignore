@@ -262,3 +262,5 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+# The registry of a ScorchQL gateway started in the checkout.
+.scorchql/
