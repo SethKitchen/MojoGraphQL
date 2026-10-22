@@ -185,10 +185,10 @@ the values of the public OpenSSL headers. A program that does not import
   `requestPipeline.ts` and `writeMultipartBody` of `runHttpQuery.ts`; its
   tests port `describe('tests that require graphql@17')` of
   `packages/integration-testsuite/src/httpServerTests.ts`. It does not port
-  `legacyExperimentalExecuteIncrementally`. `gql_server_ws` ports the
-  setup of `docs/source/data/subscriptions.mdx` and
-  `src/plugin/drainHttpServer/index.ts`. It does not port
-  `src/plugin/subscriptionCallback/`.
+  `legacyExperimentalExecuteIncrementally` (`deferSpec=20220824`).
+  `gql_server` also ports `src/plugin/subscriptionCallback/index.ts`.
+  `gql_server_ws` ports the setup of `docs/source/data/subscriptions.mdx`
+  and `src/plugin/drainHttpServer/index.ts`.
 - **Apollo Client.** `src/react/internal/compiler-runtime/` is a separate MIT
   notice from Meta Platforms, Inc. MojoGraphQL ports no React code, so it
   does not port that directory. `gql_client` ports these MIT files of

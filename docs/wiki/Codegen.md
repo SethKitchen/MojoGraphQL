@@ -99,7 +99,7 @@ The types map as follows:
 ## Differences from upstream
 
 - The output is one Mojo module, not one Kotlin file per class. A nested Kotlin class is a flat struct named after its path.
-- Only the `operationBased` models are ported. `responseBased` and `experimental_operationBasedWithInterfaces` are refused.
+- `CodegenModels` supports `operationBased`, `responseBased` and `experimental_operationBasedWithInterfaces`.
 - The validation messages are the graphql-js messages of `gql_validation`. In 8 of 20 upstream validation fixtures, the first location of a graphql-js error is another place than the upstream issue.
 - The schema check is the graphql-js check, which is stricter than the `apollo-ast` check.
 - `@link` to the Apollo foreign schemas is not ported. So `@nonnull`, `@optional`, `@catch`, `@semanticNonNull`, `@typePolicy`, `@targetName` and `@requiresOptIn` are not read.

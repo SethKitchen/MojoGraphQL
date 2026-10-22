@@ -40,6 +40,7 @@ from gql_language.block_string import print_string
 from gql_language.error import GraphQLError, quote_json_string
 from gql_language.printer import print_node
 from gql_json.number import read_float64
+from gql_json.value import JsonDocument, JsonKind
 from gql_schema.definition import NO_TYPE, Schema, TypeKind, TypeRef
 from gql_schema.suggestions import did_you_mean, suggestion_list
 
@@ -159,6 +160,36 @@ struct JsValues(Movable):
         if value < 0:
             return JsKind.UNDEFINED
         return self.nodes[value].kind
+
+    def add_json(mut self, document: JsonDocument, node: Int) -> Int:
+        """Copy a JSON value, as `JSON.parse` gives it.
+
+        Args:
+            document: The JSON document.
+            node: The JSON value's index.
+
+        Returns:
+            The new value's index.
+        """
+        var kind = document.kind(node)
+        if kind == JsonKind.NULL:
+            return self.add(JsNode(JsKind.NULL))
+        if kind == JsonKind.BOOLEAN:
+            return self.add(_boolean(document.bool_value(node)))
+        if kind == JsonKind.NUMBER:
+            return self.add(_number(document.as_float64(node)))
+        if kind == JsonKind.STRING:
+            return self.add(_string(document.string_value(node)))
+        var is_object = kind == JsonKind.OBJECT
+        var out = JsNode(JsKind.OBJECT if is_object else JsKind.LIST)
+        var child = document.first(node)
+        while child != -1:
+            var item = self.add_json(document, child)
+            if is_object:
+                out.keys.append(String(document.key(child)))
+            out.items.append(item)
+            child = document.next(child)
+        return self.add(out^)
 
 
 comptime UNDEFINED = -1

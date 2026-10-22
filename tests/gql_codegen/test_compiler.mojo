@@ -246,18 +246,75 @@ def test_options() raises:
     assert_equal(
         CodegenModels.parse("operationBased"), CodegenModels.OPERATION_BASED
     )
-    with assert_raises(
-        contains="codegenModels='responseBased' is not supported"
-    ):
-        _ = CodegenModels.parse("responseBased")
+    assert_equal(
+        CodegenModels.parse("responseBased"), CodegenModels.RESPONSE_BASED
+    )
+    assert_equal(
+        CodegenModels.parse("experimental_operationBasedWithInterfaces"),
+        CodegenModels.EXPERIMENTAL_OPERATION_BASED_WITH_INTERFACES,
+    )
+    with assert_raises(contains="codegenModels='unknown' is not supported"):
+        _ = CodegenModels.parse("unknown")
     assert_true(CodegenModels.OPERATION_BASED.is_valid())
-    assert_false(CodegenModels(1).is_valid())
+    assert_true(CodegenModels.RESPONSE_BASED.is_valid())
+    assert_true(
+        CodegenModels.EXPERIMENTAL_OPERATION_BASED_WITH_INTERFACES.is_valid()
+    )
+    assert_false(CodegenModels(3).is_valid())
     assert_equal(String(CodegenModels.OPERATION_BASED), "operationBased")
-    assert_equal(String(CodegenModels(1)), "<invalid>")
+    assert_equal(String(CodegenModels.RESPONSE_BASED), "responseBased")
+    assert_equal(
+        String(CodegenModels.EXPERIMENTAL_OPERATION_BASED_WITH_INTERFACES),
+        "experimental_operationBasedWithInterfaces",
+    )
+    assert_equal(String(CodegenModels(3)), "<invalid>")
     var options = CodegenOptions()
     assert_true(options.generate_optional_operation_variables)
     assert_true(options.flatten_models)
     assert_false(options.decapitalize_fields)
+
+
+def test_response_based_and_experimental_models() raises:
+    var poly_schema = build_codegen_schema(
+        """
+        interface Character { id: ID! name: String! }
+        type Human implements Character { id: ID! name: String! homePlanet: String }
+        type Droid implements Character { id: ID! name: String! primaryFunction: String }
+        type Query { hero: Character }
+        """
+    )
+    var docs = List[CodegenDocument]()
+    docs.append(
+        CodegenDocument(
+            "hero.graphql",
+            """
+            query Hero {
+              hero {
+                id
+                ... on Character { name }
+                ... on Droid { primaryFunction }
+                ...HumanFrag
+              }
+            }
+            fragment HumanFrag on Human { homePlanet }
+            """,
+        )
+    )
+    var opts = CodegenOptions()
+    opts.codegen_models = CodegenModels.RESPONSE_BASED
+    var rb_result = compile(poly_schema, docs, opts)
+    assert_true(rb_result.succeeded())
+    assert_true("var asDroid:" in rb_result.source)
+    assert_true("var asHuman:" in rb_result.source)
+    assert_true("struct HeroQuery_Data_Hero_DroidHero" in rb_result.source)
+    assert_true("struct HeroQuery_Data_Hero_HumanHero" in rb_result.source)
+
+    opts.codegen_models = (
+        CodegenModels.EXPERIMENTAL_OPERATION_BASED_WITH_INTERFACES
+    )
+    var exp_result = compile(poly_schema, docs, opts)
+    assert_true(exp_result.succeeded())
+    assert_true("var onDroid:" in exp_result.source)
 
 
 def test_issues() raises:

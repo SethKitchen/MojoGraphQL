@@ -119,6 +119,9 @@ comptime UNDEFINED = -1
 comptime STREAM_TAG = -7
 """The tag of a handle to an event stream that `Values.add_stream` holds.
 The introspection tags are -1 to -6."""
+comptime PROMISE_TAG = -8
+"""The tag of a handle to a promise that `Values.add_promise` or
+`Values.add_rejected_promise` holds."""
 
 
 @fieldwise_init
@@ -722,6 +725,71 @@ struct Values(Movable):
             raise Error("The value is not an event stream.")
         return self.streams[self.id(value)].take()
 
+    # --- promises -------------------------------------------------------
+
+    def add_promise(mut self, resolved: Int) -> Int:
+        """Add a resolved promise value, as JavaScript
+        `Promise.resolve(resolved)`.
+
+        Args:
+            resolved: The value that the promise resolves to.
+
+        Returns:
+            A handle with the tag `PROMISE_TAG`.
+        """
+        return self.add_handle(PROMISE_TAG, resolved, first=0)
+
+    def add_rejected_promise(mut self, message: StringSlice) -> Int:
+        """Add a rejected promise value, as JavaScript
+        `Promise.reject(new Error(message))`.
+
+        Args:
+            message: The error's message.
+
+        Returns:
+            A handle with the tag `PROMISE_TAG`.
+        """
+        var err = self.add_error(message)
+        return self.add_handle(PROMISE_TAG, err, first=1)
+
+    def is_promise(self, value: Int) -> Bool:
+        """Return True for a promise handle that `add_promise` or
+        `add_rejected_promise` made.
+
+        Args:
+            value: A value's index, or `UNDEFINED`.
+
+        Returns:
+            Whether the value is a promise.
+        """
+        if self.kind(value) != ValueKind.HANDLE:
+            return False
+        return self.tag(value) == PROMISE_TAG
+
+    def is_rejected_promise(self, value: Int) -> Bool:
+        """Return True for a rejected promise handle.
+
+        Args:
+            value: A promise handle's index.
+
+        Returns:
+            Whether the promise is rejected.
+        """
+        if not self.is_promise(value):
+            return False
+        return self.handle_first(value) != 0
+
+    def promise_value(self, value: Int) -> Int:
+        """Return the resolved value or error node of a promise handle.
+
+        Args:
+            value: A promise handle's index.
+
+        Returns:
+            The target value's index.
+        """
+        return self.id(value)
+
     def mark(self) -> Tuple[Int, Int]:
         """Return the sizes of the arena, for `release`.
 
@@ -751,6 +819,9 @@ struct Values(Movable):
             var kind = node.kind
             if kind == ValueKind.LIST or kind == ValueKind.OBJECT:
                 if Int(node.start) >= count or Int(node.end) >= count:
+                    return False
+            elif kind == ValueKind.HANDLE and node.tag == PROMISE_TAG:
+                if Int(node.payload) >= count:
                     return False
             elif kind == ValueKind.STRING or kind == ValueKind.ERROR:
                 if Int(node.end) > mark[1]:

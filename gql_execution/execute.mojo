@@ -147,6 +147,12 @@ comptime IsTypeOf = def(
 ) raises thin -> Bool
 """An `isTypeOf` function, graphql-js `GraphQLIsTypeOfFn`."""
 
+comptime AsyncIsTypeOf = def(
+    mut values: Values, value: Int, info: ResolveInfo
+) raises thin -> Int
+"""An async `isTypeOf` function: it returns a boolean value, a promise of
+a boolean value, or an error value."""
+
 
 def default_field_resolver(
     mut values: Values, source: Int, args: Int, info: ResolveInfo
@@ -189,6 +195,10 @@ struct Resolvers(Copyable, Movable):
     """The object type of each `isTypeOf` function."""
     var object_functions: List[IsTypeOf]
     """Each `isTypeOf` function."""
+    var async_object_names: List[String]
+    """The object type of each async `isTypeOf` function."""
+    var async_object_functions: List[AsyncIsTypeOf]
+    """Each async `isTypeOf` function."""
     var default_field: FieldResolver
     """The resolver of a field with none: graphql-js `fieldResolver`."""
     var default_type: List[TypeResolver]
@@ -216,6 +226,8 @@ struct Resolvers(Copyable, Movable):
         self.type_functions = List[TypeResolver]()
         self.object_names = List[String]()
         self.object_functions = List[IsTypeOf]()
+        self.async_object_names = List[String]()
+        self.async_object_functions = List[AsyncIsTypeOf]()
         self.default_field = default_field_resolver
         self.default_type = List[TypeResolver]()
         self.has_default_field = False
@@ -305,6 +317,17 @@ struct Resolvers(Copyable, Movable):
         """
         self.object_names.append(type_name)
         self.object_functions.append(check)
+
+    def async_is_type_of(mut self, type_name: String, check: AsyncIsTypeOf):
+        """Set an async `isTypeOf` of an object type, which returns a
+        promise or boolean in `Values`.
+
+        Args:
+            type_name: The object type.
+            check: The function.
+        """
+        self.async_object_names.append(type_name)
+        self.async_object_functions.append(check)
 
     def field_resolver(mut self, resolve: FieldResolver):
         """Set the resolver of the fields with none, as graphql-js
@@ -668,6 +691,7 @@ struct _Executor[
     var field_resolvers: List[Int32]
     var type_resolvers: List[Int32]
     var type_checks: List[Int32]
+    var async_type_checks: List[Int32]
     var custom_default: Bool
     var intro_types: Array[Int, 6]
     var intro_starts: List[Int]
@@ -676,6 +700,8 @@ struct _Executor[
     # `ExecutionArgs.field_timing`, and the timings it records.
     var field_timing: Bool
     var field_timings: List[FieldTiming]
+    var sync_only: Bool
+    var saw_async: Bool
     # The records of incremental delivery; `inc.enabled` is False for
     # `execute`.
     var inc: IncrementalState
@@ -707,6 +733,7 @@ struct _Executor[
         self.field_resolvers = List[Int32]()
         self.type_resolvers = List[Int32]()
         self.type_checks = List[Int32]()
+        self.async_type_checks = List[Int32]()
         self.custom_default = False
         self.intro_types = Array[Int, 6](fill=NO_TYPE)
         self.intro_starts = List[Int]()
@@ -714,6 +741,8 @@ struct _Executor[
         self.string_type = schema.type_named("String")
         self.field_timing = False
         self.field_timings = List[FieldTiming]()
+        self.sync_only = False
+        self.saw_async = False
         self.inc = IncrementalState()
         self._bind(schema, resolvers)
         self._index_introspection(schema)
@@ -730,6 +759,10 @@ struct _Executor[
             self.type_resolvers = List[Int32](length=len(schema.types), fill=-1)
         if len(resolvers.object_functions) > 0:
             self.type_checks = List[Int32](length=len(schema.types), fill=-1)
+        if len(resolvers.async_object_functions) > 0:
+            self.async_type_checks = List[Int32](
+                length=len(schema.types), fill=-1
+            )
         var index = 0
         while index < len(resolvers.field_functions):
             var type = schema.type_named(resolvers.field_types[index])
@@ -751,6 +784,12 @@ struct _Executor[
             var type = schema.type_named(resolvers.object_names[index])
             if type != NO_TYPE:
                 self.type_checks[type] = Int32(index)
+            index += 1
+        index = 0
+        while index < len(resolvers.async_object_functions):
+            var type = schema.type_named(resolvers.async_object_names[index])
+            if type != NO_TYPE:
+                self.async_type_checks[type] = Int32(index)
             index += 1
 
     def _index_introspection(mut self, schema: Schema):
@@ -1100,6 +1139,16 @@ struct _Executor[
 
     # --- completion -----------------------------------------------------
 
+    def _unwrap_promise(mut self, var value: Int) raises GraphQLError -> Int:
+        """Unwrap any promise handles and raise if an error value is
+        reached."""
+        while self.values.is_promise(value):
+            self.saw_async = True
+            value = self.values.promise_value(value)
+        if self.values.kind(value) == ValueKind.ERROR:
+            raise GraphQLError(String(self.values.string(value)))
+        return value
+
     def _complete_value(
         mut self,
         type: TypeRef,
@@ -1109,12 +1158,11 @@ struct _Executor[
         result: Int,
     ) raises GraphQLError -> Int:
         """Return graphql-js `completeValue`."""
-        var kind = self.values.kind(result)
-        if kind == ValueKind.ERROR:
-            raise GraphQLError(String(self.values.string(result)))
+        var current = self._unwrap_promise(result)
+        var kind = self.values.kind(current)
         if type.is_non_null():
             var completed = self._complete_value(
-                type.of_type(), group, parent, field, result
+                type.of_type(), group, parent, field, current
             )
             if self.data.kind(completed) == JsonKind.NULL:
                 raise GraphQLError(
@@ -1128,14 +1176,14 @@ struct _Executor[
         if kind == ValueKind.UNDEFINED or kind == ValueKind.NULL:
             return self.data.add_null()
         if type.is_list():
-            return self._complete_list(type, group, parent, field, result)
+            return self._complete_list(type, group, parent, field, current)
         var named = Int(type.named)
         var named_kind = self.schema[].types[named].kind
         if named_kind.is_leaf():
-            return self._serialize(named, result)
+            return self._serialize(named, current)
         if named_kind.is_abstract():
-            return self._complete_abstract(named, group, parent, field, result)
-        return self._complete_object(named, group, parent, field, result)
+            return self._complete_abstract(named, group, parent, field, current)
+        return self._complete_object(named, group, parent, field, current)
 
     def _complete_list(
         mut self,
@@ -1166,6 +1214,7 @@ struct _Executor[
         var item = self.values.first(result)
         var index = 0
         while item != UNDEFINED:
+            var next_item = self.values.next(item)
             self.path.append(Int32(-index - 1))
             var depth = len(self.path)
             var completed: Int
@@ -1177,7 +1226,7 @@ struct _Executor[
                 completed = self._handle_error(e^, group, item_type, depth)
             _ = self.path.pop()
             self.data.append(list, completed)
-            item = self.values.next(item)
+            item = next_item
             index += 1
         return list
 
@@ -1305,35 +1354,68 @@ struct _Executor[
         var object = self._runtime_type(type, runtime, parent, field, result)
         return self._complete_object(object, group, parent, field, result)
 
+    def _check_is_type_of(
+        mut self, type: Int, value: Int, info: ResolveInfo
+    ) raises GraphQLError -> Int:
+        """Run the `isTypeOf` or async `isTypeOf` of an object type.
+        Return 1 for True, 0 for False, or -1 when there is no check."""
+        var check = _slot(self.type_checks, type)
+        if check >= 0:
+            try:
+                var ok = self.resolvers[].object_functions[check](
+                    self.values, value, info
+                )
+                return 1 if ok else 0
+            except e:
+                raise GraphQLError(String(e))
+        var async_check = _slot(self.async_type_checks, type)
+        if async_check >= 0:
+            var raw: Int
+            try:
+                raw = self.resolvers[].async_object_functions[async_check](
+                    self.values, value, info
+                )
+            except e:
+                raise GraphQLError(String(e))
+            var resolved = self._unwrap_promise(raw)
+            if self.values.kind(resolved) != ValueKind.BOOLEAN:
+                return 0
+            return 1 if self.values.bool_value(resolved) else 0
+        return -1
+
     def _resolve_type(
         mut self, type: Int, value: Int, info: ResolveInfo
     ) raises GraphQLError -> Int:
         """Call the type resolver of an abstract type, or graphql-js
         `defaultTypeResolver`."""
         var resolver = _slot(self.type_resolvers, type)
-        try:
-            if resolver >= 0:
-                return self.resolvers[].type_functions[resolver](
+        if resolver >= 0:
+            var raw: Int
+            try:
+                raw = self.resolvers[].type_functions[resolver](
                     self.values, value, info, type
                 )
-            if len(self.resolvers[].default_type) > 0:
-                return self.resolvers[].default_type[0](
+            except e:
+                raise GraphQLError(String(e))
+            return self._unwrap_promise(raw)
+        if len(self.resolvers[].default_type) > 0:
+            var raw: Int
+            try:
+                raw = self.resolvers[].default_type[0](
                     self.values, value, info, type
                 )
-            var name = self.values.get(value, "__typename")
-            if self.values.kind(name) == ValueKind.STRING:
-                return name
-            for possible in self.schema[].possible_types(type):
-                var check = _slot(self.type_checks, possible)
-                if check >= 0 and self.resolvers[].object_functions[check](
-                    self.values, value, info
-                ):
-                    return self.values.add_string(
-                        self.schema[].types[possible].name
-                    )
-            return UNDEFINED
-        except e:
-            raise GraphQLError(String(e))
+            except e:
+                raise GraphQLError(String(e))
+            return self._unwrap_promise(raw)
+        var name = self.values.get(value, "__typename")
+        if self.values.kind(name) == ValueKind.STRING:
+            return name
+        for possible in self.schema[].possible_types(type):
+            if self._check_is_type_of(possible, value, info) == 1:
+                return self.values.add_string(
+                    self.schema[].types[possible].name
+                )
+        return UNDEFINED
 
     def _runtime_type(
         mut self,
@@ -1404,19 +1486,14 @@ struct _Executor[
     ) raises GraphQLError -> Int:
         """Return graphql-js `completeObjectValue`."""
         var plan = self._subfields(type, group)
-        var check = _slot(self.type_checks, type)
-        if check >= 0:
+        var has_check = _slot(self.type_checks, type) >= 0
+        if not has_check:
+            has_check = _slot(self.async_type_checks, type) >= 0
+        if has_check:
             var info = self._info(
                 parent, field, group, self._return_type(field)
             )
-            var matches: Bool
-            try:
-                matches = self.resolvers[].object_functions[check](
-                    self.values, result, info
-                )
-            except e:
-                raise GraphQLError(String(e))
-            if not matches:
+            if self._check_is_type_of(type, result, info) == 0:
                 raise GraphQLError(
                     'Expected value of type "'
                     + self.schema[].types[type].name
@@ -1708,6 +1785,7 @@ struct _Executor[
         if not self.values.is_stream(result):
             var item = self.values.first(result)
             while item != UNDEFINED:
+                var next_item = self.values.next(item)
                 if index == initial:
                     record.next_item = item
                     record.index = index
@@ -1716,7 +1794,7 @@ struct _Executor[
                 self.complete_item(
                     list, item_type, group, parent, field, item, index
                 )
-                item = self.values.next(item)
+                item = next_item
                 index += 1
             if index == initial:
                 record.index = index
@@ -2221,6 +2299,8 @@ struct _Executor[
         except e:
             self.errors.append(e^)
             self.data.root = self.data.add_null()
+        if self.sync_only and self.saw_async:
+            raise Error("GraphQL execution failed to complete synchronously.")
         var data = JsonDocument()
         swap(data, self.data)
         var errors = List[GraphQLError]()
@@ -2353,9 +2433,7 @@ struct _Executor[
                 stream = resolve(self.values, root_value, args, info)
             except e:
                 raise GraphQLError(String(e))
-            if self.values.kind(stream) == ValueKind.ERROR:
-                raise GraphQLError(String(self.values.string(stream)))
-            return stream
+            return self._unwrap_promise(stream)
         except e:
             raise self._locate(e^, group, 1)
 
@@ -2452,6 +2530,17 @@ def execute_with_resolvers(
     Raises:
         Error: As `execute` raises.
     """
+    return _execute_with_resolvers(schema, document, resolvers, args, False)
+
+
+def _execute_with_resolvers(
+    schema: Schema,
+    document: Document,
+    resolvers: Resolvers,
+    mut args: ExecutionArgs,
+    sync_only: Bool,
+) raises -> ExecutionResult:
+    """Execute an operation with `sync_only` when called by `execute_sync`."""
     if not args.assume_valid_schema:
         assert_valid_schema(schema)
     var kind = args.values.kind(args.variable_values)
@@ -2466,6 +2555,7 @@ def execute_with_resolvers(
     var executor = _Executor(schema, document, resolvers, values^)
     executor.custom_default = resolvers.has_default_field
     executor.field_timing = args.field_timing
+    executor.sync_only = sync_only
     var result: ExecutionResult
     try:
         result = executor.run(
@@ -2579,8 +2669,7 @@ def execute(schema: Schema, document: Document) raises -> ExecutionResult:
 def execute_sync(
     schema: Schema, document: Document, mut args: ExecutionArgs
 ) raises -> ExecutionResult:
-    """Execute an operation, as graphql-js `executeSync`. Execution is
-    always synchronous, so this is `execute`.
+    """Execute an operation synchronously, as graphql-js `executeSync`.
 
     Args:
         schema: The schema.
@@ -2591,9 +2680,21 @@ def execute_sync(
         The result.
 
     Raises:
-        Error: As `execute` raises.
+        Error: As `execute` raises, or `GraphQL execution failed to
+            complete synchronously.` when a resolver returns a promise.
     """
-    return execute(schema, document, args)
+    var resolvers = Resolvers()
+    swap(resolvers, args.resolvers)
+    var result: ExecutionResult
+    try:
+        result = _execute_with_resolvers(
+            schema, document, resolvers, args, True
+        )
+    except e:
+        swap(resolvers, args.resolvers)
+        raise e^
+    swap(resolvers, args.resolvers)
+    return result^
 
 
 def _to_number(values: Values, value: Int) -> Float64:

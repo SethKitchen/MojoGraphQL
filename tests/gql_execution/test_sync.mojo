@@ -15,15 +15,20 @@ Upstream cases that are not ported:
   does not depend on.
 """
 
-from std.testing import TestSuite, assert_equal
+from std.testing import TestSuite, assert_equal, assert_false, assert_true
 from _helpers import run_query
-from gql_execution.execute import ExecutionArgs, ResolveInfo, execute_sync
+from gql_execution.execute import (
+    ExecutionArgs,
+    ResolveInfo,
+    execute,
+    execute_sync,
+)
 from gql_execution.value import Values
 from gql_language.parser import parse
 from gql_schema.build import build_schema
 
 comptime SDL = """
-type Query { syncField: String }
+type Query { syncField: String asyncField: String }
 type Mutation { syncMutationField: String }
 """
 
@@ -34,11 +39,18 @@ def root(
     return values.copy(source)
 
 
+def async_root(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_promise(values.copy(source))
+
+
 def _run(query: String) raises -> String:
     var schema = build_schema(SDL)
     var args = ExecutionArgs()
     args.root_value = args.values.add_string("rootValue")
     args.resolvers.field("Query", "syncField", root)
+    args.resolvers.field("Query", "asyncField", async_root)
     args.resolvers.field("Mutation", "syncMutationField", root)
     return execute_sync(schema, parse(query), args).to_json()
 
@@ -69,6 +81,29 @@ def test_execute_sync_does_not_return_a_promise_for_sync_execution() raises:
         _run("query Example { syncField }"),
         '{"data":{"syncField":"rootValue"}}',
     )
+
+
+def test_execute_resolves_async_field_and_execute_sync_throws() raises:
+    var schema = build_schema(SDL)
+    var args = ExecutionArgs()
+    args.root_value = args.values.add_string("rootValue")
+    args.resolvers.field("Query", "syncField", root)
+    args.resolvers.field("Query", "asyncField", async_root)
+    assert_equal(
+        execute(
+            schema, parse("query Example { syncField, asyncField }"), args
+        ).to_json(),
+        '{"data":{"syncField":"rootValue","asyncField":"rootValue"}}',
+    )
+    var raised = False
+    try:
+        _ = _run("query Example { syncField, asyncField }")
+    except e:
+        raised = True
+        assert_equal(
+            String(e), "GraphQL execution failed to complete synchronously."
+        )
+    assert_true(raised)
 
 
 def main() raises:

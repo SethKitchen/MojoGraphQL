@@ -239,8 +239,8 @@ A part must have no content type, or a JSON content type. A result that is an em
 
 ## Differences from Apollo Client
 
-- **No result cache.** A read builds a new result. Watches, broadcasts, `batch`, `performTransaction` and `resultCaching` are not ported.
-- **No optimistic layers.** `recordOptimisticTransaction` and `removeOptimistic` are not ported.
+- **No result cache.** A read builds a new result. Watches, broadcasts, `batch` and `resultCaching` are not ported.
+- **Optimistic layers.** `record_optimistic_transaction`, `remove_optimistic` and `perform_transaction` manage optimistic layers on top of the root store.
 - **Not ported.** Custom scalars, the fragment registry, reactive variables, `updateQuery`, `updateFragment` and the `storage` of policy functions.
 - **No client.** `ApolloClient`, `QueryManager`, `ObservableQuery`, the links and the network are not ported. `query_info` ports only the cache writes of a result. Apollo Link has the network; `gql_client_http` ports only its response parsing.
 - **No incremental reads.** `cache.diff` does not prune the pending `@defer` boundaries (`deferInfo`) or cut the pending `@stream` arrays (`StreamArrayState.truncate`) of Apollo Client 4.3. A result whose deferred data is to come has the data state `STREAMING` and the read with partial data. The memo of the last stream merge (`streamInfo.previous`) is not ported, so a merge function runs for each write.

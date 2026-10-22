@@ -47,6 +47,10 @@ from gql_http.error import HttpError
 from gql_server.plugin import ServerPlugin
 from gql_server.server import ApolloServer, ContextFunction, default_context
 from gql_server.standalone import MAX_BODY_BYTES, StandaloneHandler
+from gql_server.subscription_callback import (
+    SubscriptionCallbackOptions,
+    SubscriptionCallbackPlugin,
+)
 from gql_ws.graphql_ws import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from gql_ws.server import Server, ServerConfig, listen
 from gql_ws.transport_server import TransportOptions, TransportServer

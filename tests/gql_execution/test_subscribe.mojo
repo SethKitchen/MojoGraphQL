@@ -58,6 +58,15 @@ def _subscribe_foo(
     return values.add_stream(_foo_generator())
 
 
+def _subscribe_foo_async(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    var context = info.context_value
+    if context != UNDEFINED:
+        values.set(context, "didResolveFoo", values.add_bool(True))
+    return values.add_promise(values.add_stream(_foo_generator()))
+
+
 def _subscribe_bar(
     mut values: Values, source: Int, args: Int, info: ResolveInfo
 ) raises -> Int:
@@ -102,6 +111,17 @@ def test_accepts_type_definition_with_sync_subscribe_function() raises:
     # A function of another type, or of another field, is not used.
     args.resolvers.subscribe("Query", "foo", _returns_test)
     args.resolvers.subscribe("Subscription", "bar", _returns_test)
+    args.assume_valid_schema = True
+    var subscription = subscribe(schema, parse("subscription { foo }"), args^)
+    assert_equal(subscription.to_json(), "")
+    var stream = subscription.take_stream()
+    _expect_foo_then_done(stream)
+
+
+def test_accepts_type_definition_with_async_subscribe_function() raises:
+    var schema = build_schema(_FOO_SCHEMA)
+    var args = ExecutionArgs()
+    args.resolvers.subscribe("Subscription", "foo", _subscribe_foo_async)
     args.assume_valid_schema = True
     var subscription = subscribe(schema, parse("subscription { foo }"), args^)
     assert_equal(subscription.to_json(), "")

@@ -12,7 +12,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project is new. Today it has twenty-five finished packages, and more are in progress.
+The project has thirty-two finished packages.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
@@ -112,9 +112,9 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] Input value coercion and printing (`valueFromAST`, `astFromValue`)
 - [x] [Breaking and dangerous changes (`findBreakingChanges`)](https://github.com/SethKitchen/MojoGraphQL/wiki/Schema#breaking-and-dangerous-changes)
 - [x] [Sort a schema (`lexicographicSortSchema`) and `typeFromAST`](https://github.com/SethKitchen/MojoGraphQL/wiki/Schema#schema-utilities)
-- [x] Introspection and `buildClientSchema` (in [`gql_execution`](https://github.com/SethKitchen/MojoGraphQL/wiki/Execution))
+- [x] [Introspection and `buildClientSchema`](https://github.com/SethKitchen/MojoGraphQL/wiki/Schema#introspection-and-client-schemas)
 
-### Planned packages
+### Packages
 
 - [x] [`gql_json`](https://github.com/SethKitchen/MojoGraphQL/wiki/Json): a strict RFC 8259 parser and a `JSON.stringify` writer, for requests and responses.
 - [x] [`gql_validation`](https://github.com/SethKitchen/MojoGraphQL/wiki/Validation): the validation rules of the GraphQL specification.
@@ -160,9 +160,9 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | --- | --- | --- | --- |
 | `gql_language` | Done | nothing | graphql-js 16.14.2 `src/language` |
 | `gql_json` | Done | nothing | RFC 8259; ECMAScript `JSON.stringify` |
-| `gql_schema` | Done, except introspection | `gql_language`, `gql_json` | graphql-js `src/type`, `src/utilities` |
+| `gql_schema` | Done | `gql_language`, `gql_json` | graphql-js `src/type`, `src/utilities` |
 | `gql_validation` | Done | `gql_schema` | graphql-js `src/validation` |
-| `gql_execution` | Done, with subscriptions and `@defer`/`@stream`; except async resolvers | `gql_schema`, `gql_json`, `gql_stream` | graphql-js 16.14.2 `src/execution`; graphql-js 17.0.2 incremental delivery |
+| `gql_execution` | Done | `gql_schema`, `gql_json`, `gql_stream` | graphql-js 16.14.2 `src/execution`; graphql-js 17.0.2 incremental delivery |
 | `gql_http` | Done | nothing | RFC 9110, RFC 9112; GraphQL over HTTP |
 | `gql_sse` | Done | `gql_http`, `gql_json`, `gql_stream` | graphql-sse 2.6.3 |
 | `gql_sse_execution` | Done | `gql_sse`, `gql_execution`, `gql_validation` | graphql-sse 2.6.3 `handler.ts` |
@@ -177,14 +177,14 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_quic` | Done | `gql_tls`; system OpenSSL 3.5 at run time | quinn-proto 0.11.19; RFC 9000, RFC 9001, RFC 9002 |
 | `gql_http3` | Done | `gql_quic`, `gql_https2`; OpenSSL 3.5 at run time | hyperium/h3; RFC 9114, RFC 9204 |
 | `gql_server` | Done | `gql_validation`, `gql_execution`, `gql_http`, `gql_stream` | Apollo Server 5.5.1 |
-| `gql_server_ws` | Done, except the subscription callback plugin | `gql_server`, `gql_ws_execution` | Apollo Server 5.5.1 subscriptions with graphql-ws |
+| `gql_server_ws` | Done | `gql_server`, `gql_ws_execution` | Apollo Server 5.5.1 subscriptions with graphql-ws |
 | `gql_subgraph` | Done | `gql_execution` | `@apollo/subgraph` 2.14.4 |
 | `gql_composition` | Done | `gql_language` | Hive Federation Composition v0.27.0 |
 | `gql_router` | Done | `gql_language`, `gql_json`, `gql_http`, `gql_validation` | Hive Router `1a29df9` query planner, executor and pipeline |
 | `gql_router_stream` | Done | `gql_router`, `gql_ws`, `gql_stream` | Hive Router `1a29df9` subscriptions; streamed `@defer` |
-| `gql_client` | Done, except optimistic layers | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache`, `src/incremental` |
+| `gql_client` | Done | `gql_language`, `gql_json` | Apollo Client 4.3.3 `src/cache`, `src/incremental` |
 | `gql_client_http` | Done | `gql_http`, `gql_json` | Apollo Client 4.3.3 `parseAndCheckHttpResponse.ts` |
-| `gql_codegen` | Done, `operationBased` models only | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
+| `gql_codegen` | Done | `gql_validation`, `gql_json` | Apollo Kotlin `apollo-compiler` |
 | `gql_compiler` | Done | `gql_language` | apollo-compiler 1.33.0 (apollo-rs) |
 | `gql_normalization` | Done | `gql_schema`, `gql_json` | graphql-go-tools v2 `astnormalization`, `astminify`, `variablesvalidation` |
 | `gql_mcp` | Done | `gql_validation`, `gql_http` | Apollo MCP Server 2.0.0 |

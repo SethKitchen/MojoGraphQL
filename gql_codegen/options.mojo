@@ -103,23 +103,32 @@ struct CodegenModels(Equatable, ImplicitlyCopyable, Writable):
     comptime OPERATION_BASED = CodegenModels(0)
     """`operationBased`: the models follow the operation, and each
     fragment becomes a synthetic field."""
+    comptime RESPONSE_BASED = CodegenModels(1)
+    """`responseBased`: the models follow the response shapes."""
+    comptime EXPERIMENTAL_OPERATION_BASED_WITH_INTERFACES = CodegenModels(2)
+    """`experimental_operationBasedWithInterfaces`: `operationBased`
+    models, with interface models for polymorphic selection sets."""
 
     def is_valid(self) -> Bool:
         """Return True if the value names a ported shape.
 
         Returns:
-            Whether the value is `OPERATION_BASED`.
+            Whether the value is in range.
         """
-        return self.value == 0
+        return self.value <= 2
 
     def text(self) -> StaticString:
         """Return the upstream name of the shape.
 
         Returns:
-            `operationBased`, or `<invalid>`.
+            The upstream name, or `<invalid>`.
         """
-        if self.is_valid():
+        if self == CodegenModels.OPERATION_BASED:
             return "operationBased"
+        if self == CodegenModels.RESPONSE_BASED:
+            return "responseBased"
+        if self == CodegenModels.EXPERIMENTAL_OPERATION_BASED_WITH_INTERFACES:
+            return "experimental_operationBasedWithInterfaces"
         return "<invalid>"
 
     @staticmethod
@@ -137,6 +146,10 @@ struct CodegenModels(Equatable, ImplicitlyCopyable, Writable):
         """
         if text == "operationBased":
             return CodegenModels.OPERATION_BASED
+        if text == "responseBased":
+            return CodegenModels.RESPONSE_BASED
+        if text == "experimental_operationBasedWithInterfaces":
+            return CodegenModels.EXPERIMENTAL_OPERATION_BASED_WITH_INTERFACES
         raise Error("codegenModels='" + String(text) + "' is not supported")
 
     def write_to(self, mut writer: Some[Writer]):

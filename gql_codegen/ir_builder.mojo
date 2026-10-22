@@ -42,7 +42,7 @@ from gql_codegen.ir import (
     IrType,
     IrVariable,
 )
-from gql_codegen.options import CodegenOptions
+from gql_codegen.options import CodegenModels, CodegenOptions
 from gql_codegen.printer import print_executable
 from gql_codegen.schema_util import (
     field_type as _field_type,
@@ -535,6 +535,17 @@ struct _Builder(Movable):
             Error: With the upstream message, for a field that is not
                 defined or a wrong directive argument.
         """
+        if self.options.codegen_models == CodegenModels.RESPONSE_BASED:
+            return self.build_response_based_field(
+                document,
+                schema,
+                path,
+                info^,
+                selections,
+                has_selections,
+                parent,
+                condition,
+            )
         if not has_selections:
             return (IrProperty(info^, condition, False, "", ""), -1)
         var self_path = path + "." + info.response_name
@@ -739,6 +750,206 @@ struct _Builder(Movable):
         return (
             IrProperty(
                 IrFieldInfo(response_name, patched^, info.is_synthetic),
+                condition,
+                requires_buffering,
+                "",
+                "",
+            ),
+            len(self.ir.models) - 1,
+        )
+
+    def _collect_response_fields(
+        mut self,
+        document: Document,
+        schema: Schema,
+        selections: List[Int],
+        parent: Int,
+        mut fields: List[Int],
+        mut sub_types: List[Int],
+    ) raises:
+        """Collect fields directly and from matching or subtype inline
+        fragments and fragment spreads."""
+        var index = 0
+        while index < len(selections):
+            var sel = selections[index]
+            index += 1
+            var kind = document.kind(sel)
+            if kind == Kind.FIELD:
+                fields.append(sel)
+            elif kind == Kind.INLINE_FRAGMENT:
+                var tc_name = _type_condition_name(document, sel)
+                var tc = parent if tc_name == "" else schema.type_named(tc_name)
+                if tc == parent or is_sub_type_of(schema, parent, tc):
+                    self._collect_response_fields(
+                        document,
+                        schema,
+                        _selections_of(
+                            document, document.child(sel, Role.SELECTION_SET)
+                        ),
+                        parent,
+                        fields,
+                        sub_types,
+                    )
+                else:
+                    if not tc in sub_types:
+                        sub_types.append(tc)
+            else:
+                var frag_name = String(document.name(sel))
+                var def_node = self.fragments.find(frag_name)
+                if def_node == NO_NODE:
+                    raise Error("cannot find fragment " + frag_name)
+                var tc_name = _type_condition_name(document, def_node)
+                var tc = schema.type_named(tc_name)
+                if tc == parent or is_sub_type_of(schema, parent, tc):
+                    self._collect_response_fields(
+                        document,
+                        schema,
+                        _selections_of(
+                            document,
+                            document.child(def_node, Role.SELECTION_SET),
+                        ),
+                        parent,
+                        fields,
+                        sub_types,
+                    )
+                else:
+                    if not tc in sub_types:
+                        sub_types.append(tc)
+
+    def build_response_based_field(
+        mut self,
+        document: Document,
+        schema: Schema,
+        path: String,
+        var info: IrFieldInfo,
+        selections: List[Int],
+        has_selections: Bool,
+        parent: Int,
+        condition: Int,
+    ) raises -> Tuple[IrProperty, Int]:
+        """Build a field and its model for `responseBased` models, as
+        upstream `ResponseBasedModelGroupBuilder`.
+
+        Args:
+            document: The document.
+            schema: The schema.
+            path: The id of the parent model.
+            info: The field.
+            selections: The selections of the field.
+            has_selections: Whether the field has a selection set.
+            parent: The type of the selections.
+            condition: The condition of the property.
+
+        Returns:
+            The property, and the index of its model or -1.
+
+        Raises:
+            Error: When a field or fragment is not defined.
+        """
+        if not has_selections:
+            return (IrProperty(info^, condition, False, "", ""), -1)
+        var self_path = path + "." + info.response_name
+        var parent_name = schema.types[parent].name
+        var name = model_name(info)
+        var base_fields = List[Int]()
+        var sub_types = List[Int]()
+        self._collect_response_fields(
+            document, schema, selections, parent, base_fields, sub_types
+        )
+        var properties = List[IrProperty]()
+        var models = List[Int]()
+        for merged in self.merge(document, schema, base_fields, parent):
+            var child_type = ir_type(schema, merged.type)
+            if merged.condition != Conditions.TRUE:
+                child_type = child_type.with_nullable(True)
+            var raw = Int(merged.type.named)
+            var built = self.build_response_based_field(
+                document,
+                schema,
+                self_path,
+                IrFieldInfo(merged.response_name, child_type^, False),
+                merged.selections,
+                merged.has_selections,
+                raw,
+                Conditions.TRUE,
+            )
+            properties.append(built[0].copy())
+            if built[1] >= 0:
+                models.append(built[1])
+
+        var synthetic = List[IrProperty]()
+        var synthetic_models = List[Int]()
+        for sub_type in sub_types:
+            ref sub_named = schema.types[sub_type]
+            var sub_fields = List[Int]()
+            var ignored = List[Int]()
+            self._collect_response_fields(
+                document, schema, selections, sub_type, sub_fields, ignored
+            )
+            var sub_name = capitalize_first_letter(sub_named.name) + name
+            var sub_path = self_path + "." + sub_name
+            var sub_props = List[IrProperty]()
+            var sub_models = List[Int]()
+            for merged in self.merge(document, schema, sub_fields, sub_type):
+                var child_type = ir_type(schema, merged.type)
+                if merged.condition != Conditions.TRUE:
+                    child_type = child_type.with_nullable(True)
+                var raw = Int(merged.type.named)
+                var built = self.build_response_based_field(
+                    document,
+                    schema,
+                    sub_path,
+                    IrFieldInfo(merged.response_name, child_type^, False),
+                    merged.selections,
+                    merged.has_selections,
+                    raw,
+                    Conditions.TRUE,
+                )
+                sub_props.append(built[0].copy())
+                if built[1] >= 0:
+                    sub_models.append(built[1])
+            self.ir.models.append(
+                IrModel(
+                    sub_path,
+                    sub_name,
+                    sub_named.name,
+                    sub_props^,
+                    sub_models^,
+                )
+            )
+            var sub_model_idx = len(self.ir.models) - 1
+            var cond = self.type_condition(schema, sub_type, [parent])
+            var prop_type = IrType(
+                sub_named.name,
+                sub_named.kind,
+                sub_path,
+                0,
+                UInt32(0 if cond == Conditions.TRUE else 1),
+                False,
+            )
+            var prop_name = "as" + capitalize_first_letter(sub_named.name)
+            synthetic.append(
+                IrProperty(
+                    IrFieldInfo(prop_name, prop_type^, True),
+                    cond,
+                    False,
+                    "",
+                    sub_named.name,
+                )
+            )
+            synthetic_models.append(sub_model_idx)
+
+        var requires_buffering = len(synthetic) > 0
+        properties.extend(synthetic^)
+        for m in synthetic_models:
+            models.append(m)
+        self.ir.models.append(
+            IrModel(self_path, name, parent_name, properties^, models^)
+        )
+        var patched = info.type.with_model(self_path)
+        return (
+            IrProperty(
+                IrFieldInfo(info.response_name, patched^, info.is_synthetic),
                 condition,
                 requires_buffering,
                 "",

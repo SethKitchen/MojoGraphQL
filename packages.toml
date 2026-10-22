@@ -158,7 +158,7 @@ upstream = ["hyperium/h3 h3-v0.0.8 (22c1aa3) enable_extended_connect of h3/src/c
 summary = "Apollo Server subscriptions over graphql-transport-ws, on the port of its HTTP server, with a drain on stop"
 depends = ["gql_server", "gql_ws", "gql_ws_execution", "gql_http"]
 test_depends = ["gql_execution", "gql_schema", "gql_stream", "gql_json", "gql_language"]
-upstream = ["Apollo Server 5.5.1 (0c22029) docs/source/data/subscriptions.mdx (useServer of graphql-ws on the HTTP server, the drainServer plugin) and packages/server/src/plugin/drainHttpServer/index.ts (MIT); plugin/subscriptionCallback is excluded"]
+upstream = ["Apollo Server 5.5.1 (0c22029) docs/source/data/subscriptions.mdx (useServer of graphql-ws on the HTTP server, the drainServer plugin), packages/server/src/plugin/drainHttpServer/index.ts and packages/server/src/plugin/subscriptionCallback/index.ts (MIT)"]
 
 [packages.gql_sse]
 summary = "GraphQL over Server-Sent Events (graphql-sse): distinct connections and single connection modes on gql_http held responses"

@@ -70,6 +70,7 @@ from gql_client.read import DiffResult, diff_query_against_store
 from gql_client.store import (
     EntityStore,
     Entry,
+    Layer,
     member_index,
     member_value,
     merge_members,
@@ -101,6 +102,8 @@ comptime Modifier = def(
 ) raises thin -> Int
 """A `cache.modify` function: return the new value, `DELETE` or
 `INVALIDATE`."""
+comptime Transaction = def(mut cache: InMemoryCache) raises thin -> None
+"""A `perform_transaction` or `record_optimistic_transaction` callback."""
 comptime CachePointer = Pointer[InMemoryCache, MutUntrackedOrigin]
 """A pointer to the cache that a policy function works on."""
 
@@ -653,7 +656,7 @@ struct InMemoryCache(Movable):
             The value, or `NO_VALUE`.
         """
         if self.store.present(id):
-            var found = member_value(self.store.entries[id].members, name)
+            var found = self.store.get_field(id, name)
             if found != NO_VALUE:
                 return found
         if name == TYPENAME:
@@ -764,14 +767,7 @@ struct InMemoryCache(Movable):
             id: The interned id.
             incoming: The fields.
         """
-        if self.store.present(id):
-            _ = merge_members(
-                self.values, self.store.entries[id].members, incoming
-            )
-            return
-        # A new entity takes the fields as they are: they come from one
-        # object, so their keys are distinct and their values defined.
-        self.store.add(id, incoming^)
+        self.store.merge_into(self.values, id, incoming^)
 
     def merge_objects(mut self, existing: Int, incoming: Int) raises -> Int:
         """Merge two objects, as the upstream `mergeObjects` function.
@@ -819,7 +815,7 @@ struct InMemoryCache(Movable):
                 var members = self.values.members(existing)
                 if self.store.present(id):
                     _ = merge_members(
-                        self.values, members, self.store.entries[id].members
+                        self.values, members, self.store.members_of(id)
                     )
                 self.store.add(id, members^)
             return incoming
@@ -1281,6 +1277,7 @@ struct InMemoryCache(Movable):
         overwrite: Bool = False,
         extensions: JsonDocument = JsonDocument(),
         stream_info: StreamInfo = StreamInfo(),
+        optimistic: Bool = False,
     ) raises -> String:
         """Write the result of a query, as `cache.writeQuery`.
 
@@ -1299,6 +1296,10 @@ struct InMemoryCache(Movable):
                 document for `undefined`.
             stream_info: The `stream_info` of the incremental request, or
                 an empty trie.
+            optimistic: When False (the default outside an optimistic
+                transaction), writes go to the root store unless inside
+                `record_optimistic_transaction`. When True, writes go to
+                the top optimistic layer if one exists.
 
         Returns:
             The id that the data was written to.
@@ -1307,18 +1308,26 @@ struct InMemoryCache(Movable):
             Error: For the upstream invariant errors, such as a missing
                 fragment or a missing key field.
         """
-        var result = write_to_store(
-            self,
-            query,
-            data,
-            String(id),
-            variables,
-            overwrite,
-            extensions,
-            stream_info,
-        )
-        self._maybe_compact()
-        return result^
+        var saved = self.store.write_to_root
+        if not optimistic and self.store._in_optimistic == 0:
+            self.store.write_to_root = True
+        try:
+            var result = write_to_store(
+                self,
+                query,
+                data,
+                String(id),
+                variables,
+                overwrite,
+                extensions,
+                stream_info,
+            )
+            self.store.write_to_root = saved
+            self._maybe_compact()
+            return result^
+        except e:
+            self.store.write_to_root = saved
+            raise e^
 
     def write_fragment(
         mut self,
@@ -1328,6 +1337,7 @@ struct InMemoryCache(Movable):
         fragment_name: StringSlice = "",
         variables: JsonDocument = JsonDocument(),
         overwrite: Bool = False,
+        optimistic: Bool = False,
     ) raises -> String:
         """Write the data of a fragment, as `cache.writeFragment`.
 
@@ -1338,6 +1348,8 @@ struct InMemoryCache(Movable):
             fragment_name: The fragment, or empty for the only fragment.
             variables: The variables object, or an empty document.
             overwrite: Whether merge functions get no existing value.
+            optimistic: When True, writes to the top optimistic layer if
+                one exists.
 
         Returns:
             The id that the data was written to.
@@ -1347,11 +1359,19 @@ struct InMemoryCache(Movable):
                 name, or for the upstream write errors.
         """
         var query = get_fragment_query_document(fragment, fragment_name)
-        var result = write_to_store(
-            self, query, data, String(id), variables, overwrite
-        )
-        self._maybe_compact()
-        return result^
+        var saved = self.store.write_to_root
+        if not optimistic and self.store._in_optimistic == 0:
+            self.store.write_to_root = True
+        try:
+            var result = write_to_store(
+                self, query, data, String(id), variables, overwrite
+            )
+            self.store.write_to_root = saved
+            self._maybe_compact()
+            return result^
+        except e:
+            self.store.write_to_root = saved
+            raise e^
 
     def diff(
         mut self,
@@ -1359,6 +1379,7 @@ struct InMemoryCache(Movable):
         variables: JsonDocument = JsonDocument(),
         id: StringSlice = "ROOT_QUERY",
         return_partial_data: Bool = True,
+        optimistic: Bool = True,
     ) raises -> DiffResult:
         """Read a query and tell what is missing, as `cache.diff`.
 
@@ -1367,6 +1388,7 @@ struct InMemoryCache(Movable):
             variables: The variables object, or an empty document.
             id: The entity that the query starts at.
             return_partial_data: Whether an incomplete result is kept.
+            optimistic: Whether to read from the optimistic layers first.
 
         Returns:
             The result, whether it is complete, and the missing fields.
@@ -1375,9 +1397,18 @@ struct InMemoryCache(Movable):
             Error: For the upstream read errors, such as a missing
                 fragment.
         """
-        return diff_query_against_store(
-            self, query, variables, String(id), return_partial_data
-        )
+        var saved = self.store.write_to_root
+        if not optimistic:
+            self.store.write_to_root = True
+        try:
+            var out = diff_query_against_store(
+                self, query, variables, String(id), return_partial_data
+            )
+            self.store.write_to_root = saved
+            return out^
+        except e:
+            self.store.write_to_root = saved
+            raise e^
 
     def read_query(
         mut self,
@@ -1385,6 +1416,7 @@ struct InMemoryCache(Movable):
         variables: JsonDocument = JsonDocument(),
         id: StringSlice = "ROOT_QUERY",
         return_partial_data: Bool = False,
+        optimistic: Bool = True,
     ) raises -> Optional[JsonDocument]:
         """Read a query, as `cache.readQuery`.
 
@@ -1393,6 +1425,7 @@ struct InMemoryCache(Movable):
             variables: The variables object, or an empty document.
             id: The entity that the query starts at.
             return_partial_data: Whether an incomplete result is kept.
+            optimistic: Whether to read from the optimistic layers first.
 
         Returns:
             The result, or None (upstream `null`) when data is missing.
@@ -1400,7 +1433,9 @@ struct InMemoryCache(Movable):
         Raises:
             Error: For the upstream read errors.
         """
-        var result = self.diff(query, variables, id, return_partial_data)
+        var result = self.diff(
+            query, variables, id, return_partial_data, optimistic
+        )
         return result^.take_result()
 
     def read_fragment(
@@ -1410,6 +1445,7 @@ struct InMemoryCache(Movable):
         fragment_name: StringSlice = "",
         variables: JsonDocument = JsonDocument(),
         return_partial_data: Bool = False,
+        optimistic: Bool = True,
     ) raises -> Optional[JsonDocument]:
         """Read a fragment of an entity, as `cache.readFragment`.
 
@@ -1419,6 +1455,7 @@ struct InMemoryCache(Movable):
             fragment_name: The fragment, or empty for the only fragment.
             variables: The variables object, or an empty document.
             return_partial_data: Whether an incomplete result is kept.
+            optimistic: Whether to read from the optimistic layers first.
 
         Returns:
             The result, or None when data is missing.
@@ -1429,7 +1466,9 @@ struct InMemoryCache(Movable):
         """
         var query = get_fragment_query_document(fragment, fragment_name)
         var root = String(id) if id.byte_length() > 0 else "ROOT_QUERY"
-        return self.read_query(query, variables, root, return_partial_data)
+        return self.read_query(
+            query, variables, root, return_partial_data, optimistic
+        )
 
     def transform_document(self, document: Document) -> Document:
         """Add `__typename` to a document, as `cache.transformDocument`.
@@ -1556,6 +1595,7 @@ struct InMemoryCache(Movable):
         fields: Dict[String, Modifier],
         id: Optional[String] = None,
         all: Optional[Modifier] = None,
+        optimistic: Bool = True,
     ) raises -> Bool:
         """Change the fields of an entity, as `cache.modify`.
 
@@ -1568,6 +1608,8 @@ struct InMemoryCache(Movable):
             id: The entity id; None is `ROOT_QUERY`, and the empty string
                 modifies nothing.
             all: One modifier for every field, in place of `fields`.
+            optimistic: Whether to modify the top optimistic layer when
+                one is active; False modifies the root store.
 
         Returns:
             Whether a modifier changed a field.
@@ -1580,7 +1622,16 @@ struct InMemoryCache(Movable):
             target = id.value()
             if target.byte_length() == 0:
                 return False
-        var changed = self._modify(target, fields, all, False, "", False)
+        var saved = self.store.write_to_root
+        if not optimistic:
+            self.store.write_to_root = True
+        var changed: Bool
+        try:
+            changed = self._modify(target, fields, all, False, "", False)
+        except e:
+            self.store.write_to_root = saved
+            raise e^
+        self.store.write_to_root = saved
         self._maybe_compact()
         return changed
 
@@ -1598,7 +1649,7 @@ struct InMemoryCache(Movable):
         var slot = self.values.ids.find(id)
         if slot < 0 or not self.store.present(slot):
             return False
-        var members = self.store.entries[slot].members.copy()
+        var members = self.store.members_of(slot)
         var changes = List[Member]()
         var all_deleted = True
         for ref member in members:
@@ -1648,6 +1699,7 @@ struct InMemoryCache(Movable):
         id: Optional[String] = None,
         field_name: String = "",
         args: Optional[JsonDocument] = None,
+        optimistic: Bool = True,
     ) raises -> Bool:
         """Remove an entity or some of its fields, as `cache.evict`.
 
@@ -1657,6 +1709,8 @@ struct InMemoryCache(Movable):
             field_name: The field to remove, or empty for the entity.
             args: The arguments of the one field value to remove; without
                 them, every value of the field goes.
+            optimistic: Whether to evict from the top optimistic layer
+                when one is active; False evicts from the root store.
 
         Returns:
             Whether something was removed.
@@ -1669,8 +1723,12 @@ struct InMemoryCache(Movable):
             target = id.value()
             if target.byte_length() == 0:
                 return False
+        var saved = self.store.write_to_root
+        if not optimistic:
+            self.store.write_to_root = True
         var slot = self.values.ids.find(target)
         if slot < 0 or not self.store.present(slot):
+            self.store.write_to_root = saved
             return False
         var store_name = field_name
         var exact = False
@@ -1680,57 +1738,142 @@ struct InMemoryCache(Movable):
             var value = self.values.from_json(arguments, arguments.root)
             var empty = Document()
             var reference = self.values.add_reference_to(slot)
-            store_name = self.store_field_name(
-                self.typename_of(reference),
-                field_name,
-                empty,
-                NO_AST_NODE,
-                NO_VALUE,
-                value,
-                True,
+            try:
+                store_name = self.store_field_name(
+                    self.typename_of(reference),
+                    field_name,
+                    empty,
+                    NO_AST_NODE,
+                    NO_VALUE,
+                    value,
+                    True,
+                )
+            except e:
+                self.store.write_to_root = saved
+                raise e^
+        var evicted: Bool
+        try:
+            evicted = self._modify(
+                target,
+                Dict[String, Modifier](),
+                None,
+                exact,
+                store_name,
+                store_name.byte_length() == 0,
             )
-        var evicted = self._modify(
-            target,
-            Dict[String, Modifier](),
-            None,
-            exact,
-            store_name,
-            store_name.byte_length() == 0,
-        )
+        except e:
+            self.store.write_to_root = saved
+            raise e^
+        self.store.write_to_root = saved
         self._maybe_compact()
         return evicted
 
-    def retain(mut self, id: String) -> Int:
+    def retain(mut self, id: String, optimistic: Bool = False) -> Int:
         """Keep an entity from `gc`, as `cache.retain`.
 
         Args:
             id: The entity id.
+            optimistic: Whether to retain in the top optimistic layer
+                when one is active.
 
         Returns:
             The number of holds on the id.
         """
-        return self.store.retain(id)
+        var saved = self.store.write_to_root
+        if not optimistic:
+            self.store.write_to_root = True
+        var count = self.store.retain(id)
+        self.store.write_to_root = saved
+        return count
 
-    def release(mut self, id: String) -> Int:
+    def release(mut self, id: String, optimistic: Bool = False) -> Int:
         """Remove one hold of `retain`, as `cache.release`.
 
         Args:
             id: The entity id.
+            optimistic: Whether to release from the optimistic layers
+                first.
 
         Returns:
             The number of holds that are left.
         """
-        return self.store.release(id)
+        var saved = self.store.write_to_root
+        if not optimistic:
+            self.store.write_to_root = True
+        var count = self.store.release(id)
+        self.store.write_to_root = saved
+        return count
 
-    def root_id_set(self) -> List[String]:
+    def perform_transaction(
+        mut self,
+        transaction: Transaction,
+        optimistic_id: Optional[String] = None,
+    ) raises:
+        """Run a transaction against the root store or an optimistic
+        layer, as `cache.performTransaction`.
+
+        Args:
+            transaction: The callback that reads and writes the cache.
+            optimistic_id: When set, pushes a new optimistic layer with
+                this id while the callback runs; None writes to the root
+                store.
+
+        Raises:
+            Error: Any error raised by `transaction`.
+        """
+        var saved = self.store.write_to_root
+        if optimistic_id:
+            self.store.write_to_root = False
+            self.store.push_layer(optimistic_id.value())
+            self.store._in_optimistic += 1
+        else:
+            self.store.write_to_root = True
+        try:
+            transaction(self)
+            if optimistic_id:
+                self.store._in_optimistic -= 1
+            self.store.write_to_root = saved
+        except e:
+            if optimistic_id:
+                self.store._in_optimistic -= 1
+            self.store.write_to_root = saved
+            raise e^
+
+    def record_optimistic_transaction(
+        mut self, transaction: Transaction, id: String
+    ) raises:
+        """Record an optimistic transaction in a new layer, as
+        `cache.recordOptimisticTransaction`.
+
+        Args:
+            transaction: The callback that writes optimistic data.
+            id: The transaction id, used later with `remove_optimistic`.
+
+        Raises:
+            Error: Any error raised by `transaction`.
+        """
+        self.perform_transaction(transaction, id)
+
+    def remove_optimistic(mut self, id: String):
+        """Remove an optimistic layer by id, as `cache.removeOptimistic`.
+
+        Args:
+            id: The transaction id to remove.
+        """
+        _ = self.store.remove_layer(id)
+        self._maybe_compact()
+
+    def root_id_set(self, optimistic: Bool = True) -> List[String]:
         """Return the ids that `gc` keeps, as `EntityStore.getRootIdSet`.
+
+        Args:
+            optimistic: Whether to include retained ids from optimistic
+                layers.
 
         Returns:
             The retained ids, then the root ids such as `ROOT_QUERY`.
         """
-        var out = List[String]()
-        for entry in self.store.root_ids.items():
-            out.append(entry.key)
+        var out = self.store.retained_root_ids(optimistic)
         var roots: List[String] = [
             "ROOT_QUERY",
             "ROOT_MUTATION",
@@ -1738,7 +1881,7 @@ struct InMemoryCache(Movable):
         ]
         var index = 0
         while index < len(roots):
-            if roots[index] not in self.store.root_ids:
+            if self.store.retain_count(roots[index], optimistic) == 0:
                 out.append(roots[index])
             index += 1
         return out^
@@ -1752,7 +1895,7 @@ struct InMemoryCache(Movable):
         Raises:
             Error: Never in practice; the id table can raise.
         """
-        var ids = self.root_id_set()
+        var ids = self.root_id_set(True)
         var seen = Dict[String, Bool]()
         var index = 0
         while index < len(ids):
@@ -1763,7 +1906,10 @@ struct InMemoryCache(Movable):
         var position = 0
         while position < len(ids):
             var slot = self.values.ids.find(ids[position])
-            if slot >= 0 and self.store.present(slot):
+            if slot >= 0 and (
+                self.store.present(slot, True)
+                or self.store.present(slot, False)
+            ):
                 kept[slot] = True
                 var children = self._child_ref_ids(slot)
                 for ref child in children:
@@ -1773,10 +1919,11 @@ struct InMemoryCache(Movable):
                         ids.append(text)
             position += 1
         var removed = List[String]()
-        for slot in self.store.ids_in_order():
+        for slot in self.store.ids_in_order(False):
             if slot not in kept:
                 removed.append(String(self.values.ids.text(slot)))
-                self.store.remove(slot)
+                self.store.entries[slot].present = False
+                self.store.entries[slot].members = List[Member]()
         self._compact()
         return removed^
 
@@ -1785,8 +1932,14 @@ struct InMemoryCache(Movable):
         `findChildRefIds`."""
         var out = List[Int]()
         var work = List[Int]()
-        for ref member in self.store.entries[slot].members:
-            work.append(Int(member.value))
+        if slot < len(self.store.entries) and self.store.entries[slot].present:
+            for ref member in self.store.entries[slot].members:
+                work.append(Int(member.value))
+        for ref layer in self.store.layers:
+            if slot < len(layer.entries) and layer.entries[slot].present:
+                for ref member in layer.entries[slot].members:
+                    if Int(member.value) != NO_VALUE:
+                        work.append(Int(member.value))
         while len(work) > 0:
             var value = work.pop()
             var kind = self.values.kind(value)
@@ -1807,42 +1960,50 @@ struct InMemoryCache(Movable):
 
     # --- extract and restore ----------------------------------------------
 
-    def extract(mut self) -> String:
-        """Return the normalized data, as `JSON.stringify(cache.extract())`.
+    def extract(mut self, optimistic: Bool = False) -> String:
+        """Return the normalized data, as
+        `JSON.stringify(cache.extract(optimistic))`.
 
         The entities are in the order they were added; ids that are array
         indices come first, as ECMAScript orders them. `__META` lists the
         retained ids that are not root ids.
 
+        Args:
+            optimistic: Whether to extract optimistic data; False by
+                default, as upstream `cache.extract(optimistic = false)`.
+
         Returns:
             The JSON text.
         """
         var writer = JsonWriter(0, 4096)
-        self.write_extract(writer)
+        self.write_extract(writer, optimistic)
         return writer^.take_string()
 
-    def write_extract(mut self, mut writer: JsonWriter):
+    def write_extract(
+        mut self, mut writer: JsonWriter, optimistic: Bool = False
+    ):
         """Write the normalized data, as `extract` gives it.
 
         Args:
             writer: The destination.
+            optimistic: Whether to extract optimistic data.
         """
         writer.begin_object()
-        var order = self.store.ids_in_order()
+        var order = self.store.ids_in_order(optimistic)
         var indexed = List[Int]()
         for slot in order:
             if self.values.ids.indexes[slot] >= 0:
                 indexed.append(slot)
         _sort_by_index(indexed, self.values.ids.indexes)
         for slot in indexed:
-            self._write_entity(writer, slot)
+            self._write_entity(writer, slot, optimistic)
         for slot in order:
             if self.values.ids.indexes[slot] < 0:
-                self._write_entity(writer, slot)
+                self._write_entity(writer, slot, optimistic)
         var extra = List[String]()
-        for entry in self.store.root_ids.items():
-            if entry.key not in self.policies.root_typenames_by_id:
-                extra.append(entry.key)
+        for ref key in self.store.retained_root_ids(optimistic):
+            if key not in self.policies.root_typenames_by_id:
+                extra.append(key)
         if len(extra) > 0:
             _sort_texts(extra)
             writer.key("__META")
@@ -1857,10 +2018,12 @@ struct InMemoryCache(Movable):
             writer.end_object()
         writer.end_object()
 
-    def _write_entity(self, mut writer: JsonWriter, slot: Int):
+    def _write_entity(
+        self, mut writer: JsonWriter, slot: Int, optimistic: Bool = False
+    ):
         """Write one entity as a member of the extract object."""
         writer.key(self.values.ids.text(slot))
-        ref members = self.store.entries[slot].members
+        var members = self.store.members_of(slot, optimistic)
         writer.begin_object()
         # Store field names that are array indices come first, as
         # ECMAScript orders the keys of an object.
@@ -1962,6 +2125,16 @@ struct InMemoryCache(Movable):
                     member.value = Int32(
                         self.values.copy_into(target, Int(member.value), moved)
                     )
+        for ref layer in self.store.layers:
+            for ref entry in layer.entries:
+                if entry.present:
+                    for ref member in entry.members:
+                        if Int(member.value) != NO_VALUE:
+                            member.value = Int32(
+                                self.values.copy_into(
+                                    target, Int(member.value), moved
+                                )
+                            )
         swap(self.values, target)
         self.live = len(self.values.nodes)
 

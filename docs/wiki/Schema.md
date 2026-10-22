@@ -179,6 +179,9 @@ These functions are ports of the graphql-js schema utilities. Each one is in its
 | `find_dangerous_changes(old_schema, new_schema)` | `gql_schema.find_breaking_changes` | `findDangerousChanges` | `List[DangerousChange]` |
 | `lexicographic_sort_schema(schema)` | `gql_schema.lexicographic_sort_schema` | `lexicographicSortSchema` | `Schema` |
 | `type_from_ast(schema, document, node)` | `gql_schema.type_from_ast` | `typeFromAST` | `Optional[TypeRef]`, empty when the schema does not have the named type |
+| `get_introspection_query(options)` | `gql_schema.introspection` | `getIntrospectionQuery` | `String` |
+| `introspection_from_schema(schema, options, assume_valid)` | `gql_schema.introspection` | `introspectionFromSchema` | `JsonDocument` |
+| `build_client_schema(document, introspection, assume_valid)` | `gql_schema.build_client_schema` | `buildClientSchema` | `Schema` |
 
 ### Breaking and dangerous changes
 
@@ -207,6 +210,10 @@ for change in find_breaking_changes(old_schema, new_schema):
 `lexicographic_sort_schema` returns a copy of a schema with everything sorted by name in natural order. That is the type map, the directives, and the fields, arguments, input fields, enum values, interfaces and union members of each type. The specified scalars and the introspection types keep their order, as in graphql-js. `print_schema` of the result is the same text as graphql-js.
 
 A type keeps its index in `types`, so a `TypeRef` of the old schema names the same type in the new schema. The indices of fields, input values, enum values and directives change.
+
+### Introspection and client schemas
+
+`gql_schema.introspection` gives `get_introspection_query` and `introspection_from_schema`. `gql_schema.build_client_schema` builds a `Schema` from the `data` of an introspection result with `build_client_schema`.
 
 ### Differences from graphql-js in the schema utilities
 

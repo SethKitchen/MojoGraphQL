@@ -11,7 +11,7 @@ There is no upstream test file: graphql-js has no arena.
 
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
-from gql_execution.value import STREAM_TAG, UNDEFINED, Values
+from gql_execution.value import PROMISE_TAG, STREAM_TAG, UNDEFINED, Values
 from gql_stream.stream import AnyStream, ListStream
 from gql_stream.waker import Waker
 
@@ -105,6 +105,28 @@ def test_release_keeps_a_container_whose_first_child_is_newer() raises:
     values.append(list, orphan)
     assert_false(values.release(mark))
     assert_equal(values.length(list), 2)
+
+
+def test_add_promise_and_rejected_promise() raises:
+    var values = Values()
+    var inner = values.add_string("ok")
+    var p = values.add_promise(inner)
+    assert_equal(values.tag(p), PROMISE_TAG)
+    assert_true(values.is_promise(p))
+    assert_false(values.is_rejected_promise(p))
+    assert_equal(values.promise_value(p), inner)
+    assert_false(values.is_promise(UNDEFINED))
+    assert_false(values.is_promise(inner))
+
+    var r = values.add_rejected_promise("boom")
+    assert_true(values.is_promise(r))
+    assert_true(values.is_rejected_promise(r))
+    assert_equal(values.string(values.promise_value(r)), "boom")
+
+    var mark = values.mark()
+    var newer = values.add_number(42)
+    values.nodes[p].payload = Int64(newer)
+    assert_false(values.release(mark))
 
 
 def main() raises:

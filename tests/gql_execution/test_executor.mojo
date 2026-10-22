@@ -194,6 +194,45 @@ def sync_return_error_list(
     return out
 
 
+def async_value(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_promise(values.add_string("async"))
+
+
+def async_reject(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_rejected_promise("Error getting asyncReject")
+
+
+def async_return_error(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_promise(
+        values.add_error("Error getting asyncReturnError")
+    )
+
+
+def async_return_error_with_extensions(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_promise(
+        values.add_error("Error getting asyncReturnErrorWithExtensions")
+    )
+
+
+def is_special_async(
+    mut values: Values, value: Int, info: ResolveInfo
+) raises -> Int:
+    var found = values.get(value, "value")
+    var ok = False
+    if values.kind(found) == ValueKind.STRING:
+        if values.string(found) == "foo":
+            ok = True
+    return values.add_promise(values.add_bool(ok))
+
+
 def catch_me(
     mut values: Values, source: Int, args: Int, info: ResolveInfo
 ) raises -> Int:
@@ -464,6 +503,10 @@ def test_nulls_out_error_subtrees() raises:
           syncError: String
           syncReturnError: String
           syncReturnErrorList: [String]
+          async: String
+          asyncReject: String
+          asyncReturnError: String
+          asyncReturnErrorWithExtensions: String
         }
         schema { query: Type }
         """
@@ -473,12 +516,24 @@ def test_nulls_out_error_subtrees() raises:
     args.resolvers.field("Type", "syncError", sync_error)
     args.resolvers.field("Type", "syncReturnError", sync_return_error)
     args.resolvers.field("Type", "syncReturnErrorList", sync_return_error_list)
+    args.resolvers.field("Type", "async", async_value)
+    args.resolvers.field("Type", "asyncReject", async_reject)
+    args.resolvers.field("Type", "asyncReturnError", async_return_error)
+    args.resolvers.field(
+        "Type",
+        "asyncReturnErrorWithExtensions",
+        async_return_error_with_extensions,
+    )
     var query = """
       {
         sync
         syncError
         syncReturnError
         syncReturnErrorList
+        async
+        asyncReject
+        asyncReturnError
+        asyncReturnErrorWithExtensions
       }
     """
     assert_equal(
@@ -493,9 +548,16 @@ def test_nulls_out_error_subtrees() raises:
             '"locations":[{"line":6,"column":9}],"path":["syncReturnErrorList",1]},'
             '{"message":"Error getting'
             ' syncReturnErrorList3","locations":[{"line":'
-            '6,"column":9}],"path":["syncReturnErrorList",3]}],"data":{"sync":'
+            '6,"column":9}],"path":["syncReturnErrorList",3]},{"message":"Error'
+            ' getting asyncReject","locations":[{"line":8,"column":9}],"path":'
+            '["asyncReject"]},{"message":"Error getting'
+            ' asyncReturnError","locations":[{"line":9,"column":9}],"path":'
+            '["asyncReturnError"]},{"message":"Error getting'
+            ' asyncReturnErrorWithExtensions","locations":[{"line":10,"column":9'
+            '}],"path":["asyncReturnErrorWithExtensions"]}],"data":{"sync":'
             '"sync","syncError":null,"syncReturnError":null,"syncReturnErrorList":'
-            '["sync0",null,"sync2",null]}}'
+            '["sync0",null,"sync2",null],"async":"async","asyncReject":null,'
+            '"asyncReturnError":null,"asyncReturnErrorWithExtensions":null}}'
         ),
     )
 
@@ -744,6 +806,20 @@ def test_fails_when_an_is_type_of_check_is_not_met() raises:
     args.resolvers.is_type_of("SpecialType", is_special)
     assert_equal(
         run_query(schema, "{ specials { value } }", args),
+        (
+            '{"errors":[{"message":"Expected value of type'
+            ' \\"SpecialType\\" but'
+            ' got: { value: \\"bar\\" }.","locations":[{"line":1,"column":3}],'
+            '"path":["specials",1]}],"data":{"specials":[{"value":"foo"},null]}}'
+        ),
+    )
+    var args2 = ExecutionArgs()
+    args2.root_value = json_value(
+        args2.values, '{"specials": [{"value": "foo"}, {"value": "bar"}]}'
+    )
+    args2.resolvers.async_is_type_of("SpecialType", is_special_async)
+    assert_equal(
+        run_query(schema, "{ specials { value } }", args2),
         (
             '{"errors":[{"message":"Expected value of type'
             ' \\"SpecialType\\" but'

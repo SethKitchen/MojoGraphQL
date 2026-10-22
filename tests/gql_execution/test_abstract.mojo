@@ -66,10 +66,44 @@ def resolve_throws(
     raise Error("We are testing this error")
 
 
-def resolve_list(
+def is_dog_async(
+    mut values: Values, value: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_promise(
+        values.add_bool(values.member(value, "woofs") != UNDEFINED)
+    )
+
+
+def is_cat_async(
+    mut values: Values, value: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_promise(
+        values.add_bool(values.member(value, "meows") != UNDEFINED)
+    )
+
+
+def rejects_async(
+    mut values: Values, value: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_rejected_promise("We are testing this error")
+
+
+def throws_async(
+    mut values: Values, value: Int, info: ResolveInfo
+) raises -> Int:
+    raise Error("We are testing this error")
+
+
+def resolve_rejects(
     mut values: Values, value: Int, info: ResolveInfo, type: Int
 ) raises -> Int:
-    return values.add_list()
+    return values.add_rejected_promise("We are testing this error")
+
+
+def resolve_dog_promise(
+    mut values: Values, value: Int, info: ResolveInfo, type: Int
+) raises -> Int:
+    return values.add_promise(values.add_string("Dog"))
 
 
 comptime INTERFACE_SDL = """
@@ -109,6 +143,12 @@ comptime PETS_ERRORS = (
 )
 
 
+def resolve_list(
+    mut values: Values, value: Int, info: ResolveInfo, type: Int
+) raises -> Int:
+    return values.add_list()
+
+
 def test_is_type_of_used_to_resolve_runtime_type_for_interface() raises:
     var schema = build_schema(INTERFACE_SDL)
     var args = ExecutionArgs()
@@ -116,6 +156,11 @@ def test_is_type_of_used_to_resolve_runtime_type_for_interface() raises:
     args.resolvers.is_type_of("Dog", is_dog)
     args.resolvers.is_type_of("Cat", is_cat)
     assert_equal(run_query(schema, PETS_QUERY, args), PETS_DATA)
+    var args_async = ExecutionArgs()
+    args_async.resolvers.field("Query", "pets", pets)
+    args_async.resolvers.async_is_type_of("Dog", is_dog_async)
+    args_async.resolvers.async_is_type_of("Cat", is_cat_async)
+    assert_equal(run_query(schema, PETS_QUERY, args_async), PETS_DATA)
 
 
 def test_is_type_of_can_throw() raises:
@@ -124,6 +169,25 @@ def test_is_type_of_can_throw() raises:
     args.resolvers.field("Query", "pets", pets)
     args.resolvers.is_type_of("Dog", throws)
     assert_equal(run_query(schema, PETS_QUERY, args), PETS_ERRORS)
+    var args_reject = ExecutionArgs()
+    args_reject.resolvers.field("Query", "pets", pets)
+    args_reject.resolvers.async_is_type_of("Dog", rejects_async)
+    assert_equal(run_query(schema, PETS_QUERY, args_reject), PETS_ERRORS)
+    var args_throw_async = ExecutionArgs()
+    args_throw_async.resolvers.field("Query", "pets", pets)
+    args_throw_async.resolvers.async_is_type_of("Dog", throws_async)
+    assert_equal(run_query(schema, PETS_QUERY, args_throw_async), PETS_ERRORS)
+    var args_reject_type = ExecutionArgs()
+    args_reject_type.resolvers.field("Query", "pets", pets)
+    args_reject_type.resolvers.type_resolver("Pet", resolve_rejects)
+    assert_equal(run_query(schema, PETS_QUERY, args_reject_type), PETS_ERRORS)
+    var args_default_type = ExecutionArgs()
+    args_default_type.resolvers.field("Query", "pets", pets)
+    args_default_type.resolvers.default_type_resolver(resolve_dog_promise)
+    assert_equal(
+        run_query(schema, "{ pets { name } }", args_default_type),
+        '{"data":{"pets":[{"name":"Odie"},{"name":"Garfield"}]}}',
+    )
 
 
 def test_is_type_of_can_return_false() raises:
