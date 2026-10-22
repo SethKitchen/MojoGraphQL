@@ -35,6 +35,7 @@ from gql_ws_http2.client import connect_h2c, connect_transport_h2c
 from gql_ws_http2.handshake import client_head
 from gql_ws_http2.server import Server, ServerConfig, listen
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
+from std.time import perf_counter_ns
 
 comptime GTW = "graphql-transport-ws"
 
@@ -166,6 +167,29 @@ def test_echo() raises:
         String(unsafe_from_utf8=Span(peer.conn.streams[slot].body)), "http /x"
     )
     assert_equal(server.open_connections, 1)
+
+
+def test_idle_connections() raises:
+    """A connection without a WebSocket that sends nothing closes after
+    `idle_timeout_ms`; a connection with a WebSocket stays."""
+    var config = _config()
+    config.http.idle_timeout_ms = 50
+    var server = _server(config)
+    var busy = Peer(server.port)
+    busy.turn(server)
+    var id = busy.tunnel(server)
+    var quiet = Peer(server.port)
+    quiet.turn(server)
+    assert_equal(server.open_connections, 2)
+    var start = Int(perf_counter_ns() // 1_000_000)
+    while Int(perf_counter_ns() // 1_000_000) - start < 200:
+        # The wait of -1 is at most 50 ms while connections are open.
+        _ = server.poll(-1)
+    assert_equal(server.open_connections, 1)
+    busy.ws.send_text("still here")
+    busy.send(server, id)
+    assert_equal(busy.text(id), "still here")
+    _ = quiet.open
 
 
 def test_tick() raises:

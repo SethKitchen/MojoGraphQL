@@ -49,6 +49,7 @@ The client must wait for the SETTINGS of the server. It can send an extended `CO
 - **Back pressure.** A WebSocket waits while its stream has content that waits for a window.
 - **Closing.** After the closing handshake, the server ends its side with `END_STREAM`. A reset is a close without a handshake, with code 1006.
 - **Turns.** Each `poll` calls `on_tick`, and then sends what the handler sent.
+- **Idle connections.** A connection without a WebSocket that sends nothing for `idle_timeout_ms` of `ServerConfig.http` closes. A connection with a WebSocket stays, because the handler checks a WebSocket with pings. While connections are open, `poll` waits at most `min(idle_timeout_ms, 1000)` milliseconds, so the sweep runs without an event.
 
 ```mojo
 from gql_http.server import Handler
@@ -87,7 +88,7 @@ def serve[W: WsHandler, H: Handler](var handler: W, var http: H) raises:
 - the server does not allow the extended `CONNECT`;
 - the server does not answer within `connect_timeout_ms`.
 
-A refusal with a status, such as 404, is the answer of the server. The client does not try again. `uses_http2()` tells which protocol the client chose. HTTP/3 is not in the chain, because [WsHttp3](WsHttp3) has no QUIC driver yet.
+A refusal with a status, such as 404, is the answer of the server. The client does not try again. `uses_http2()` tells which protocol the client chose. `connect_ws` takes `ws://` URLs only. For a `wss://` URL, use `connect_any` of [WsHttp3](WsHttp3): it tries HTTP/3, then HTTP/2 over TLS.
 
 ## Differences from upstream
 
@@ -102,6 +103,7 @@ The tests are in `tests/gql_ws_http2/`. There is no upstream suite. The cases fo
 - **Session.** A session and a client `Connection`, in memory.
 - **Client.** `H2WebSocket` on a `Loop` transport, whose far end is a session in memory.
 - **Server and fallback.** Real sockets on the loopback address, with a server in this process or in a child process. `Faults` makes system calls fail.
+- **TLS.** `H2WebSocket` over the `TlsTransport` of `gql_https2`, after ALPN chose `h2`. The server is a `TlsProtocol` of `gql_tls` that runs a `WsH2Session` on each connection.
 
 ## Benchmarks
 

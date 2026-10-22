@@ -20,7 +20,8 @@ This module ports no code. It follows the choice of RFC 8441 section 3:
 a client sends the extended `CONNECT` only after the setting arrived.
 
 Differences from upstream: none; there is no upstream. HTTP/3 (RFC 9220)
-is not in the chain: `gql_ws_http3` has no QUIC driver yet.
+is not in this chain, because it needs TLS: `connect_any` of
+`gql_ws_http3` tries it for a `wss://` URL.
 """
 
 from gql_http2.session import SocketTransport

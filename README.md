@@ -18,7 +18,7 @@ The project is new. Today it has twenty-four finished packages, and more are in 
 
 `gql_server` is Apollo Server, and `gql_subgraph` builds Apollo Federation subgraphs. `gql_mcp` is the Apollo MCP Server. `gql_codegen` writes Mojo models for operations, as Apollo Kotlin does. `gql_composition` composes a supergraph, and `seamstress` (`gql_seamstress`) runs the offline Rover commands. `gql_router` plans and runs federated operations over a supergraph. `gql_http2`, `gql_tls` and `gql_http3` serve HTTP/2, HTTPS and HTTP/3, and fall back to what the network supports.
 
-Subscriptions and streams go through the whole stack. `gql_stream` holds the event streams. `gql_execution` runs subscriptions and `@defer`/`@stream`. `gql_ws` and `gql_sse` carry them over WebSocket and Server-Sent Events, and `gql_http` streams `multipart/mixed`. `gql_ws_http2` runs WebSockets over HTTP/2, and falls back to HTTP/1.1.
+Subscriptions and streams go through the whole stack. `gql_stream` holds the event streams. `gql_execution` runs subscriptions and `@defer`/`@stream`. `gql_ws` and `gql_sse` carry them over WebSocket and Server-Sent Events, and `gql_http` streams `multipart/mixed`. `gql_ws_http2` and `gql_ws_http3` run WebSockets over HTTP/2 and HTTP/3. The client tries HTTP/3, then HTTP/2, then HTTP/1.1.
 
 `gql_server_ws` adds subscriptions to `gql_server`, and `gql_router_stream` adds subscriptions and streamed `@defer` to `gql_router`. A user who needs no streams does not build these packages.
 
@@ -166,7 +166,7 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_ws` | Done | `gql_http`, `gql_stream` | RFC 6455; graphql-ws `graphql-transport-ws`; tungstenite |
 | `gql_ws_execution` | Done | `gql_ws`, `gql_execution`, `gql_validation` | graphql-ws `useServer` |
 | `gql_ws_http2` | Done | `gql_ws`, `gql_http2` | RFC 8441; h2 0.4.20 extended CONNECT |
-| `gql_ws_http3` | Protocol layer only; no QUIC driver yet | `gql_ws_http2`, `gql_http3` | RFC 9220; hyperium/h3 extended CONNECT |
+| `gql_ws_http3` | Done | `gql_ws_http2`, `gql_http3` | RFC 9220; hyperium/h3 extended CONNECT |
 | `gql_http2` | Done | `gql_http` | hyperium/h2 0.4.20; RFC 9113, RFC 7541 |
 | `gql_tls` | Done | `gql_http`; system OpenSSL 3 at run time | RFC 8446, RFC 7301 |
 | `gql_https2` | Done | `gql_tls`, `gql_http2` | RFC 9113 over TLS; RFC 7301 |

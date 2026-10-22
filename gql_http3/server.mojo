@@ -24,6 +24,13 @@ connection, then reads every stream that has bytes:
 - A push stream from a client is an `H3_STREAM_CREATION_ERROR`; other
   stream types are read and dropped (RFC 9114 section 6.2.3).
 
+With `H3Config.enable_connect`, the SETTINGS carry
+`SETTINGS_ENABLE_CONNECT_PROTOCOL = 1`, and a request stream whose HEADERS
+have `:method CONNECT` and `:protocol` is a tunnel (RFC 9220). The
+handler does not see it. Its head is a `HEAD` event in `events`, each
+DATA frame is a `DATA` event, and the end of the stream is an `END` or a
+`RESET` event. The application answers with `send` and `reset`.
+
 A malformed request resets its stream with `H3_MESSAGE_ERROR`. A request
 that `gql_http` refuses gets its error response, such as 431. A
 connection error closes the connection with its code.
@@ -43,7 +50,12 @@ datagram of its own, so a round trip on that stack is slower.
 Differences from upstream: h3 is generic over a QUIC implementation and
 async. This server is a poll loop over the `Quic` handles, on `gql_quic`
 or on the OpenSSL QUIC API. It sends no GOAWAY at shutdown, and it never
-pushes.
+pushes. h3 gives every request to the application at its head, with the
+`Protocol` extension of an extended `CONNECT`. Here only a tunnel is
+given at its head, as events; other requests stay whole. h3 h3-v0.0.8
+accepts only the `:protocol` values `webtransport` and `connect-udp`
+(`h3/src/ext.rs`), and refuses a request with another value. Here any
+value opens a tunnel, such as `websocket` of RFC 9220.
 """
 
 from std.memory import ArcPointer
@@ -121,6 +133,90 @@ struct StreamRole(Equatable, ImplicitlyCopyable, Writable):
 
 
 @fieldwise_init
+struct TunnelEventKind(Equatable, ImplicitlyCopyable, Writable):
+    """What happened on a tunnel, as a type and not a bare integer."""
+
+    var value: UInt8
+    """The kind's index; see `is_valid`."""
+
+    comptime HEAD = TunnelEventKind(0)
+    """The HEADERS of an extended `CONNECT` arrived; the stream stays
+    open."""
+    comptime DATA = TunnelEventKind(1)
+    """The content of DATA frames arrived."""
+    comptime END = TunnelEventKind(2)
+    """The peer ended its side of the stream (FIN)."""
+    comptime RESET = TunnelEventKind(3)
+    """The stream or its connection failed; the tunnel is gone."""
+
+    def is_valid(self) -> Bool:
+        """Return True if the value names one of the kinds.
+
+        Returns:
+            Whether the value is at most 3.
+        """
+        return self.value <= 3
+
+    def write_to(self, mut writer: Some[Writer]):
+        """Write the name of the kind.
+
+        Args:
+            writer: The destination.
+        """
+        comptime names: Array[StaticString, 4] = [
+            "head",
+            "data",
+            "end",
+            "reset",
+        ]
+        writer.write(materialize[names]()[Int(min(self.value, 3))])
+
+
+struct TunnelEvent(Movable):
+    """An event of the tunnel of an extended `CONNECT` (RFC 9220)."""
+
+    var kind: TunnelEventKind
+    """What happened."""
+    var stream: Int
+    """The handle of the stream, for `H3Server.send` and `reset`."""
+    var id: UInt64
+    """The QUIC id of the stream."""
+    var conn: Int
+    """The handle of the connection of the stream."""
+    var fields: FieldList
+    """The fields of the request, for `HEAD`; else empty."""
+    var data: List[UInt8]
+    """The content, for `DATA`; else empty."""
+
+    def __init__(
+        out self, kind: TunnelEventKind, stream: Int, id: UInt64, conn: Int
+    ):
+        """Make an event without fields or content.
+
+        Args:
+            kind: What happened.
+            stream: The handle of the stream.
+            id: The QUIC id of the stream.
+            conn: The handle of the connection.
+        """
+        self.kind = kind
+        self.stream = stream
+        self.id = id
+        self.conn = conn
+        self.fields = FieldList()
+        self.data = List[UInt8]()
+
+
+def _is_tunnel(fields: FieldList) -> Bool:
+    """Return True for the head of an extended `CONNECT`: `:method CONNECT`
+    with `:protocol` (RFC 9220 section 3)."""
+    var method = fields.find(":method")
+    if method < 0 or fields.find(":protocol") < 0:
+        return False
+    return fields.value_text(method) == "CONNECT"
+
+
+@fieldwise_init
 struct H3Config(Copyable, Movable):
     """How an HTTP/3 server listens and what it allows."""
 
@@ -130,20 +226,29 @@ struct H3Config(Copyable, Movable):
     """The UDP port; 0 lets the system choose one."""
     var limits: Limits
     """The size limits of a request, as for HTTP/1.1."""
+    var enable_connect: Bool
+    """Whether to send `SETTINGS_ENABLE_CONNECT_PROTOCOL = 1` and give each
+    extended `CONNECT` (RFC 9220) to the application as tunnel events."""
 
     def __init__(out self):
-        """Make the default configuration: UDP port 4433 on every address."""
+        """Make the default configuration: UDP port 4433 on every address,
+        without the extended `CONNECT`, as in h3."""
         self.host = IPv4Address.ANY
         self.port = 4433
         self.limits = Limits()
+        self.enable_connect = False
 
 
-def control_preface(limits: Limits) -> List[UInt8]:
+def control_preface(
+    limits: Limits, enable_connect: Bool = False
+) -> List[UInt8]:
     """Return the start of a control stream: its type and SETTINGS.
 
     Args:
         limits: The size limits; `max_head_bytes` becomes
             `SETTINGS_MAX_FIELD_SECTION_SIZE`.
+        enable_connect: Whether to add
+            `SETTINGS_ENABLE_CONNECT_PROTOCOL = 1` (RFC 9220 section 3).
 
     Returns:
         The bytes.
@@ -151,6 +256,9 @@ def control_preface(limits: Limits) -> List[UInt8]:
     var payload = List[UInt8]()
     encode_varint(SettingId.MAX_FIELD_SECTION_SIZE.value, payload)
     encode_varint(UInt64(limits.max_head_bytes), payload)
+    if enable_connect:
+        encode_varint(SettingId.ENABLE_CONNECT_PROTOCOL.value, payload)
+        encode_varint(UInt64(1), payload)
     var out = List[UInt8]()
     encode_varint(StreamType.CONTROL.value, out)
     write_frame_header(out, FrameType.SETTINGS, len(payload))
@@ -241,6 +349,8 @@ struct _H3Stream(Movable):
     var sent: Int
     var answered: Bool
     var ended: Bool
+    var headed: Bool
+    var tunnel: Bool
 
     def __init__(out self, ssl: Int, id: UInt64, max_body: Int):
         self.ssl = ssl
@@ -253,6 +363,8 @@ struct _H3Stream(Movable):
         self.sent = 0
         self.answered = False
         self.ended = False
+        self.headed = False
+        self.tunnel = False
 
 
 struct _H3Connection(Movable):
@@ -305,6 +417,9 @@ struct H3Server[H: Handler](Movable):
     """The UDP socket."""
     var listener: Int
     """The QUIC listener."""
+    var events: List[TunnelEvent]
+    """The tunnel events since the application last cleared the list; with
+    `H3Config.enable_connect` only."""
     var _conns: List[_H3Connection]
     var _reader: RequestReader
     var _buffer: List[UInt8]
@@ -345,6 +460,7 @@ struct H3Server[H: Handler](Movable):
         self.port = 0
         self.fd = -1
         self.listener = 0
+        self.events = List[TunnelEvent]()
         self._conns = List[_H3Connection]()
         self._reader = RequestReader(config.limits)
         self._buffer = List[UInt8](length=65536, fill=0)
@@ -353,7 +469,7 @@ struct H3Server[H: Handler](Movable):
         self._body = List[UInt8]()
         self._block = List[UInt8]()
         self._encoder_out = List[UInt8]()
-        self._preface = control_preface(config.limits)
+        self._preface = control_preface(config.limits, config.enable_connect)
         self._second = -1
         self._busy = False
         self.fd = self.quic.udp_socket()
@@ -399,6 +515,12 @@ struct H3Server[H: Handler](Movable):
         """Free the streams of a connection, close it and free it."""
         while len(conn.streams) > 0:
             var stream = conn.streams.pop()
+            if stream.tunnel:
+                self.events.append(
+                    TunnelEvent(
+                        TunnelEventKind.RESET, stream.ssl, stream.id, conn.ssl
+                    )
+                )
             self.quic.free(stream.ssl)
         self.quic.free(conn.control)
         self.quic.close_connection(conn.ssl, code)
@@ -550,22 +672,29 @@ struct H3Server[H: Handler](Movable):
                     H3ErrorCode.H3_CLOSED_CRITICAL_STREAM,
                     "the control stream ended",
                 )
-            if role == StreamRole.REQUEST and result.state == ReadState.END:
+            if self._conns[index].streams[at].tunnel:
+                self._end_tunnel(index, at, result.state == ReadState.END)
+            elif role == StreamRole.REQUEST and result.state == ReadState.END:
                 self._answer(index, at)
         ref current = self._conns[index].streams[at]
         if current.sent < len(current.out):
+            # A request has bytes only once answered; a tunnel ends when
+            # the application asks.
             var n = self.quic.write(
                 current.ssl,
                 current.out.unsafe_ptr().unsafe_offset(current.sent),
                 len(current.out) - current.sent,
-                True,
+                current.answered,
             )
             if n < 0:
                 n = len(current.out) - current.sent
             current.sent += n
-        var done = current.ended and (
-            not current.answered or current.sent >= len(current.out)
-        )
+        var done: Bool
+        if current.answered:
+            done = current.ended and current.sent >= len(current.out)
+        else:
+            # A tunnel stays until the application ends its side.
+            done = current.ended and not current.tunnel
         if not done:
             return True
         var gone = self._conns[index].streams.pop(at)
@@ -626,12 +755,145 @@ struct H3Server[H: Handler](Movable):
                     raise e^
                 self.quic.reset_stream(stream.ssl, e.code.value)
                 stream.ended = True
+                if stream.tunnel:
+                    self._end_tunnel(index, at, False)
+                return
+            if self.config.enable_connect:
+                self._tunnel(index, at)
         elif stream.role == StreamRole.CONTROL:
             stream.control.feed(data)
         elif stream.role == StreamRole.ENCODER:
             conn.decoder.on_encoder_stream(data)
         elif stream.role == StreamRole.DECODER:
             conn.encoder.on_decoder_stream(data)
+
+    def _tunnel(mut self, index: Int, at: Int):
+        """Turn the head of an extended `CONNECT` into a tunnel, and give
+        the content of a tunnel to the application."""
+        ref conn = self._conns[index]
+        ref stream = conn.streams[at]
+        if not stream.headed:
+            if not stream.reader.has_headers:
+                return
+            stream.headed = True
+            if not _is_tunnel(stream.reader.fields):
+                return
+            stream.tunnel = True
+            var head = TunnelEvent(
+                TunnelEventKind.HEAD, stream.ssl, stream.id, conn.ssl
+            )
+            head.fields = stream.reader.fields.copy()
+            self.events.append(head^)
+        if stream.tunnel and len(stream.reader.body) > 0:
+            var event = TunnelEvent(
+                TunnelEventKind.DATA, stream.ssl, stream.id, conn.ssl
+            )
+            event.data = stream.reader.body.copy()
+            stream.reader.body.clear()
+            self.events.append(event^)
+
+    def _end_tunnel(mut self, index: Int, at: Int, end: Bool):
+        """Tell the application that the peer ended a tunnel (FIN), or that
+        the tunnel failed."""
+        ref conn = self._conns[index]
+        ref stream = conn.streams[at]
+        var kind = TunnelEventKind.END if end else TunnelEventKind.RESET
+        self.events.append(TunnelEvent(kind, stream.ssl, stream.id, conn.ssl))
+        if not end:
+            # Nothing more goes out on a failed stream.
+            stream.answered = True
+            stream.out.clear()
+            stream.sent = 0
+
+    def _locate(self, stream: Int) -> Tuple[Int, Int]:
+        """Return the connection and the place of an open tunnel, or
+        (-1, -1)."""
+        var index = 0
+        while index < len(self._conns):
+            ref streams = self._conns[index].streams
+            var at = 0
+            while at < len(streams):
+                if streams[at].ssl == stream and streams[at].tunnel:
+                    return (index, at)
+                at += 1
+            index += 1
+        return (-1, -1)
+
+    def send(mut self, stream: Int, data: Span[UInt8, _], fin: Bool) -> Bool:
+        """Send bytes on a tunnel, and end its side of the stream after
+        them when asked. QUIC sends at once what the stream has credit for;
+        each `poll` sends the rest.
+
+        Args:
+            stream: The handle of the stream, from a `TunnelEvent`.
+            data: The bytes: HEADERS and DATA frames.
+            fin: Whether to end the stream after them (FIN).
+
+        Returns:
+            False when the tunnel is gone, has ended its side, or failed.
+        """
+        var place = self._locate(stream)
+        if place[0] < 0:
+            return False
+        ref current = self._conns[place[0]].streams[place[1]]
+        if current.answered:
+            return False
+        current.out.extend(data)
+        current.answered = fin
+        var n = self.quic.write(
+            current.ssl,
+            current.out.unsafe_ptr().unsafe_offset(current.sent),
+            len(current.out) - current.sent,
+            fin,
+        )
+        if n < 0:
+            current.out.clear()
+            current.sent = 0
+            return False
+        current.sent += n
+        if current.sent >= len(current.out):
+            current.out.clear()
+            current.sent = 0
+        # Network I/O happens only in handle_events.
+        self.quic.handle_events(self._conns[place[0]].ssl)
+        return True
+
+    def pending(self, stream: Int) -> Int:
+        """Return the count of bytes of a tunnel that wait for credit.
+
+        Args:
+            stream: The handle of the stream.
+
+        Returns:
+            The count; 0 for a tunnel that is gone.
+        """
+        var place = self._locate(stream)
+        if place[0] < 0:
+            return 0
+        ref current = self._conns[place[0]].streams[place[1]]
+        return len(current.out) - current.sent
+
+    def reset(mut self, stream: Int, code: UInt64) -> Bool:
+        """Reset a tunnel, such as for a malformed extended `CONNECT`.
+
+        Args:
+            stream: The handle of the stream.
+            code: The HTTP/3 error code, such as `H3_MESSAGE_ERROR`.
+
+        Returns:
+            False when the tunnel is gone.
+        """
+        var place = self._locate(stream)
+        if place[0] < 0:
+            return False
+        ref current = self._conns[place[0]].streams[place[1]]
+        self.quic.reset_stream(current.ssl, code)
+        current.ended = True
+        current.answered = True
+        current.out.clear()
+        current.sent = 0
+        self.quic.handle_events(self._conns[place[0]].ssl)
+        return True
 
     def _answer(mut self, index: Int, at: Int) raises H3Error:
         """Run the handler for a complete request, and frame its response."""

@@ -18,12 +18,20 @@ WebSockets of HTTP/1.1. Each other request goes to the gql_http `Handler`.
 - **Limits.** `max_connections` refuses more connections. A client that
   does not send the HTTP/2 preface gets `GOAWAY`, and the connection
   closes.
+- **Idle connections.** A connection without a WebSocket that sends
+  nothing for `idle_timeout_ms` closes. A connection with a WebSocket
+  stays: the liveness of a WebSocket is the work of its handler, with
+  pings. While connections are open, `poll` waits at most
+  `min(idle_timeout_ms, 1000)` milliseconds, so the sweep runs without an
+  event.
 
 This module ports no code. The loop follows the h2c loop of
 `gql_http2.server`.
 
 Differences from upstream: none; there is no upstream.
 """
+
+from std.time import perf_counter_ns
 
 from gql_http.error import HttpError
 from gql_http.scan import move_down
@@ -72,17 +80,25 @@ struct ServerConfig(Copyable, Movable):
         self.protocols = List[String]()
 
 
+def _now_ms() -> Int:
+    """Return a monotonic time in milliseconds."""
+    return Int(perf_counter_ns() // 1_000_000)
+
+
 struct _Conn(Movable):
     """The state of one connection of this loop."""
 
     var fd: Int
     var session: Int
     var interest: UInt32
+    var last: Int
+    """When the connection last read bytes, in milliseconds."""
 
     def __init__(out self):
         self.fd = -1
         self.session = -1
         self.interest = 0
+        self.last = 0
 
 
 struct Server[W: WsHandler, H: Handler](Movable):
@@ -114,6 +130,7 @@ struct Server[W: WsHandler, H: Handler](Movable):
     var _free: List[Int]
     var _events: List[UInt8]
     var _buffer: List[UInt8]
+    var _last_sweep: Int
 
     def __init__(
         out self,
@@ -152,6 +169,7 @@ struct Server[W: WsHandler, H: Handler](Movable):
             length=max(config.http.max_events, 1) * EPOLL_EVENT_SIZE, fill=0
         )
         self._buffer = List[UInt8](length=65536, fill=0)
+        self._last_sweep = _now_ms()
         var epoll = self.sys.epoll_create()
         if epoll < 0:
             self.close()
@@ -203,6 +221,10 @@ struct Server[W: WsHandler, H: Handler](Movable):
         var limit = self.handler.wait_ms()
         if limit >= 0 and (wait < 0 or limit < wait):
             wait = limit
+        if self.open_connections > 0:
+            # An idle connection times out without an event.
+            var every = self._sweep_every()
+            wait = every if wait < 0 else min(wait, every)
         var count = self.sys.epoll_wait(
             self._epoll_fd,
             self._events.unsafe_ptr(),
@@ -229,6 +251,7 @@ struct Server[W: WsHandler, H: Handler](Movable):
                 self._send(fd)
             else:
                 self._readable(fd)
+        self._sweep()
         self.handler.on_tick(self.sockets)
         if len(self.sockets.dirty) > 0:
             self.sockets.dirty.clear()
@@ -240,6 +263,31 @@ struct Server[W: WsHandler, H: Handler](Movable):
                     self._send(fd)
                 fd += 1
         return count
+
+    def _sweep_every(self) -> Int:
+        """Return the time between two sweeps, in milliseconds."""
+        return max(min(self.config.http.idle_timeout_ms, 1000), 1)
+
+    def _sweep(mut self):
+        """Close each idle connection without a WebSocket; at most once
+        per `_sweep_every`."""
+        var now = _now_ms()
+        if now - self._last_sweep < self._sweep_every():
+            return
+        self._last_sweep = now
+        var fd = 0
+        while fd < len(self._conns):
+            if self._idle(fd, now):
+                self._close(fd)
+            fd += 1
+
+    def _idle(self, fd: Int, now: Int) -> Bool:
+        """Return True for an open connection without a WebSocket that has
+        read nothing for `idle_timeout_ms`."""
+        ref conn = self._conns[fd]
+        if conn.fd < 0 or len(self._sessions[conn.session].tunnels) > 0:
+            return False
+        return now - conn.last >= self.config.http.idle_timeout_ms
 
     def _accept(mut self):
         """Accept every pending connection, and start its session."""
@@ -276,6 +324,7 @@ struct Server[W: WsHandler, H: Handler](Movable):
             self._conns[fd].fd = fd
             self._conns[fd].session = slot
             self._conns[fd].interest = EPOLLIN
+            self._conns[fd].last = _now_ms()
             self.open_connections += 1
             self._send(fd)
 
@@ -307,6 +356,7 @@ struct Server[W: WsHandler, H: Handler](Movable):
         if n <= 0:
             self._close(fd)
             return
+        self._conns[fd].last = _now_ms()
         var session = self._conns[fd].session
         self._sessions[session].receive(
             self.http, self.handler, self.sockets, Span(self._buffer)[:n]

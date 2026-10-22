@@ -296,8 +296,12 @@ the values of the public OpenSSL headers. A program that does not import
   code is ported except the extended `CONNECT` of h2 v0.4.20 (in
   `gql_http2`), and `enable_extended_connect` of `h3/src/config.rs` and
   the `:protocol` rules of `h3/src/proto/headers.rs` of hyperium/h3
-  h3-v0.0.8 (in `gql_ws_http3`). The rest follows RFC 8441 and RFC 9220.
+  h3-v0.0.8 (in `gql_ws_http3`). The rest follows RFC 8441 and RFC 9220:
+  the tunnel events of `gql_http3`, the QUIC server, client and fallback
+  of `gql_ws_http3`, and the idle sweep of `gql_ws_http2` port no code.
   The WebTransport and datagram crates of hyperium/h3 are not ported.
+  `gql_ws_http3` has no benchmark baseline: h3 `0.0.8` refuses
+  `:protocol websocket` (`h3/src/ext.rs`).
 - **graphql-ws (gql_ws, gql_ws_execution).** The adapters of `src/use/`
   other than `ws.ts` (`bun`, `deno`, `fastify-websocket`, `uWebSockets`,
   `crossws`), the deprecated `subscriptions-transport-ws` protocol, the

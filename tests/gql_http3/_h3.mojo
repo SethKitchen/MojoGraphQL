@@ -7,18 +7,33 @@
 raw QUIC client that writes any bytes on any stream. Both run in one
 thread: `pump` turns the server and the client in turn."""
 
+from std.time import perf_counter_ns
+
 from _certs import test_certs
-from gql_http.parser import Request
+from gql_http.parser import Limits, Request
 from gql_http.server import Handler, ResponseWriter
 from gql_http.socket import IPv4Address, Sys
 from gql_http.status import Status
 from gql_tls.openssl import OpenSsl
-from gql_http3.frame import FrameType, write_frame_header
+from gql_http3.error import H3ErrorCode
+from gql_http3.frame import (
+    FrameType,
+    write_data_frame,
+    write_frame_header,
+    write_headers_frame,
+)
 from gql_http3.message import write_message
 from gql_http3.qpack_encoder import QpackEncoder
 from gql_http3.qpack_field import FieldList
 from gql_http3.quic import Quic, QuicContext, QuicTransport, ReadState
-from gql_http3.server import H3Config, H3Server, listen_h3
+from gql_http3.server import (
+    H3Config,
+    H3Server,
+    TunnelEvent,
+    TunnelEventKind,
+    control_preface,
+    listen_h3,
+)
 from gql_http3.varint import encode_varint
 
 
@@ -233,6 +248,123 @@ def start_server(
     var port = server.port
     server.close()
     return (pid, port)
+
+
+def tunnel_head(status: StaticString) -> List[UInt8]:
+    var fields = FieldList()
+    fields.add_text(":status", status)
+    var encoder = QpackEncoder()
+    var block = List[UInt8]()
+    var inserts = List[UInt8]()
+    _ = encoder.encode(0, fields, block, inserts)
+    var out = List[UInt8]()
+    write_headers_frame(out, Span(block))
+    return out^
+
+
+def start_tunnel_server(
+    enable: Bool = True, max_body: Int = 16 << 20
+) raises -> Tuple[Int, Int]:
+    """Fork an `H3Server` that echoes each tunnel of an extended `CONNECT`.
+    It answers the head with `:status 200`, echoes each DATA payload in a
+    DATA frame, ends its side at the end of the peer, and resets the tunnel
+    on the payload `reset`. It returns the pid and the UDP port."""
+    var certs = test_certs()
+    var c = config()
+    c.enable_connect = enable
+    c.limits.max_body_bytes = max_body
+    var server = listen_h3(Echo(), certs.cert, certs.key, c, Quic(OpenSsl()))
+    var sys = Sys()
+    var pid = sys.fork()
+    if pid == 0:
+        _ = sys.die_with_parent()
+        var head = tunnel_head("200")
+        try:
+            while True:
+                _ = server.poll(5)
+                var events = List[TunnelEvent]()
+                swap(events, server.events)
+                var index = 0
+                while index < len(events):
+                    ref event = events[index]
+                    if event.kind == TunnelEventKind.HEAD:
+                        _ = server.send(event.stream, Span(head), False)
+                    elif event.kind == TunnelEventKind.DATA:
+                        if String(unsafe_from_utf8=event.data) == "reset":
+                            _ = server.reset(
+                                event.stream,
+                                H3ErrorCode.H3_REQUEST_CANCELLED.value,
+                            )
+                        else:
+                            var out = List[UInt8]()
+                            write_data_frame(out, Span(event.data))
+                            _ = server.send(event.stream, Span(out), False)
+                    elif event.kind == TunnelEventKind.END:
+                        _ = server.send(event.stream, List[UInt8](), True)
+                    index += 1
+        except:
+            pass
+        sys.exit_now(0)
+    var port = server.port
+    server.close()
+    return (pid, port)
+
+
+def _pump_for(mut quic: Quic, mut sys: Sys, fd: Int, listener: Int, ms: Int):
+    var end = Int(perf_counter_ns()) + ms * 1_000_000
+    while Int(perf_counter_ns()) < end:
+        _ = sys.poll(fd, 1, 5)
+        quic.handle_events(listener)
+
+
+def start_control_server(bad: Bool) raises -> Tuple[Int, Int]:
+    """Fork a QUIC server that opens streams to each client, and reads
+    nothing. It opens a stream of an unknown type that ends at once, and a
+    control stream. Its type comes first, and its SETTINGS (with
+    `SETTINGS_ENABLE_CONNECT_PROTOCOL`) 200 ms later; `bad` sends a DATA
+    frame instead, which fails the control stream. It returns the pid and
+    the port."""
+    var certs = test_certs()
+    var quic = Quic(OpenSsl())
+    var context = QuicContext.server(quic.copy(), certs.cert, certs.key)
+    var sys = Sys()
+    var fd = quic.udp_socket()
+    _ = sys.bind(fd, IPv4Address.LOOPBACK, 0)
+    var port = sys.local_port(fd)
+    var listener = quic.listener(context.ctx, fd)
+    var pid = sys.fork()
+    if pid != 0:
+        quic.free(listener)
+        sys.close(fd)
+        return (pid, port)
+    _ = sys.die_with_parent()
+    var grease: List[UInt8] = [0x21, 0x78]
+    var kind: List[UInt8] = [0x00]
+    var settings = List[UInt8](Span(control_preface(Limits(), True))[1:])
+    var frame: List[UInt8] = [0x00, 0x00]
+    # The loop names the context, so it lives: its ALPN list must.
+    while context.ctx != 0:
+        _ = sys.poll(fd, 1, 5)
+        quic.handle_events(listener)
+        var conn = quic.accept_connection(listener)
+        if conn == 0:
+            continue
+        # Streams open once the handshake has ended.
+        while not quic.handshake_done(conn):
+            _ = sys.poll(fd, 1, 5)
+            quic.handle_events(listener)
+        var other = quic.new_stream(conn, True)
+        _ = quic.write(other, grease.unsafe_ptr(), len(grease), True)
+        var control = quic.new_stream(conn, True)
+        _ = quic.write(control, kind.unsafe_ptr(), len(kind), False)
+        quic.handle_events(listener)
+        _pump_for(quic, sys, fd, listener, 200)
+        if bad:
+            _ = quic.write(control, frame.unsafe_ptr(), len(frame), False)
+        else:
+            _ = quic.write(control, settings.unsafe_ptr(), len(settings), False)
+        quic.handle_events(listener)
+    return (0, 0)
 
 
 def stop(pid: Int):

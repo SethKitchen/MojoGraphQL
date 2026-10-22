@@ -150,8 +150,8 @@ test_depends = ["gql_ws_execution", "gql_execution", "gql_schema", "gql_stream",
 upstream = ["h2 v0.4.20 (b0e8908) ext::Protocol, SETTINGS_ENABLE_CONNECT_PROTOCOL and the extended CONNECT tests of tests/h2-tests/tests/client_request.rs and server.rs (MIT), in gql_http2; RFC 8441; no other code is ported: the package joins gql_ws and gql_http2"]
 
 [packages.gql_ws_http3]
-summary = "WebSockets over HTTP/3 (RFC 9220): SETTINGS_ENABLE_CONNECT_PROTOCOL, the extended CONNECT checks, and a WebSocket on one HTTP/3 request stream without I/O"
-depends = ["gql_ws_http2", "gql_ws", "gql_http3", "gql_http2"]
+summary = "WebSockets over HTTP/3 (RFC 9220): the extended CONNECT checks, a WebSocket on one HTTP/3 request stream, a server and a client over real QUIC, graphql-transport-ws, and a fallback to HTTP/2 over TLS"
+depends = ["gql_ws_http2", "gql_ws", "gql_http3", "gql_https2", "gql_http2", "gql_http", "gql_tls"]
 upstream = ["hyperium/h3 h3-v0.0.8 (22c1aa3) enable_extended_connect of h3/src/config.rs and the :protocol rules of h3/src/proto/headers.rs (MIT); RFC 9220"]
 
 [packages.gql_server_ws]

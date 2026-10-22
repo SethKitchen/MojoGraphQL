@@ -8,8 +8,14 @@
 `H3Client` sends one request at a time and returns the whole
 `gql_http.client.Response`, the type of the HTTP/1.1 and HTTPS clients. It
 keeps one QUIC connection per address and port, and opens one request
-stream per request. It opens its control stream with SETTINGS, and it
-reads and drops the streams that the server opens.
+stream per request. It opens its control stream with SETTINGS. It reads
+the SETTINGS of the control stream of the server, and drops the bytes of
+the other streams that the server opens.
+
+`open_stream` opens a request stream that stays open, for the tunnel of an
+extended `CONNECT` (RFC 9220). It waits for the SETTINGS of the server,
+and requires `SETTINGS_ENABLE_CONNECT_PROTOCOL = 1`. The caller writes the
+frames with `write_stream` and reads with `read_stream`.
 
 Each request has the deadline `ClientConfig.timeout_ms`, for the
 handshake and the whole response; the handshake also has
@@ -23,7 +29,10 @@ the content.
 
 Differences from upstream: h3 is async and generic over a QUIC
 implementation, and streams the content. This client is blocking with a
-deadline, and reads the whole response.
+deadline, and reads the whole response. h3 sends `:protocol` when a
+request has the `Protocol` extension. Here a stream of `open_stream`
+carries the bytes that the caller frames, such as the HEADERS of
+`gql_ws_http3`.
 """
 
 from std.time import perf_counter_ns
@@ -45,7 +54,8 @@ from gql_http3.qpack_decoder import QpackDecoder
 from gql_http3.qpack_encoder import QpackEncoder
 from gql_http3.qpack_field import FieldList
 from gql_http3.quic import Quic, QuicContext, ReadState
-from gql_http3.server import control_preface
+from gql_http3.frame import SettingId
+from gql_http3.server import ControlReader, StreamRole, control_preface
 
 
 def _now_ns() -> Int:
@@ -99,6 +109,10 @@ struct _Connection(Movable):
     var control: Int
     var decoder: QpackDecoder
     var encoder: QpackEncoder
+    var incoming: List[Int]
+    var roles: List[StreamRole]
+    var peer: ControlReader
+    var peer_failed: Bool
 
     def __init__(out self, key: Int, fd: Int, ssl: Int):
         self.key = key
@@ -107,6 +121,23 @@ struct _Connection(Movable):
         self.control = 0
         self.decoder = QpackDecoder()
         self.encoder = QpackEncoder()
+        self.incoming = List[Int]()
+        self.roles = List[StreamRole]()
+        self.peer = ControlReader()
+        self.peer_failed = False
+
+
+@fieldwise_init
+struct H3Stream(ImplicitlyCopyable):
+    """A request stream that stays open, such as the tunnel of an extended
+    `CONNECT` (RFC 9220)."""
+
+    var conn: Int
+    """The handle of the QUIC connection."""
+    var ssl: Int
+    """The handle of the stream."""
+    var id: UInt64
+    """The QUIC id of the stream."""
 
 
 struct H3Client(Movable):
@@ -190,6 +221,8 @@ struct H3Client(Movable):
     def _drop(mut self, index: Int):
         """Close one connection and forget it."""
         var conn = self._conns.pop(index)
+        while len(conn.incoming) > 0:
+            self.quic.free(conn.incoming.pop())
         self.quic.free(conn.control)
         self.quic.close_connection(conn.ssl, 0x100)
         self.quic.free(conn.ssl)
@@ -521,15 +554,194 @@ struct H3Client(Movable):
         return response^
 
     def _drain_incoming(mut self, index: Int):
-        """Accept the streams that the server opens, and drop their bytes."""
+        """Accept the streams that the server opens. Read the SETTINGS of
+        its control stream, and drop the bytes of the others."""
+        ref conn = self._conns[index]
         while True:
-            var ssl = self.quic.accept_stream(self._conns[index].ssl)
+            var ssl = self.quic.accept_stream(conn.ssl)
             if ssl == 0:
-                return
-            while True:
-                var result = self.quic.read(
-                    ssl, self._buffer.unsafe_ptr(), len(self._buffer)
+                break
+            conn.incoming.append(ssl)
+            conn.roles.append(StreamRole.UNTYPED)
+        var at = 0
+        while at < len(self._conns[index].incoming):
+            if self._read_incoming(index, at):
+                at += 1
+
+    def _read_incoming(mut self, index: Int, at: Int) -> Bool:
+        """Read one stream of the server; False after it left the list."""
+        ref conn = self._conns[index]
+        while True:
+            var result = self.quic.read(
+                conn.incoming[at], self._buffer.unsafe_ptr(), len(self._buffer)
+            )
+            if result.state == ReadState.WAIT:
+                return True
+            if result.state != ReadState.DATA:
+                self.quic.free(conn.incoming.pop(at))
+                _ = conn.roles.pop(at)
+                return False
+            var start = 0
+            if conn.roles[at] == StreamRole.UNTYPED:
+                # The type 0 is one byte: the control stream.
+                conn.roles[at] = (
+                    StreamRole.CONTROL if self._buffer[0]
+                    == 0 else StreamRole.IGNORED
                 )
-                if result.state != ReadState.DATA:
-                    break
-            self.quic.free(ssl)
+                start = 1
+            if conn.roles[at] == StreamRole.CONTROL:
+                try:
+                    conn.peer.feed(Span(self._buffer)[start : result.count])
+                except:
+                    conn.peer_failed = True
+
+    def open_stream(
+        mut self, endpoint: HttpsEndpoint
+    ) raises TlsError -> H3Stream:
+        """Open a request stream that stays open, for the tunnel of an
+        extended `CONNECT` (RFC 9220). The client waits for the SETTINGS of
+        the server first, until `ClientConfig.timeout_ms`.
+
+        Args:
+            endpoint: The server.
+
+        Returns:
+            The stream. The caller writes its HEADERS and DATA frames with
+            `write_stream`, reads with `read_stream`, and frees it with
+            `close_stream`.
+
+        Raises:
+            TlsError: `PROTOCOL` when the server does not send
+                `SETTINGS_ENABLE_CONNECT_PROTOCOL = 1`, when its control
+                stream fails, or when no stream opens; `TIMEOUT` without
+                SETTINGS; the errors of the handshake.
+        """
+        var deadline = _now_ns() + self.config.timeout_ms * 1_000_000
+        var index = self._find(endpoint)
+        if index < 0:
+            index = self._connect(endpoint, deadline)
+        while True:
+            self._drain_incoming(index)
+            if self._conns[index].peer_failed:
+                raise TlsError(
+                    TlsErrorKind.PROTOCOL,
+                    "the control stream of the server failed",
+                    0,
+                )
+            if self._conns[index].peer.has_settings:
+                break
+            self._wait(index, deadline)
+        ref conn = self._conns[index]
+        if conn.peer.settings.get_or(SettingId.ENABLE_CONNECT_PROTOCOL, 0) != 1:
+            raise TlsError(
+                TlsErrorKind.PROTOCOL,
+                "the server does not allow the extended CONNECT",
+                0,
+            )
+        var ssl = self.quic.new_stream(conn.ssl, False)
+        if ssl == 0:
+            raise TlsError(TlsErrorKind.PROTOCOL, "cannot open a stream", 0)
+        return H3Stream(conn.ssl, ssl, self.quic.stream_id(ssl))
+
+    def _index_of(self, stream: H3Stream) raises TlsError -> Int:
+        """Return the index of the connection of a stream."""
+        var index = 0
+        while index < len(self._conns):
+            if self._conns[index].ssl == stream.conn:
+                return index
+            index += 1
+        raise TlsError(TlsErrorKind.CLOSED, "the connection has closed", 0)
+
+    def write_stream(
+        mut self, stream: H3Stream, data: Span[UInt8, _], fin: Bool
+    ) raises TlsError:
+        """Write bytes on a stream of `open_stream`, and wait for credit
+        until `ClientConfig.timeout_ms`.
+
+        Args:
+            stream: The stream.
+            data: The bytes: HEADERS and DATA frames.
+            fin: Whether to end the stream after them (FIN).
+
+        Raises:
+            TlsError: `CLOSED` when the stream or its connection failed;
+                `TIMEOUT` when the server gives no credit.
+        """
+        var index = self._index_of(stream)
+        var deadline = _now_ns() + self.config.timeout_ms * 1_000_000
+        var sent = 0
+        while True:
+            var n = self.quic.write(
+                stream.ssl,
+                data.unsafe_ptr().unsafe_offset(sent),
+                len(data) - sent,
+                fin,
+            )
+            if n < 0:
+                raise TlsError(TlsErrorKind.CLOSED, "the stream failed", 0)
+            sent += n
+            self.quic.handle_events(stream.conn)
+            if sent >= len(data):
+                return
+            self._wait(index, deadline)
+
+    def read_stream(
+        mut self, stream: H3Stream, mut data: List[UInt8], timeout_ms: Int
+    ) raises TlsError -> ReadState:
+        """Read the bytes of a stream of `open_stream` that arrived, and
+        wait for them until a timeout.
+
+        Args:
+            stream: The stream.
+            data: Receives the bytes, after its content.
+            timeout_ms: The longest wait in milliseconds; 0 does not wait.
+
+        Returns:
+            `DATA` when bytes arrived; `WAIT` after the timeout; `END` at
+            the end of the stream (FIN); `RESET` when the server reset it.
+
+        Raises:
+            TlsError: `CLOSED` when the connection has closed.
+        """
+        var index = self._index_of(stream)
+        var deadline = _now_ns() + timeout_ms * 1_000_000
+        self.quic.handle_events(stream.conn)
+        var got = False
+        while True:
+            var result = self.quic.read(
+                stream.ssl, self._buffer.unsafe_ptr(), len(self._buffer)
+            )
+            if result.state == ReadState.DATA:
+                data.extend(Span(self._buffer)[0 : result.count])
+                got = True
+                continue
+            if got:
+                return ReadState.DATA
+            if result.state != ReadState.WAIT:
+                return result.state
+            self._drain_incoming(index)
+            var remaining = (deadline - _now_ns() + 999_999) // 1_000_000
+            if remaining <= 0:
+                return ReadState.WAIT
+            var timer = self.quic.event_timeout_ms(stream.conn)
+            var wait = remaining if timer < 0 else min(timer, remaining)
+            _ = self.sys.poll(self._conns[index].fd, POLLIN, wait)
+            self.quic.handle_events(stream.conn)
+
+    def reset_stream(mut self, stream: H3Stream, code: UInt64):
+        """Reset a stream of `open_stream`.
+
+        Args:
+            stream: The stream.
+            code: The HTTP/3 error code, such as `H3_REQUEST_CANCELLED`.
+        """
+        self.quic.reset_stream(stream.ssl, code)
+        self.quic.handle_events(stream.conn)
+
+    def close_stream(mut self, stream: H3Stream):
+        """Free a stream of `open_stream`. The connection stays open.
+
+        Args:
+            stream: The stream.
+        """
+        self.quic.free(stream.ssl)

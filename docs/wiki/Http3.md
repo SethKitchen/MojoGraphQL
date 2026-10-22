@@ -58,6 +58,7 @@ def main() raises:
 | `host` | `IPv4Address.ANY` | The local address |
 | `port` | `4433` | The UDP port; `0` lets the system choose one |
 | `limits` | `Limits()` | The size limits of a request, as for HTTP/1.1 |
+| `enable_connect` | `False` | Send `SETTINGS_ENABLE_CONNECT_PROTOCOL = 1`, and give each extended `CONNECT` to the application as tunnel events |
 
 - **Requests:** a request stream carries a HEADERS frame and DATA frames. At the end of the stream, the server writes the request as HTTP/1.1, and the `RequestReader` of `gql_http` parses it. Thus a handler serves HTTP/1.1, HTTPS and HTTP/3 the same way.
 - **Responses:** the server reads the response of the `ResponseWriter`, and sends a HEADERS frame and a DATA frame. It drops the fields that are specific to a connection, such as `Connection`.
@@ -70,6 +71,21 @@ The QUIC objects of the server use explicit event handling: network I/O occurs o
 
 The writer has no socket, so `ResponseWriter.flush` keeps the bytes. Streamed content goes out after the handler returns. The server sends no GOAWAY at shutdown, and it never pushes.
 
+### Tunnels
+
+With `enable_connect`, a request stream with `:method CONNECT` and `:protocol` is a tunnel (RFC 9220). The handler does not see it. The server appends a `TunnelEvent` to `H3Server.events` for each step, and the application clears the list.
+
+| `TunnelEventKind` | When |
+| --- | --- |
+| `HEAD` | The HEADERS of the extended `CONNECT` arrived; `fields` holds them |
+| `DATA` | Content of DATA frames arrived; `data` holds it |
+| `END` | The peer ended its side of the stream (FIN) |
+| `RESET` | The peer reset the stream, the content was too large, or the connection ended |
+
+- **Send:** `send(stream, data, fin)` writes HEADERS and DATA frames on a tunnel. QUIC sends at once what the stream has credit for, and each `poll` sends the rest. `pending(stream)` is the count of bytes that wait for credit.
+- **Reset:** `reset(stream, code)` resets a tunnel, such as for a malformed extended `CONNECT`.
+- **Ends:** a tunnel stays until the application ends its side with `fin`, or resets it. [WsHttp3](WsHttp3) runs WebSockets on these events.
+
 ## Client
 
 `H3Client` sends one request at a time and returns the whole `gql_http.client.Response`, the type of the other clients. It keeps one QUIC connection per address and port, and it opens one request stream for each request.
@@ -81,6 +97,11 @@ The writer has no socket, so `ResponseWriter.flush` keeps the bytes. Streamed co
 | `get(url)`, `post(url, content_type, body)` | Send a request to an `https` URL |
 | `endpoint(url)`, `send(endpoint, method, target, headers, body)` | Resolve a URL once, for many requests |
 | `connections()`, `close()` | The open connections |
+| `open_stream(endpoint)` | A request stream that stays open, for the tunnel of an extended `CONNECT` |
+| `write_stream(stream, data, fin)`, `read_stream(stream, data, timeout_ms)` | Write frames on such a stream, and read what arrived |
+| `reset_stream(stream, code)`, `close_stream(stream)` | Reset the stream, or free it; the connection stays open |
+
+`open_stream` waits for the SETTINGS of the server. It raises `PROTOCOL` when the server does not send `SETTINGS_ENABLE_CONNECT_PROTOCOL = 1`. `read_stream` returns `DATA`, `WAIT` after the timeout, `END` at the FIN of the server, or `RESET`.
 
 Each request has the deadline `ClientConfig.timeout_ms`. The handshake also has the limit `connect_timeout_ms`. When a reused connection gives no stream, such as a connection that is closing, the client sends the request on a new connection.
 
@@ -143,7 +164,9 @@ h2c is off by default, because a server without HTTP/2 must first refuse the pre
 
 ## Performance
 
-The round-trip gap to h3 with quinn is closed. The QPACK coder is 2.6 to 3.2 times faster than the coder of h3. A 32-byte QUIC stream echo takes 73 µs. quinn takes 90 µs for the same echo. An HTTP/3 round trip of a small JSON body takes 98 µs. h3 with quinn takes 112 µs.
+The round-trip gap to h3 with quinn is closed. The QPACK coder is 2.6 to 3.2 times faster than the coder of h3. A 32-byte QUIC stream echo takes 73 µs. quinn takes 90 µs for the same echo. An HTTP/3 round trip of a small JSON body takes 99 µs. h3 with quinn takes 111 µs.
+
+The tunnels of the extended `CONNECT` did not change the time of a round trip.
 
 The OpenSSL QUIC stack remains an option. It sends each ACK in its own datagram, so a round trip on that stack is slower.
 
@@ -155,6 +178,7 @@ The OpenSSL QUIC stack remains an option. It sends each ACK in its own datagram,
 - **Encoder base:** the encoder base is the insert count, and the prefix is encoded against the SETTINGS maximum.
 - **Checks:** the decoder refuses a dynamic reference at or above the Required Insert Count. It also refuses an Insert Count Increment of 0, and a boolean setting above 1.
 - **Duplicate:** the encoder does not emit the Duplicate instruction. The decoder accepts it.
+- **Extended CONNECT:** h3 gives each request to the application at its head, with the `Protocol` extension. Here only a tunnel is given at its head, as events. h3 0.0.8 accepts only the `:protocol` values `webtransport` and `connect-udp`, and refuses a request with another value. Here any value opens a tunnel, such as `websocket` of RFC 9220.
 
 ## License
 
