@@ -54,7 +54,7 @@ BENCHES := $(shell $(PACKAGES) benches $(SELECTED))
 ALL_FILES := $(shell $(PACKAGES) files)
 TOOL_SOURCES := $(wildcard coverage/*.mojo) $(wildcard tools/*.mojo)
 FORMATTED := $(ALL_FILES) $(TOOL_SOURCES) \
-             $(shell find tests bench -name '*.mojo' 2> /dev/null)
+             $(shell find tests bench bin -name '*.mojo' 2> /dev/null)
 DOCS := README.md CONTRIBUTING.md $(wildcard docs/wiki/*.md)
 COV_DIR := coverage/build/$(or $(PKG),all)
 
@@ -65,7 +65,7 @@ out=$$($(1) 2>&1); rc=$$?; printf '%s\n' "$$out" | sed '/Crashpad/d'
 endef
 
 .PHONY: help check test lint fmt fmt-check packages-check docs-check \
-        coverage bench bench-check package clean
+        coverage bench bench-check package scorchql clean
 
 help:
 	@echo "MojoGraphQL tasks ($(words $(SELECTED)) packages selected)"
@@ -77,6 +77,7 @@ help:
 	@echo "  make bench           Mojo against the upstream libraries"
 	@echo "  make bench-check     fail when Mojo is not the fastest"
 	@echo "  make package         one precompiled .mojoc per package, into dist/"
+	@echo "  make scorchql        the ScorchQL gateway, its demo and seamstress, into dist/"
 	@echo "  make fmt             reformat the sources"
 	@echo "  make packages-check  enforce the package graph in packages.toml"
 	@echo "  make docs-check      check the documentation writing rules"
@@ -103,6 +104,9 @@ lint:
 	    --diagnose-missing-doc-strings -o /dev/null "$$1"); exit $$rc' _ {} \
 	  || { echo "lint failed."; exit 1; }
 	@[ -z "$(strip $(BENCHES))" ] || printf '%s\n' $(BENCHES) | xargs -P $(JOBS) -I {} \
+	  sh -c '$(call run,$(MOJO) build $(MOJOFLAGS) --Werror -o /dev/null "$$1"); exit $$rc' _ {} \
+	  || { echo "lint failed."; exit 1; }
+	@[ -n "$(strip $(PKG))" ] || printf '%s\n' $(PROGRAMS) | xargs -P $(JOBS) -I {} \
 	  sh -c '$(call run,$(MOJO) build $(MOJOFLAGS) --Werror -o /dev/null "$$1"); exit $$rc' _ {} \
 	  || { echo "lint failed."; exit 1; }
 	@echo "No warnings: $(words $(LIB_SOURCES)) modules, $(words $(BENCHES)) benchmarks."
@@ -155,6 +159,20 @@ package:
 	  $(call run,$(MOJO) precompile $(MOJOFLAGS) $$p -o dist/$$p.mojoc); \
 	  [ $$rc -eq 0 ] || exit 1; echo "dist/$$p.mojoc"; \
 	done
+
+# The ScorchQL programs: the gateway and the demo subgraphs. A program in
+# bin/ is not a package, so it can join packages that do not depend on each
+# other.
+PROGRAMS := $(wildcard bin/*.mojo)
+
+scorchql:
+	@mkdir -p dist
+	@$(call run,$(MOJO) build $(MOJOFLAGS) -o dist/scorchql bin/scorchql.mojo); \
+	  [ $$rc -eq 0 ] || exit 1; echo "dist/scorchql"
+	@$(call run,$(MOJO) build $(MOJOFLAGS) -o dist/scorchql-demo bin/scorchql_demo.mojo); \
+	  [ $$rc -eq 0 ] || exit 1; echo "dist/scorchql-demo"
+	@$(call run,$(MOJO) build $(MOJOFLAGS) -o dist/seamstress bench/gql_seamstress/_seamstress.mojo); \
+	  [ $$rc -eq 0 ] || exit 1; echo "dist/seamstress"
 
 clean:
 	@rm -rf coverage/build .cache dist

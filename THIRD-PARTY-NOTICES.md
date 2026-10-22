@@ -107,7 +107,8 @@ the values of the public OpenSSL headers. A program that does not import
   `src/cli.rs`, `src/command/supergraph/compose/`,
   `src/composition/supergraph/config/` (the subgraph resolution),
   `src/command/subgraph/introspect.rs`, `src/command/graph/introspect.rs`,
-  `src/command/output.rs`, `src/options/output.rs`, `src/error/`,
+  the output of `src/command/subgraph/publish/`, `delete.rs` and `list.rs`,
+  `src/utils/table.rs`, `src/command/output.rs`, `src/options/output.rs`, `src/error/`,
   `src/federation.rs`, `src/utils/parsers.rs`, the
   `crates/rover-client/src/operations/subgraph/introspect/` and
   `graph/introspect/` operations, and `crates/rover-graphql/src/lib.rs`.

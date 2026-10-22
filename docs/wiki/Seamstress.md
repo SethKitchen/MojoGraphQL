@@ -12,6 +12,9 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `seamstress supergraph compose --config <FILE>` | Reads `supergraph.yaml`, resolves each subgraph, composes them, and prints the supergraph SDL |
 | `seamstress subgraph introspect <ENDPOINT>` | Sends the `_service { sdl }` query, and prints the SDL |
 | `seamstress graph introspect <ENDPOINT>` | Sends the introspection query, and prints the schema as SDL |
+| `seamstress subgraph publish <GATEWAY> --name <NAME>` | Publishes a subgraph to a ScorchQL gateway |
+| `seamstress subgraph delete <GATEWAY> --name <NAME> --confirm` | Removes a subgraph from a ScorchQL gateway |
+| `seamstress subgraph list <GATEWAY>` | Lists the subgraphs of a ScorchQL gateway |
 
 Each command takes `--format plain` or `--format json`, and `--output <FILE>`. As in Rover 1.0.0, `--format json` selects the JSON output, and `--output` names the file that receives the output. The text and the JSON are the Rover text and JSON. An error has the Rover message and code, such as `error[E029]`, and exit code 1. A usage error has the clap message and exit code 2.
 
@@ -23,6 +26,7 @@ Each command takes `--format plain` or `--format json`, and `--output <FILE>`. A
 | `gql_seamstress.federation_version` | `FederationVersion`, `SemanticVersion` | `apollo-federation-types` `src/config/version.rs`, `src/federation.rs` |
 | `gql_seamstress.yaml`, `yaml_scalar` | A minimal YAML reader | serde_yaml, for the subset that a configuration uses |
 | `gql_seamstress.introspect` | `subgraph_introspect`, `graph_introspect` | `src/command/*/introspect.rs`, `crates/rover-client` |
+| `gql_seamstress.publish` | `subgraph_publish`, `subgraph_delete`, `subgraph_list` | `src/command/subgraph/publish`, `delete.rs`, `list.rs`, `src/utils/parsers.rs` |
 | `gql_seamstress.graphql_client` | One GraphQL request over HTTP | `crates/rover-graphql` |
 | `gql_seamstress.encode`, `serialize` | The SDL of an introspection result | `graph/introspect/schema.rs`, apollo-compiler `ast/serialize.rs` |
 | `gql_seamstress.introspection_json` | `graph introspect --format json` | `graph/introspect/introspection_json.rs` |
@@ -48,6 +52,21 @@ def main() raises:
     print(result.stdout, end="")
 ```
 
+## Publish to a ScorchQL gateway
+
+Rover publishes a subgraph to GraphOS. seamstress publishes it to the registry of a [ScorchQL](ScorchQL) gateway. The graph ref is the URL of the gateway:
+
+```bash
+./seamstress subgraph publish http://my-vm:4000 --name products \\
+    --schema products.graphql --routing-url http://10.0.0.5:4001/graphql
+./seamstress subgraph list http://my-vm:4000
+./seamstress subgraph delete http://my-vm:4000 --name products --confirm
+```
+
+The gateway composes the subgraphs again. When they do not compose, the gateway refuses the publish, and seamstress prints the errors with exit code 1. Use `--schema -` to read the SDL from standard input. Without `--schema`, the gateway reads the SDL from the routing URL. Without `--routing-url`, seamstress uses the URL that the gateway already has.
+
+When the gateway has a token, set `APOLLO_KEY` or `SCORCHQL_TOKEN` to it. The messages and the JSON are the Rover ones.
+
 ## Supergraph configuration
 
 The configuration is the Rover format. A subgraph source is `file`, `subgraph_url` with `introspection_headers`, or `sdl`. A file path is relative to the directory of the configuration. A JSON configuration is read too.
@@ -70,7 +89,7 @@ subgraphs:
 
 - **Program name.** The program is `seamstress`. The usage errors and the suggestions say `seamstress` where Rover says `rover`.
 - **Composition.** Rover composes with the `supergraph` plugin, which is Elastic licensed. `gql_seamstress` composes with `gql_composition`, the Hive Federation Composition port. The supergraph SDL and the error messages are the Hive ones, and there are no hints. The JSON output lists no plugins.
-- **GraphOS.** A `graphref` source, `--graph-ref`, `--watch` and the commands that need GraphOS are not supported.
+- **GraphOS.** A `graphref` source, `--graph-ref`, `--watch` and the commands that need GraphOS are not supported. `subgraph publish`, `delete` and `list` send to a ScorchQL gateway. The graph ref is the gateway URL, and a publish that does not compose is an error. `delete` needs `--confirm`.
 - **Environment variables.** `${env.NAME}` in a configuration is not expanded. The Rover expansion code is Elastic licensed.
 - **Configuration errors.** A configuration that cannot be read, or that does not match the format, is an error. Rover warns and continues with an empty configuration.
 - **YAML.** Anchors, aliases, tags, flow collections with content and more than one document are refused. The messages are not the serde_yaml messages.

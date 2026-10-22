@@ -189,7 +189,15 @@ struct RouterStreamHandler[T: SubgraphTransport](Handler):
         response.begin_chunked()
         response.write_chunk(Span(answer.body))
         response.hold()
-        var id = response.connection()
+        self.hold(response.connection(), answer^)
+
+    def hold(mut self, id: Int, var answer: StreamAnswer[Self.T]):
+        """Keep a streamed answer for `poll_body` on a connection.
+
+        Args:
+            id: The connection.
+            answer: The streamed answer.
+        """
         while len(self.held) <= id:
             self.held.append(None)
         self.held[id] = _Held(answer^)

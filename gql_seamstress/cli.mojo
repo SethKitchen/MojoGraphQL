@@ -13,13 +13,19 @@ and `src/command/graph/introspect.rs`, for these commands:
     seamstress subgraph introspect <ENDPOINT> [--header <KEY:VALUE>]...
     seamstress graph introspect <ENDPOINT> [--header <KEY:VALUE>]...
                            [--legacy-introspection-query]
+    seamstress subgraph publish <GATEWAY_URL> --name <NAME> [--schema <FILE|->]
+                           [--routing-url <URL>]
+    seamstress subgraph delete <GATEWAY_URL> --name <NAME> --confirm
+    seamstress subgraph list <GATEWAY_URL>
 
 The global options `--format <plain|json>`, `--output <FILE>` (`-o`),
 `--no-color`, `--log <LEVEL>` (`-l`), `--profile <NAME>`,
 `--skip-update-check` and `--insecure-accept-invalid-certs` can come
 anywhere. A usage error is written as clap writes it, with exit code 2.
 
-**Differences from upstream.** Only the commands above exist. `--watch`,
+**Differences from upstream.** Only the commands above exist. The
+`publish`, `delete` and `list` commands send to a ScorchQL gateway, not to
+GraphOS; `gql_seamstress.publish` lists their differences. `--watch`,
 `--graph-ref` and the other GraphOS options are refused, because they need
 GraphOS. `--log` and `--profile` take a value and do nothing.
 """
@@ -30,6 +36,9 @@ from gql_seamstress.federation_version import FederationVersion
 from gql_seamstress.federation_version import parse_federation_version
 from gql_seamstress.introspect import graph_introspect, subgraph_introspect
 from gql_seamstress.output import CommandOutput, CommandResult, OutputFormat
+from gql_seamstress.output import RoverError
+from gql_seamstress.publish import read_schema, subgraph_delete, subgraph_list
+from gql_seamstress.publish import subgraph_publish
 
 comptime VERSION = "seamstress 1.0.0"
 """What `--version` prints: the upstream version that this port follows."""
@@ -235,6 +244,110 @@ def _compose(
     return result.render(globals.format, globals.output)
 
 
+def _registry(
+    sub: String, args: List[String], globals: _Globals, stdin: Optional[String]
+) raises -> CommandOutput:
+    """Parse and run `seamstress subgraph publish`, `delete` or `list`
+    against a ScorchQL gateway."""
+    var usage = (
+        "seamstress subgraph list <GRAPH_REF>" if sub
+        == "list" else "seamstress subgraph "
+        + sub
+        + " [OPTIONS] --name <SUBGRAPH_NAME> <GRAPH_REF>"
+    )
+    var gateway = Optional[String](None)
+    var name = Optional[String](None)
+    var schema = Optional[String](None)
+    var routing_url = Optional[String](None)
+    var no_url = False
+    var confirm = False
+    var index = 0
+    while index < len(args):
+        if sub != "list":
+            var value = _flag_value(args, index, "--name")
+            if not value:
+                value = _flag_value(args, index, "-n")
+            if value:
+                name = value^
+                continue
+        if sub == "publish":
+            var path = _flag_value(args, index, "--schema")
+            if not path:
+                path = _flag_value(args, index, "-s")
+            if path:
+                schema = path^
+                continue
+            var url = _flag_value(args, index, "--routing-url")
+            if url:
+                routing_url = url^
+                continue
+        var token = args[index].copy()
+        index += 1
+        if sub == "publish" and token == "--no-url":
+            no_url = True
+        elif sub == "publish" and token == "--allow-invalid-routing-url":
+            pass
+        elif sub == "delete" and token == "--confirm":
+            confirm = True
+        elif token.startswith("-") or gateway:
+            return _unexpected(token, usage)
+        else:
+            gateway = token^
+    if not gateway:
+        return _missing("<GRAPH_REF>", usage)
+    if sub != "list" and not name:
+        return _missing("--name <SUBGRAPH_NAME>", usage)
+    var url = gateway.value()
+    if not is_url(url):
+        return _invalid(
+            url,
+            "<GRAPH_REF>",
+            (
+                "seamstress publishes to a ScorchQL gateway: pass its URL, such"
+                " as http://localhost:4000"
+            ),
+        )
+    var base = normalize_url(url)
+    if sub == "list":
+        return subgraph_list(base).render(globals.format, globals.output)
+    var result: CommandResult
+    if sub == "delete":
+        if not confirm:
+            var error = RoverError.of(
+                "seamstress cannot ask to confirm the delete of '"
+                + name.value()
+                + "'."
+            )
+            error.suggestions.append("Pass --confirm to delete it.")
+            result = CommandResult.failure(error^)
+        else:
+            result = subgraph_delete(base, name.value())
+    elif no_url and routing_url:
+        result = CommandResult.failure(
+            RoverError.of(
+                "You cannot use --no-url and --routing-url at the same time."
+            )
+        )
+    else:
+        if no_url:
+            routing_url = String("")
+        var sdl = Optional[String](None)
+        var refused = Optional[RoverError](None)
+        if schema:
+            var read = read_schema(schema.value(), stdin)
+            sdl = read[0].copy()
+            refused = read[1].copy()
+        if refused:
+            result = CommandResult.failure(refused.take())
+        else:
+            result = subgraph_publish(base, name.value(), sdl, routing_url)
+    if result.error or globals.format == OutputFormat.JSON:
+        return result.render(globals.format, globals.output)
+    # Rover writes these outcomes to standard error, and nothing to
+    # standard output.
+    return CommandOutput("", result.stderr + result.text + "\n", 0)
+
+
 def run_seamstress(
     args: List[String], stdin: Optional[String] = None
 ) raises -> CommandOutput:
@@ -304,6 +417,8 @@ def run_seamstress(
         return _compose(tail, globals, stdin)
     if (rest[0] == "subgraph" or rest[0] == "graph") and sub == "introspect":
         return _introspect(rest[0], tail, globals)
+    if rest[0] == "subgraph" and sub in ["publish", "delete", "list"]:
+        return _registry(sub, tail, globals, stdin)
     var unknown = (
         rest[1] if rest[0] in ["supergraph", "subgraph", "graph"]
         and len(rest) > 1 else rest[0]

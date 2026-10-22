@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Seth Kitchen, PE
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+#
+# A systemd unit for the ScorchQL gateway. See docs/wiki/How-to-host-a-gateway.md.
+#
+#     sudo install dist/scorchql /usr/local/bin/scorchql
+#     sudo cp examples/scorchql/scorchql.service /etc/systemd/system/
+#     sudo systemctl daemon-reload && sudo systemctl enable --now scorchql
+#
+# Put SCORCHQL_TOKEN=<token> in /etc/scorchql.env to protect publishing.
+# Add --tls-cert and --tls-key to ExecStart to serve HTTP/2 and HTTP/3.
+
+[Unit]
+Description=ScorchQL federated GraphQL gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=scorchql
+EnvironmentFile=-/etc/scorchql.env
+ExecStart=/usr/local/bin/scorchql --registry /var/lib/scorchql --port 4000 --workers 2
+KillSignal=SIGTERM
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

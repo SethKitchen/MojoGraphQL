@@ -1,0 +1,16 @@
+# The supergraph of the ScorchQL demo. Start the subgraphs first:
+#
+#     dist/scorchql-demo &
+#     dist/scorchql --config examples/scorchql/supergraph.yaml
+#
+# The gateway introspects each subgraph at start, and composes them.
+federation_version: =2.3.0
+subgraphs:
+  products:
+    routing_url: http://127.0.0.1:4001/
+    schema:
+      subgraph_url: http://127.0.0.1:4001/
+  reviews:
+    routing_url: http://127.0.0.1:4002/
+    schema:
+      subgraph_url: http://127.0.0.1:4002/

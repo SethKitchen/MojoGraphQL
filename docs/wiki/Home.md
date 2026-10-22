@@ -11,6 +11,7 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 
 - [How to install](How-to-install): install the toolchain and run the checks.
 - [How to pick packages](How-to-pick-packages): build and use only the packages that you need.
+- [How to host a gateway](How-to-host-a-gateway): run the ScorchQL gateway, publish subgraphs, and open its explorer.
 - [How to add a feature](How-to-add-a-feature): port a part of an upstream project.
 - [How to write documentation](How-to-write-documentation): the writing rules for this wiki.
 
@@ -39,6 +40,7 @@ MojoGraphQL is a GraphQL library in Mojo. It ports MIT licensed GraphQL projects
 - [Subgraph](Subgraph): the `gql_subgraph` package, which builds an executable Apollo Federation subgraph.
 - [Server](Server): the `gql_server` package, which is the Apollo Server port and its standalone HTTP server. The `gql_server_ws` package adds subscriptions over WebSocket on the same port.
 - [Mcp](Mcp): the `gql_mcp` package, which is the Model Context Protocol server of Apollo MCP Server.
+- [ScorchQL](ScorchQL): the `gql_scorchql` package and its `scorchql` program, a federated gateway with a subgraph registry and a web explorer.
 - [Seamstress](Seamstress): the `gql_seamstress` package and its `seamstress` program, a port of the local commands of Apollo Rover: `supergraph compose`, `subgraph introspect` and `graph introspect`.
 - [Codegen](Codegen): the `gql_codegen` package, which writes Mojo models for operations, as the Apollo Kotlin compiler writes Kotlin.
 - [Compiler](Compiler): the `gql_compiler` package, a port of the apollo-compiler schema model from apollo-rs.
