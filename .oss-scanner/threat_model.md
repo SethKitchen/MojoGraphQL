@@ -30,7 +30,7 @@ The scanner reads this file before it starts. It is for Anthropic's OSS Scanner.
 
 ## How to exercise it
 
-- The toolchain is `/src/.venv/bin/mojo`. It is Mojo 1.1.0. The pin is exact. Do not install another version.
+- The toolchain is `/src/.venv/bin/mojo`. It is Mojo 1.2.0. The pin is exact. Do not install another version.
 - Run one suite from `/src` with `.venv/bin/mojo run -I . tests/gql_json/test_parser.mojo`. The `-I .` flag is required. The suites are in `tests/<package>/`. Read them to see how to call each package.
 - `make test PKG=<package>` runs the suites of a package and of every package that depends on it. Each single test must finish in 5 seconds or less.
 - To test the server, start it from a small program in one process and send raw bytes to it from another. `tests/gql_http/` and `tests/gql_server/` show how to build a server and a request. Build a program with `.venv/bin/mojo build -I . --sanitize address`.

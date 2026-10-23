@@ -41,6 +41,8 @@ from gql_http3.frame import (
 from gql_http3.varint import Progress, encode_varint
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
+comptime _ = String().as_bytes()
+
 
 def _b(text: StaticString) -> Span[UInt8, ImmStaticOrigin]:
     return text.as_bytes()

@@ -204,7 +204,7 @@ def _serve(
         + " "
         + answer.content_type
         + " "
-        + String(unsafe_from_utf8=answer.body^)
+        + String(unsafe_from_utf8=answer.body)
     )
 
 
@@ -372,7 +372,7 @@ def test_the_fetches_of_a_parallel_node_are_in_flight_at_once() raises:
     )
     var elapsed = perf_counter_ns() - started
     assert_equal(
-        String(unsafe_from_utf8=response.body^),
+        String(unsafe_from_utf8=response.body),
         '{"data":{"books":[{"id":"books"}],"magazines":[{"id":"magazines"}]}}',
     )
     # Each subgraph takes one second. One after the other takes two.

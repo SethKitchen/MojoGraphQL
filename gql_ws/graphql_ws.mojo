@@ -477,7 +477,7 @@ def _start(mut out: List[UInt8], id: StringSlice):
 
 def _text(var out: List[UInt8]) -> String:
     """Make the text of a message."""
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def payload_message(type: MessageType, payload: StringSlice = "") -> String:

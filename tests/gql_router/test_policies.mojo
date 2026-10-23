@@ -49,13 +49,13 @@ def test_policies_are_skipped_when_directives_are_off() raises:
     off_visits.append(_field("Query", "user", "User"))
     var off_bindings = List[PolicyBinding]()
     off_bindings.append(_type_policy("User", "internal"))
-    var off = collect_required_policies(False, True, off_visits^, off_bindings^)
+    var off = collect_required_policies(False, True, off_visits, off_bindings)
     var unused_visits = List[AuthVisit]()
     unused_visits.append(_field("Query", "user", "User"))
     var unused_bindings = List[PolicyBinding]()
     unused_bindings.append(_type_policy("User", "internal"))
     var unused = collect_required_policies(
-        True, False, unused_visits^, unused_bindings^
+        True, False, unused_visits, unused_bindings
     )
     assert_equal(len(off), 0)
     assert_equal(len(unused), 0)
@@ -72,7 +72,7 @@ def test_a_field_collects_parent_field_and_output_policies() raises:
     bindings.append(_type_policy("User", "public"))
     bindings.append(_type_policy("Admin", "staff"))
     bindings.append(_type_policy("Other", "secret"))
-    var required = collect_required_policies(True, True, visits^, bindings^)
+    var required = collect_required_policies(True, True, visits, bindings)
     assert_equal(_joined(required), "public read internal staff")
 
 
@@ -80,12 +80,12 @@ def test_no_selections_or_no_bindings_collect_nothing() raises:
     var bindings = List[PolicyBinding]()
     bindings.append(_type_policy("Query", "public"))
     var empty = collect_required_policies(
-        True, True, List[AuthVisit](), bindings^
+        True, True, List[AuthVisit](), bindings
     )
     var visits = List[AuthVisit]()
     visits.append(_field("Query", "user", "User"))
     var unbound = collect_required_policies(
-        True, True, visits^, List[PolicyBinding]()
+        True, True, visits, List[PolicyBinding]()
     )
     assert_equal(len(empty), 0)
     assert_equal(len(unbound), 0)

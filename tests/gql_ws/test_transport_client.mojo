@@ -37,7 +37,7 @@ def server_frames(*texts: String) -> String:
     var out = List[UInt8]()
     for text in texts:
         out.extend(raw(OpCode.TEXT, text.as_bytes(), True, False))
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def connect_error(

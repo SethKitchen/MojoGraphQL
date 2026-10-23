@@ -18,7 +18,7 @@ Differences from upstream: `Side` and `Dir` are structs with `is_valid`,
 in place of Rust enums. `Side.opposite` stands for upstream's `!side`.
 """
 
-from std.hashlib import Hasher
+from std.hash import Hasher
 
 
 @fieldwise_init

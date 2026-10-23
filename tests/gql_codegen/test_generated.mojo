@@ -207,7 +207,7 @@ def test_read_a_mutation() raises:
             '{"createReview": {"stars": 5, "commentary": null, "from": "fan"}}'
         ),
         0,
-        CreateReviewMutation_Variables(review^),
+        CreateReviewMutation_Variables(review),
     )
     var created = data.createReview.value().copy()
     assert_equal(created.stars, 5)
@@ -280,7 +280,7 @@ def test_write_input_objects() raises:
     )
     var writer = JsonWriter()
     CreateReviewMutation_Variables(
-        review^, episode=Optional[Episode](Episode.EMPIRE)
+        review, episode=Optional[Episode](Episode.EMPIRE)
     ).write_json(writer)
     assert_equal(
         writer^.take_string(),

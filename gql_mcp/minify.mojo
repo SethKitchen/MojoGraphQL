@@ -47,7 +47,7 @@ def normalize_description(text: StringSlice) -> String:
                 out.append(32)
                 pending = False
             out.append(byte)
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def shorten_scalar_name(name: StringSlice) -> String:

@@ -148,7 +148,7 @@ struct JsonWriter(Movable):
         Returns:
             The text.
         """
-        return String(unsafe_from_utf8=self.out^)
+        return String(unsafe_from_utf8=self.out)
 
     def clear(mut self):
         """Remove the text written, keep the buffer, and start again."""

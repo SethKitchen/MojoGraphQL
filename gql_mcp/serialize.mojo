@@ -190,7 +190,7 @@ def write_string_value(
         else:
             out.append(byte)
     out.append(34)
-    writer.write(String(unsafe_from_utf8=out^))
+    writer.write(String(unsafe_from_utf8=out))
 
 
 def _write_block_line(mut writer: SdlWriter, line: StringSlice):

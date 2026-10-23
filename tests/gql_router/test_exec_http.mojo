@@ -24,7 +24,7 @@ from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
 
 def _text(var bytes: List[UInt8]) -> String:
-    return String(unsafe_from_utf8=bytes^)
+    return String(unsafe_from_utf8=bytes)
 
 
 def test_the_body_has_the_variables_it_uses() raises:

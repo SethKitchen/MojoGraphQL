@@ -68,9 +68,9 @@ def main() raises:
         serve()
         return
     var built = run(
-        "mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
-        " .cache/bin/http_loadgen bench/gql_http/_loadgen.mojo > /dev/null"
-        " 2>&1; echo __rc=$?"
+        "([ -x .cache/bin/http_loadgen ] || (mkdir -p .cache/bin &&"
+        " .venv/bin/mojo build -I . -o .cache/bin/http_loadgen"
+        " bench/gql_http/_loadgen.mojo > /dev/null 2>&1)); echo __rc=$?"
     )
     if not built.strip().endswith("__rc=0"):
         raise Error("the load generator did not build: " + built)

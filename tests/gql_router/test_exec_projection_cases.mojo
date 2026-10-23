@@ -322,7 +322,7 @@ def test_errors_null_data_and_a_small_buffer() raises:
         metadata,
     )
     assert_equal(
-        String(unsafe_from_utf8=out^),
+        String(unsafe_from_utf8=out),
         '{"data":null,"errors":[{"message":"a"},{"message":"b"}]}',
     )
     var long_name = String("n") * 200

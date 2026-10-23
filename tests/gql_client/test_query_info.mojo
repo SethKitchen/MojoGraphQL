@@ -249,7 +249,7 @@ def test_provides_stream_field_info_to_merge_functions() raises:
     var policy = FieldPolicy()
     policy.merge = Merge(_check_stream_merge)
     add_field(config, "Query", "friendList", policy^)
-    var cache = InMemoryCache(config^)
+    var cache = InMemoryCache(config)
     var handler = GraphQL17Alpha9Handler()
     var query = cache.transform_document(
         gql("query { friendList @stream(initialCount: 1) { id name } }")
@@ -430,7 +430,7 @@ def test_provides_extensions_to_merge_functions() raises:
     var policy = FieldPolicy()
     policy.merge = Merge(_check_user_name)
     add_field(config, "User", "name", policy^)
-    var cache = InMemoryCache(config^)
+    var cache = InMemoryCache(config)
     var subscription = cache.transform_document(gql(_SUBSCRIPTION))
     var variables = json('{"name":"Changping Chen"}')
     var first = mark_subscription_result(
@@ -562,7 +562,7 @@ def test_extensions_are_available_in_merge_functions() raises:
     var policy = FieldPolicy()
     policy.merge = Merge(_check_book)
     add_field(config, "Query", "book", policy^)
-    var cache = InMemoryCache(config^)
+    var cache = InMemoryCache(config)
     var query = gql("query { book { title } }")
     var data = json('{"book":{"__typename":"Book","title":"Test Book"}}')
     _ = cache.write_query(
@@ -677,7 +677,7 @@ def test_stream_writes_keep_extensions_for_other_fields() raises:
     var policy = FieldPolicy()
     policy.merge = Merge(_check_extensions_with_stream)
     add_field(config, "Query", "book", policy^)
-    var cache = InMemoryCache(config^)
+    var cache = InMemoryCache(config)
     _ = cache.write_query(
         gql("query { book { title } }"),
         json('{"book":{"__typename":"Book","title":"T"}}'),
@@ -732,7 +732,7 @@ def test_default_stream_merge_without_stream_field_info() raises:
             '{"list":[{"__typename":"T","id":"3"},{"__typename":"T","id":"4"},'
             '{"__typename":"T","id":"5"}]}'
         ),
-        stream_info=info^,
+        stream_info=info,
     )
     assert_equal(
         text_of(cache.read_query(plain).value()),

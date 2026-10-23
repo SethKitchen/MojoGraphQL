@@ -109,7 +109,7 @@ def _hex(value: UInt64) -> String:
     while shift >= 0:
         out.append(digits[Int((value >> UInt64(shift)) & 15)])
         shift -= 4
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 struct McpHttpHandler(Handler):

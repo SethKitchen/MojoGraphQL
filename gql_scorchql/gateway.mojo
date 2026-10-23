@@ -463,7 +463,7 @@ struct Gateway(Handler):
             )
             self.streams.clear()
             self.streams.append(
-                RouterStreamHandler(hub^, self.config.graphql_path)
+                RouterStreamHandler(hub, self.config.graphql_path)
             )
             self.sdl = sdl
             self.load_error = ""

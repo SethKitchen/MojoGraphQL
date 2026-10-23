@@ -55,7 +55,7 @@ def _bench_transport() raises -> CannedTransport:
 
 
 def _body(var bytes: List[UInt8]) -> String:
-    return String(unsafe_from_utf8=bytes^)
+    return String(unsafe_from_utf8=bytes)
 
 
 def test_bench_operation_matches_the_upstream_response() raises:

@@ -509,7 +509,7 @@ def test_runs_parallel_jobs_in_parallel() raises:
     )
     assert_equal(response.status, 200)
     assert_equal(
-        String(unsafe_from_utf8=response.body^),
+        String(unsafe_from_utf8=response.body),
         '{"data":{"from_a":"value_a","from_b":"value_b"}}',
     )
     ref requests = router.executor.transport.requests

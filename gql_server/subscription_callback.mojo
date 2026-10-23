@@ -143,7 +143,7 @@ struct SubscriptionCallbackPlugin(ServerPlugin):
         var config = ClientConfig()
         config.connect_timeout_ms = 2000
         config.timeout_ms = 5000
-        self.client = Client(config^)
+        self.client = Client(config)
         self.active = List[_ActiveSubscription]()
         self.stopped = False
 

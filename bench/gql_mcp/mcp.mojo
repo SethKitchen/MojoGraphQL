@@ -28,9 +28,11 @@ comptime SERVER = ".cache/bin/mcp_server"
 def main() raises:
     """Build the server, and run the server workloads."""
     var built = run(
-        "mkdir -p .cache/bin && .venv/bin/mojo build -I . -o "
+        "([ -x "
         + SERVER
-        + " bench/gql_mcp/_server.mojo > /dev/null 2>&1; echo __rc=$?"
+        + " ] || (mkdir -p .cache/bin && .venv/bin/mojo build -I . -o "
+        + SERVER
+        + " bench/gql_mcp/_server.mojo > /dev/null 2>&1)); echo __rc=$?"
     )
     if not "__rc=0" in built:
         raise Error("building bench/gql_mcp/_server.mojo failed")

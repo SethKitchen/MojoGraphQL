@@ -26,7 +26,7 @@ builds. `ResetToken.random` stands for the HMAC of upstream's
 """
 
 from std.ffi import external_call
-from std.hashlib import Hasher
+from std.hash import Hasher
 from std.memory import unsafe_memcpy
 
 comptime MAX_CID_SIZE = 20
@@ -38,6 +38,7 @@ comptime _CidBytes = SIMD[DType.uint8, 32]
 """The storage of a connection ID: 20 bytes and 12 bytes of 0."""
 comptime _TokenBytes = SIMD[DType.uint8, RESET_TOKEN_SIZE]
 """The storage of a reset token."""
+comptime _ = String().as_bytes()
 
 
 def fill_random(ptr: Pointer[mut=True, UInt8, _], n: Int):

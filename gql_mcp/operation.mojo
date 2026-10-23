@@ -238,7 +238,7 @@ def extract_and_format_comments(comments: Optional[String]) -> Optional[String]:
         if index < len(bytes):
             out.append(bytes[index])
         index += 1
-    var text = String(unsafe_from_utf8=out^)
+    var text = String(unsafe_from_utf8=out)
     var trimmed = String(text.strip())
     if trimmed.byte_length() == 0:
         return None

@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # MojoGraphQL
 
-[![Mojo 1.1.0](https://img.shields.io/badge/Mojo-1.1.0-orange)](https://docs.modular.com/mojo/)
+[![Mojo 1.2.0](https://img.shields.io/badge/Mojo-1.2.0-orange)](https://docs.modular.com/mojo/)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE)
 [![Coverage requirement: 100% line, branch, condition, MC/DC](https://img.shields.io/badge/coverage%20requirement-100%25%20line%20%7C%20branch%20%7C%20condition%20%7C%20MC%2FDC-informational)](https://github.com/SethKitchen/MojoGraphQL/wiki/Coverage-tool)
 [![Benchmark requirement: faster than upstream](https://img.shields.io/badge/benchmark%20requirement-faster%20than%20upstream-informational)](https://github.com/SethKitchen/MojoGraphQL/wiki/Benchmarks)
@@ -33,11 +33,11 @@ You need Linux on x86-64 or aarch64, macOS on Apple Silicon, or Windows with WSL
 ```bash
 git clone https://github.com/SethKitchen/MojoGraphQL.git
 cd MojoGraphQL
-uv venv && uv pip install "mojo==1.1.0"
+uv venv && uv pip install "mojo==1.2.0"
 make check
 ```
 
-The toolchain is pinned to Mojo `1.1.0` (`8189361e`). Other Mojo versions do not work. See [How to install](https://github.com/SethKitchen/MojoGraphQL/wiki/How-to-install) for the details and for Windows.
+The toolchain is pinned to Mojo `1.2.0` (`2016d0cd`). Other Mojo versions do not work. See [How to install](https://github.com/SethKitchen/MojoGraphQL/wiki/How-to-install) for the details and for Windows.
 
 ## Start
 
@@ -197,86 +197,86 @@ The dependencies of a planned package can change before it is written. `packages
 
 Mojo is faster than every baseline on every workload. Each package with a hot path has a benchmark against its upstream library, on the same fixtures. Mojo must be faster than every baseline.
 
-| Package | Workload | Mojo | Fastest other library | Mojo speedup |
-| --- | --- | ---: | --- | ---: |
-| `gql_language` | Parse the GitHub schema (368 KB of SDL) | 566 µs | graphql-go-tools, 1.61 ms | 2.85x |
-| `gql_language` | Parse the introspection query (graphql-js benchmark) | 4.69 µs | graphql-go-tools, 8.41 µs | 1.79x |
-| `gql_language` | Print the kitchen sink (graphql-js benchmark) | 2.65 µs | apollo-compiler, 2.73 µs | 1.03x |
-| `gql_language` | Strip ignored characters from the GitHub schema | 747 µs | graphql-js, 5.15 ms | 6.9x |
-| `gql_json` | Parse the introspection result | 1.21 ms | Node.js `JSON.parse`, 3.85 ms | 3.2x |
-| `gql_json` | Stringify a small response | 1.83 µs | astjson, 2.85 µs | 1.56x |
-| `gql_http` | Parse a request | 200 ns | httparse, 221 ns | 1.11x |
-| `gql_http` | Keep-alive request with a JSON body | 8.95 µs | hyper, 12.7 µs | 1.42x |
-| `gql_http` | Stream a chunked response of 16 parts | 10.1 µs | hyper, 25.8 µs | 2.6x |
-| `gql_http` | Parse a `multipart/mixed` body of 100 parts | 135 µs | meros, 349 µs | 2.6x |
-| `gql_sse` | Subscribe and send 1000 `next` events | 1.31 ms | graphql-sse, 3.20 ms | 2.4x |
-| `gql_sse` | Parse 1000 `next` events | 600 µs | graphql-sse, 1.27 ms | 2.1x |
-| `gql_http2` | HPACK encode a GraphQL request header block | 815 ns | h2, 1.04 µs | 1.28x |
-| `gql_http2` | HPACK decode the same block | 1.02 µs | h2, 2.04 µs | 2.0x |
-| `gql_http2` | h2c round trip with a small JSON body | 69.6 µs | hyper and h2, 79.6 µs | 1.14x |
-| `gql_tls` | TLS keep-alive request round trip | 82.4 µs | hyper and rustls, 85.4 µs | 1.04x |
-| `gql_https2` | h2 over TLS round trip with a small JSON body | 94.1 µs | hyper, h2 and rustls, 113 µs | 1.20x |
-| `gql_quic` | Echo 32 bytes on one QUIC stream | 72.3 µs | quinn, 90.3 µs | 1.25x |
-| `gql_http3` | QPACK encode a request header block | 702 ns | h3, 2.18 µs | 3.1x |
-| `gql_http3` | QPACK decode a request header block | 879 ns | h3, 2.56 µs | 2.9x |
-| `gql_http3` | HTTP/3 round trip with a small JSON body | 101 µs | h3 and quinn, 110 µs | 1.09x |
-| `gql_schema` | Parse and build the GitHub schema | 1.07 ms | apollo-compiler, 7.85 ms | 7.3x |
-| `gql_schema` | Validate the GitHub schema SDL (graphql-js benchmark) | 3.32 ms | graphql-js, 8.01 ms | 2.4x |
-| `gql_schema` | Build a schema from a parsed AST, as graphql-js `buildASTSchema` (graphql-js benchmark) | 457 µs | graphql-js, 4.54 ms | 9.9x |
-| `gql_compiler` | Build a schema from a parsed AST, as apollo-compiler `Schema::from_ast` | 221 µs | apollo-compiler, 308 µs | 1.39x |
-| `gql_compiler` | Build the GitHub query against the GitHub schema | 56.2 µs | apollo-compiler, 85.9 µs | 1.53x |
-| `gql_compiler` | Print the GitHub schema, as apollo-compiler `Schema::to_string` | 470 µs | apollo-compiler, 780 µs | 1.66x |
-| `gql_compiler` | Validate `many_arguments` (apollo-compiler benchmark) | 1.81 ms | apollo-compiler, 4.01 ms | 2.2x |
-| `gql_compiler` | Validate `big_schema_many_fragments` (apollo-compiler benchmark) | 1.17 ms | apollo-compiler, 2.81 ms | 2.4x |
-| `gql_compiler` | Parse with syntax error recovery: `many_aliases` (apollo-parser benchmark) | 476 µs | apollo-parser, 2.56 ms | 5.4x |
-| `gql_compiler` | Parse with syntax error recovery: the supergraph (apollo-parser benchmark) | 50.9 µs | apollo-parser, 263 µs | 5.2x |
-| `gql_normalization` | Normalize an operation (graphql-go-tools benchmark) | 612 ns | graphql-go-tools, 822 ns | 1.34x |
-| `gql_normalization` | Minify an operation (graphql-go-tools benchmark) | 12.7 µs | graphql-go-tools, 34.6 µs | 2.72x |
-| `gql_normalization` | Fragment spread depth (graphql-go-tools benchmark) | 107 ns | graphql-go-tools, 957 ns | 8.9x |
-| `gql_stream` | Publish to 1000 subscribers | 169 µs | graphql-subscriptions, 866 µs | 5.1x |
-| `gql_execution` | Subscribe, publish 100 events and execute each | 247 µs | graphql-js, 547 µs | 2.2x |
-| `gql_execution` | Execute 100 `@defer` fragments and deliver each payload | 177 µs | graphql-js 17.0.2, 248 µs | 1.40x |
-| `gql_execution` | Execute a `@stream` of 1000 items | 333 µs | graphql-js 17.0.2, 993 µs | 2.98x |
-| `gql_ws` | Parse a WebSocket frame | 79 ns | tungstenite, 741 ns | 9.4x |
-| `gql_ws` | Echo a message over a WebSocket | 7.44 µs | tokio-tungstenite, 10.8 µs | 1.45x |
-| `gql_ws_http2` | Echo a message over a WebSocket on HTTP/2 (RFC 8441) | 7.61 µs | h2 with tungstenite, 11.3 µs | 1.49x |
-| `gql_ws` | Send 1000 subscription events over graphql-transport-ws | 2.00 µs per event | graphql-ws, 37.7 µs | 18.9x |
-| `gql_validation` | Validate the introspection query (graphql-js benchmark) | 40.2 µs | graphql-js, 409 µs | 10.2x |
-| `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 694 µs | apollo-compiler, 2.13 ms | 3.1x |
-| `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 418 µs | apollo-compiler, 3.03 ms | 7.2x |
-| `gql_execution` | Execute the introspection query on the GitHub schema (graphql-js benchmark) | 1.82 ms | apollo-compiler, 18.7 ms | 10.3x |
-| `gql_execution` | Parse and execute many repeated fields (graphql-js benchmark, no validation) | 17.0 µs | graphql-js, 411 µs | 24x |
-| `gql_execution` | Build a client schema from the GitHub introspection result | 2.94 ms | graphql-js, 6.30 ms | 2.1x |
-| `gql_client` | Write a 1000-item query result into a new cache | 1.87 ms | Apollo Client, 20.3 ms | 10.8x |
-| `gql_client` | Read a 1000-item query from the cache | 1.01 ms | Apollo Client, 13.0 ms | 12.9x |
-| `gql_client` | Extract the cache as JSON text | 0.62 ms | Apollo Client, 1.14 ms | 1.84x |
-| `gql_client` | Merge 100 deferred chunks into one result | 173 µs | Apollo Client, 423 µs | 2.44x |
-| `gql_server` | Execute a small operation | 2.28 µs | Apollo Server, 12.3 µs | 5.4x |
-| `gql_server` | Answer an automatic persisted query hit | 2.56 µs | Apollo Server, 9.49 µs | 3.7x |
-| `gql_server` | Serve a small POST over HTTP | 26.0 µs | Apollo Server, 160 µs | 6.2x |
-| `gql_server` | Execute with a federated trace (`ftv1`) | 20.2 µs | Apollo Server, 84.4 µs | 4.2x |
-| `gql_server` | Answer a `@defer` request over `multipart/mixed` | 37.9 µs | Apollo Server, 102 µs | 2.7x |
-| `gql_subgraph` | Build a catalog subgraph schema | 414 µs | `@apollo/subgraph`, 3.12 ms | 7.5x |
-| `gql_subgraph` | Print the catalog subgraph schema | 36.1 µs | `@apollo/subgraph`, 1.72 ms | 47x |
-| `gql_subgraph` | Answer `_service { sdl }` | 1.63 µs | `@apollo/subgraph`, 2.33 µs | 1.43x |
-| `gql_subgraph` | Resolve 100 entities | 88.3 µs | `@apollo/subgraph`, 370 µs | 4.2x |
-| `gql_mcp` | List 200 operation tools | 593 µs | Apollo MCP Server, 2.24 ms | 3.8x |
-| `gql_mcp` | Call an operation tool | 125 µs | Apollo MCP Server, 318 µs | 2.5x |
-| `gql_mcp` | Call the search tool | 531 µs | Apollo MCP Server, 3.16 ms | 6.0x |
-| `gql_mcp` | Call the introspect tool | 184 µs | Apollo MCP Server, 411 µs | 2.24x |
-| `gql_mcp` | Call the validate tool | 65.7 µs | Apollo MCP Server, 241 µs | 3.7x |
-| `gql_mcp` | Make a tool from a large operation | 641 µs | Apollo MCP Server, 3.30 ms | 5.2x |
-| `gql_codegen` | Generate code for four operations on the GitHub schema | 7.88 ms | Apollo Kotlin, 128 ms | 16x |
-| `gql_composition` | Validate the subgraphs of the Netflix DGS example | 8.28 ms | Hive, 31.8 ms | 3.8x |
-| `gql_composition` | Validate a huge subgraph schema | 42.5 ms | Hive, 170 ms | 4.0x |
-| `gql_router` | Plan the Hive Router benchmark query (`qp_benches.rs`) | 653 µs | Hive Router, 892 µs | 1.37x |
-| `gql_router` | Execute the plan of that query against canned subgraph responses | 184 µs | Hive Router, 281 µs | 1.52x |
-| `gql_router_stream` | Run one subscription event with an entity fetch (Hive e2e supergraph) | 2.98 µs | Hive Router, 3.39 µs | 1.14x |
-| `gql_seamstress` | `supergraph compose` of three subgraphs | 1.22 ms | Hive `composeServices`, 5.43 ms | 4.4x |
-| `gql_seamstress` | `graph introspect` of the GitHub schema | 30.1 ms | Rover, 118 ms | 3.9x |
-| `gql_seamstress` | `subgraph introspect` of the catalog subgraph | 21.7 ms | Rover, 107 ms | 4.9x |
+| Package | Workload | Mojo 1.2 | Mojo 1.1 | Fastest other library | Mojo speedup |
+| --- | --- | ---: | ---: | --- | ---: |
+| `gql_language` | Parse the GitHub schema (368 KB of SDL) | 1.03 ms | 1.02 ms | graphql-go-tools, 3.07 ms | 2.98x |
+| `gql_language` | Parse the introspection query (graphql-js benchmark) | 7.76 µs | 8.00 µs | graphql-go-tools, 13.9 µs | 1.79x |
+| `gql_language` | Print the kitchen sink (graphql-js benchmark) | 4.29 µs | 4.23 µs | apollo-compiler, 4.37 µs | 1.02x |
+| `gql_language` | Strip ignored characters from the GitHub schema | 1.40 ms | 1.38 ms | graphql-js, 6.80 ms | 4.8x |
+| `gql_json` | Parse the introspection result | 2.63 ms | 2.55 ms | Node.js `JSON.parse`, 6.17 ms | 2.34x |
+| `gql_json` | Stringify a small response | 3.00 µs | 3.17 µs | astjson, 4.44 µs | 1.48x |
+| `gql_http` | Parse a request | 412 ns | 409 ns | httparse, 417 ns | 1.01x |
+| `gql_http` | Keep-alive request with a JSON body | 7.76 µs | 7.79 µs | hyper, 12.2 µs | 1.57x |
+| `gql_http` | Stream a chunked response of 16 parts | 8.68 µs | 8.97 µs | hyper, 22.5 µs | 2.59x |
+| `gql_http` | Parse a `multipart/mixed` body of 100 parts | 200 µs | 201 µs | meros, 737 µs | 3.68x |
+| `gql_sse` | Subscribe and send 1000 `next` events | 1.93 ms | 2.01 ms | graphql-sse, 7.30 ms | 3.79x |
+| `gql_sse` | Parse 1000 `next` events | 867 µs | 869 µs | graphql-sse, 1.98 ms | 2.29x |
+| `gql_http2` | HPACK encode a GraphQL request header block | 1.54 µs | 1.52 µs | h2, 1.78 µs | 1.15x |
+| `gql_http2` | HPACK decode the same block | 1.62 µs | 1.63 µs | h2, 3.29 µs | 2.04x |
+| `gql_http2` | h2c round trip with a small JSON body | 27.5 µs | 27.4 µs | hyper and h2, 35.1 µs | 1.28x |
+| `gql_tls` | TLS keep-alive request round trip | 36.8 µs | 37.7 µs | hyper and rustls, 37.9 µs | 1.03x |
+| `gql_https2` | h2 over TLS round trip with a small JSON body | 43.2 µs | 57.6 µs | hyper, h2 and rustls, 67.7 µs | 1.57x |
+| `gql_quic` | Echo 32 bytes on one QUIC stream | 40.6 µs | 41.2 µs | quinn, 45.2 µs | 1.11x |
+| `gql_http3` | QPACK encode a request header block | 1.35 µs | 1.30 µs | h3, 4.05 µs | 3.01x |
+| `gql_http3` | QPACK decode a request header block | 1.49 µs | 1.50 µs | h3, 4.18 µs | 2.80x |
+| `gql_http3` | HTTP/3 round trip with a small JSON body | 48.1 µs | 47.9 µs | h3 and quinn, 69.7 µs | 1.45x |
+| `gql_schema` | Parse and build the GitHub schema | 2.00 ms | 2.00 ms | apollo-compiler, 14.6 ms | 7.33x |
+| `gql_schema` | Validate the GitHub schema SDL (graphql-js benchmark) | 5.58 ms | 6.10 ms | graphql-js, 14.6 ms | 2.62x |
+| `gql_schema` | Build a schema from a parsed AST, as graphql-js `buildASTSchema` (graphql-js benchmark) | 874 µs | 885 µs | graphql-js, 9.04 ms | 10.4x |
+| `gql_compiler` | Build a schema from a parsed AST, as apollo-compiler `Schema::from_ast` | 419 µs | 426 µs | apollo-compiler, 599 µs | 1.43x |
+| `gql_compiler` | Build the GitHub query against the GitHub schema | 75.6 µs | 76.1 µs | apollo-compiler, 158 µs | 2.09x |
+| `gql_compiler` | Print the GitHub schema, as apollo-compiler `Schema::to_string` | 876 µs | 887 µs | apollo-compiler, 1.51 ms | 1.72x |
+| `gql_compiler` | Validate `many_arguments` (apollo-compiler benchmark) | 3.16 ms | 3.24 ms | apollo-compiler, 7.37 ms | 2.33x |
+| `gql_compiler` | Validate `big_schema_many_fragments` (apollo-compiler benchmark) | 2.28 ms | 2.31 ms | apollo-compiler, 8.52 ms | 3.73x |
+| `gql_compiler` | Parse with syntax error recovery: `many_aliases` (apollo-parser benchmark) | 838 µs | 819 µs | apollo-parser, 4.44 ms | 5.30x |
+| `gql_compiler` | Parse with syntax error recovery: the supergraph (apollo-parser benchmark) | 89.7 µs | 85.0 µs | apollo-parser, 432 µs | 4.81x |
+| `gql_normalization` | Normalize an operation (graphql-go-tools benchmark) | 900 ns | 927 ns | graphql-go-tools, 1.17 µs | 1.30x |
+| `gql_normalization` | Minify an operation (graphql-go-tools benchmark) | 22.0 µs | 22.0 µs | graphql-go-tools, 56.9 µs | 2.59x |
+| `gql_normalization` | Fragment spread depth (graphql-go-tools benchmark) | 171 ns | 176 ns | graphql-go-tools, 1.42 µs | 8.28x |
+| `gql_stream` | Publish to 1000 subscribers | 330 µs | 319 µs | graphql-subscriptions, 1.77 ms | 5.37x |
+| `gql_execution` | Subscribe, publish 100 events and execute each | 375 µs | 389 µs | graphql-js, 1.19 ms | 3.19x |
+| `gql_execution` | Execute 100 `@defer` fragments and deliver each payload | 277 µs | 278 µs | graphql-js 17.0.2, 422 µs | 1.52x |
+| `gql_execution` | Execute a `@stream` of 1000 items | 551 µs | 562 µs | graphql-js 17.0.2, 1.83 ms | 3.32x |
+| `gql_ws` | Parse a WebSocket frame | 143 ns | 146 ns | tungstenite, 2.83 µs | 19.8x |
+| `gql_ws` | Echo a message over a WebSocket | 6.53 µs | 6.45 µs | tokio-tungstenite, 16.5 µs | 2.53x |
+| `gql_ws_http2` | Echo a message over a WebSocket on HTTP/2 (RFC 8441) | 6.99 µs | 7.11 µs | h2 with tungstenite, 17.3 µs | 2.47x |
+| `gql_ws` | Send 1000 subscription events over graphql-transport-ws | 2.53 µs per event | 2.58 µs per event | graphql-ws, 25.3 µs | 10.0x |
+| `gql_validation` | Validate the introspection query (graphql-js benchmark) | 68.7 µs | 69.3 µs | graphql-js, 719 µs | 10.5x |
+| `gql_validation` | `many_same_nested_field` (apollo-compiler benchmark) | 1.28 ms | 1.26 ms | apollo-compiler, 3.74 ms | 2.92x |
+| `gql_validation` | `big_schema_many_fragments` (apollo-compiler benchmark) | 731 µs | 748 µs | apollo-compiler, 8.48 ms | 11.6x |
+| `gql_execution` | Execute the introspection query on the GitHub schema (graphql-js benchmark) | 4.12 ms | 4.13 ms | apollo-compiler, 35.9 ms | 8.71x |
+| `gql_execution` | Parse and execute many repeated fields (graphql-js benchmark, no validation) | 28.2 µs | 28.7 µs | graphql-js, 249 µs | 8.85x |
+| `gql_execution` | Build a client schema from the GitHub introspection result | 5.67 ms | 5.81 ms | graphql-js, 12.2 ms | 2.15x |
+| `gql_client` | Write a 1000-item query result into a new cache | 3.33 ms | 3.37 ms | Apollo Client, 43.8 ms | 13.2x |
+| `gql_client` | Read a 1000-item query from the cache | 1.72 ms | 1.71 ms | Apollo Client, 25.5 ms | 14.9x |
+| `gql_client` | Extract the cache as JSON text | 1.14 ms | 1.11 ms | Apollo Client, 1.95 ms | 1.72x |
+| `gql_client` | Merge 100 deferred chunks into one result | 306 µs | 311 µs | Apollo Client, 752 µs | 2.45x |
+| `gql_server` | Execute a small operation | 4.25 µs | 4.26 µs | Apollo Server, 27.5 µs | 6.48x |
+| `gql_server` | Answer an automatic persisted query hit | 5.10 µs | 5.22 µs | Apollo Server, 21.1 µs | 4.14x |
+| `gql_server` | Serve a small POST over HTTP | 23.6 µs | 23.8 µs | Apollo Server, 234 µs | 9.91x |
+| `gql_server` | Execute with a federated trace (`ftv1`) | 33.5 µs | 34.1 µs | Apollo Server, 167 µs | 4.98x |
+| `gql_server` | Answer a `@defer` request over `multipart/mixed` | 64.0 µs | 63.3 µs | Apollo Server, 199 µs | 3.12x |
+| `gql_subgraph` | Build a catalog subgraph schema | 711 µs | 766 µs | `@apollo/subgraph`, 9.03 ms | 12.7x |
+| `gql_subgraph` | Print the catalog subgraph schema | 61.2 µs | 61.9 µs | `@apollo/subgraph`, 4.10 ms | 67x |
+| `gql_subgraph` | Answer `_service { sdl }` | 3.00 µs | 2.94 µs | `@apollo/subgraph`, 4.88 µs | 1.63x |
+| `gql_subgraph` | Resolve 100 entities | 167 µs | 166 µs | `@apollo/subgraph`, 565 µs | 3.38x |
+| `gql_mcp` | List 200 operation tools | 732 µs | 727 µs | Apollo MCP Server, 4.78 ms | 6.53x |
+| `gql_mcp` | Call an operation tool | 52.9 µs | 54.1 µs | Apollo MCP Server, 244 µs | 4.62x |
+| `gql_mcp` | Call the search tool | 963 µs | 962 µs | Apollo MCP Server, 6.26 ms | 6.50x |
+| `gql_mcp` | Call the introspect tool | 240 µs | 264 µs | Apollo MCP Server, 650 µs | 2.71x |
+| `gql_mcp` | Call the validate tool | 43.2 µs | 43.6 µs | Apollo MCP Server, 246 µs | 5.70x |
+| `gql_mcp` | Make a tool from a large operation | 1.16 ms | 1.16 ms | Apollo MCP Server, 6.16 ms | 5.32x |
+| `gql_codegen` | Generate code for four operations on the GitHub schema | 8.25 ms | 8.59 ms | Apollo Kotlin, 463 ms | 56x |
+| `gql_composition` | Validate the subgraphs of the Netflix DGS example | 15.0 ms | 16.0 ms | Hive, 55.9 ms | 3.72x |
+| `gql_composition` | Validate a huge subgraph schema | 71.5 ms | 74.8 ms | Hive, 331 ms | 4.63x |
+| `gql_router` | Plan the Hive Router benchmark query (`qp_benches.rs`) | 1.12 ms | 1.15 ms | Hive Router, 1.54 ms | 1.37x |
+| `gql_router` | Execute the plan of that query against canned subgraph responses | 332 µs | 336 µs | Hive Router, 464 µs | 1.40x |
+| `gql_router_stream` | Run one subscription event with an entity fetch (Hive e2e supergraph) | 4.84 µs | 5.07 µs | Hive Router, 6.83 µs | 1.41x |
+| `gql_seamstress` | `supergraph compose` of three subgraphs | 2.21 ms | 2.23 ms | Hive `composeServices`, 11.3 ms | 5.12x |
+| `gql_seamstress` | `graph introspect` of the GitHub schema | 25.4 ms | 25.7 ms | Rover, 39.3 ms | 1.55x |
+| `gql_seamstress` | `subgraph introspect` of the catalog subgraph | 12.3 ms | 12.1 ms | Rover, 23.1 ms | 1.87x |
 
-Each time is one operation: the fastest of 5 rounds of at least one second, after a warm-up. The numbers are from one full run on 2026-10-19, on WSL2 on Windows 11 with 24 hardware threads. Other machines give other times, but the ratios stay close. Each workload compares libraries that do the same work: [Benchmarks](https://github.com/SethKitchen/MojoGraphQL/wiki/Benchmarks#like-for-like) explains the schema builds.
+Each time is one operation: the fastest of 5 rounds of at least one second, after a warm-up. The numbers are from one full run on 2026-10-23, on Linux with an Intel N150 and 4 hardware threads. Both Mojo 1.2.0 and Mojo 1.1.0 are measured on the same machine. Other machines give other times, but the ratios stay close. Each workload compares libraries that do the same work: [Benchmarks](https://github.com/SethKitchen/MojoGraphQL/wiki/Benchmarks#like-for-like) explains the schema builds.
 
 ```bash
 make bench         # run the benchmarks and write bench/RESULTS.md

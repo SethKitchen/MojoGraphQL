@@ -129,7 +129,7 @@ docs-check:
 	@$(call run,$(MOJO) run $(MOJOFLAGS) tools/doc_lint.mojo $(DOCS)); exit $$rc
 
 # Instrument the selected libraries, run the suites against the copies, and
-# report. Mojo 1.1 resolves a module beside the file being compiled before
+# report. Mojo 1.2 resolves a module beside the file being compiled before
 # any -I path, so the suites run from inside $(COV_DIR), beside the
 # instrumented copies. Every other package file and the coverage runtime are
 # copied there unchanged.

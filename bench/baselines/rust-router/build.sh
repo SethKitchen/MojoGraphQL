@@ -17,7 +17,9 @@ fi
 # The `hive-router/subscription-event` workload calls the step that upstream
 # runs for each subscription event. Upstream keeps it private; this makes it
 # public, and changes nothing else.
-sed -i 's/^async fn execute_query_plan_with_data</pub async fn execute_query_plan_with_data</' \
-  upstream/bin/router/src/executor/execution/plan.rs
+if grep -q '^async fn execute_query_plan_with_data<' upstream/bin/router/src/executor/execution/plan.rs; then
+  sed -i 's/^async fn execute_query_plan_with_data</pub async fn execute_query_plan_with_data</' \
+    upstream/bin/router/src/executor/execution/plan.rs
+fi
 export CARGO_TARGET_DIR="$PWD/target"
-cargo build --release --quiet
+[ -x target/release/mojographql-bench-router-rust ] || cargo build --release --quiet

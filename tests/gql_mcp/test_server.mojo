@@ -473,7 +473,7 @@ def test_operation_headers() raises:
     bad.headers.append((String("bad name"), String("1")))
     raw.append(bad^)
     var server = McpServer(
-        _config(base + "/echo"), build_schema("type Query { a: Int }"), raw^
+        _config(base + "/echo"), build_schema("type Query { a: Int }"), raw
     )
     var session = Session()
     _ = server.handle(session, _INIT)

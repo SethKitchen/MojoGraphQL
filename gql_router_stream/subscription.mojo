@@ -51,6 +51,8 @@ from gql_router_stream.subgraph_ws import WsPool, websocket_url
 from gql_stream.poll import Event, EventStream, Poll
 from gql_stream.waker import Waker
 
+comptime _ = String().as_bytes()
+
 
 struct StreamHub[T: SubgraphTransport](Movable):
     """The router and the subgraph streams of every subscription.

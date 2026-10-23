@@ -432,9 +432,7 @@ def test_walk_keeps_nodes_and_adds_placeholders() raises:
     )
     options.ignore_skip_include = True
     var kept = parse("{ user @skip(if: true) { loginName } }")
-    result = OperationNormalizer(
-        options^
-    ).normalize_named_operation_with_result(
+    result = OperationNormalizer(options).normalize_named_operation_with_result(
         kept, schema, "", values, RunOptions()
     )
     assert_equal(len(result.value().inline_arguments), 1)

@@ -1504,7 +1504,7 @@ def _provides_text(graph: GraphFacts, field: FieldFact) raises -> String:
     var keys = List[String]()
     if owner.extension:
         keys = owner.keys.copy()
-    return _without_key_fields(keys^, field.provides)
+    return _without_key_fields(keys, field.provides)
 
 
 def _without_key_fields(keys: List[String], selection: String) raises -> String:

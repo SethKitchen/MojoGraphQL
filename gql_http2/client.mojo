@@ -49,6 +49,8 @@ from gql_http2.error import H2Error, H2ErrorKind, Reason
 from gql_http2.hpack import HeaderList
 from gql_http2.session import SocketTransport, Transport, write_all
 
+comptime _ = String().as_bytes()
+
 
 @fieldwise_init
 struct Protocol(Equatable, ImplicitlyCopyable, Writable):

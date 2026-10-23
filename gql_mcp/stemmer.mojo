@@ -64,7 +64,7 @@ def _encode(chars: _Chars) -> String:
             out.append(UInt8(0x80 | ((c >> 12) & 0x3F)))
             out.append(UInt8(0x80 | ((c >> 6) & 0x3F)))
             out.append(UInt8(0x80 | (c & 0x3F)))
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def _is_v(c: UInt32) -> Bool:

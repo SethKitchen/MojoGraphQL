@@ -67,11 +67,13 @@ def closed_port() -> Int:
 def set_option(fd: Int, level: Int32, name: Int32, value: Int32) -> Int:
     """Set an integer socket option; return the result of `setsockopt`."""
     var v = value
-    return Int(
+    var rc = Int(
         external_call["setsockopt", Int32](
-            Int32(fd), level, name, Int(Pointer(to=v)), Int32(4)
+            Int32(fd), level, name, Pointer(to=v), Int32(4)
         )
     )
+    _ = v
+    return rc
 
 
 def unix_pair() -> Tuple[Int, Int]:
@@ -85,11 +87,13 @@ def unix_pair() -> Tuple[Int, Int]:
 
 def send_raw(fd: Int, data: List[UInt8]) -> Int:
     """Send one datagram on a connected socket; return the result."""
-    return Int(
+    var rc = Int(
         external_call["send", Int](
-            Int32(fd), Int(data.unsafe_ptr()), len(data), Int32(0x40)
+            Int32(fd), data.unsafe_ptr(), len(data), Int32(0x40)
         )
     )
+    _ = data
+    return rc
 
 
 def wait_readable(fd: Int, timeout_ms: Int):

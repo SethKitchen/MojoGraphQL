@@ -36,7 +36,7 @@ A test failure under instrumentation stops the run, and the target prints "Cover
 
 ## Why the suites run inside the build folder
 
-Mojo 1.1 finds a module beside the file that it compiles before it searches any `-I` path. A test that runs from the repository root imports the original modules. The Makefile runs each suite from inside `coverage/build/`, so the imports resolve to the instrumented copies.
+Mojo 1.2 finds a module beside the file that it compiles before it searches any `-I` path. A test that runs from the repository root imports the original modules. The Makefile runs each suite from inside `coverage/build/`, so the imports resolve to the instrumented copies.
 
 ## What the instrumenter measures
 

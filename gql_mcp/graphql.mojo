@@ -77,7 +77,7 @@ def request_body(
         out.extend(',"operationName":'.as_bytes())
         write_string(out, operation_name.value().as_bytes())
     out.append(UInt8(ord("}")))
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def serde_number(text: StringSlice) raises -> String:

@@ -192,7 +192,7 @@ def parse_message(text: StringSlice) -> Message:
     if id_kind == JsonKind.STRING:
         var out = List[UInt8]()
         write_string(out, doc.string_value(id).as_bytes())
-        message.id = String(unsafe_from_utf8=out^)
+        message.id = String(unsafe_from_utf8=out)
     elif id_kind == JsonKind.NUMBER and is_integer_id(doc.text(id)):
         message.id = String(doc.text(id))
     else:
@@ -244,7 +244,7 @@ def result_message(id: StringSlice, result: StringSlice) -> String:
     out.extend(',"result":'.as_bytes())
     out.extend(result.as_bytes())
     out.append(UInt8(ord("}")))
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def error_message(
@@ -272,7 +272,7 @@ def error_message(
     out.extend(',"message":'.as_bytes())
     write_string(out, message.as_bytes())
     out.extend("}}".as_bytes())
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def invalid_request_message() -> String:

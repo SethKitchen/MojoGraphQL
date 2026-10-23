@@ -599,7 +599,7 @@ def ryu_text(value: Float64) -> String:
         exponent += 1
     var length = len(digits)
     var point = length + exponent
-    var text = String(unsafe_from_utf8=digits^)
+    var text = String(unsafe_from_utf8=digits)
     if exponent >= 0 and point <= 16:
         out += text
         out += String("0") * exponent

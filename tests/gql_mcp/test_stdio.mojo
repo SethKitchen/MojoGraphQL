@@ -44,7 +44,7 @@ def _run(input: StringSlice) raises -> Tuple[Int, String]:
         got.extend(Span(buffer)[:n])
         n = sys.read(out[0], buffer.unsafe_ptr(), len(buffer))
     sys.close(out[0])
-    return (lines, String(unsafe_from_utf8=got^))
+    return (lines, String(unsafe_from_utf8=got))
 
 
 def test_lines() raises:

@@ -461,7 +461,7 @@ def _run(
         query, operation_name, JsonDocument(), NO_NODE, False, False
     )
     return (
-        String(response.status) + " " + String(unsafe_from_utf8=response.body^)
+        String(response.status) + " " + String(unsafe_from_utf8=response.body)
     )
 
 

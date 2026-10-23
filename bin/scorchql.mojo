@@ -355,7 +355,7 @@ def _start_gateway_workers(
             listeners.append(listener.fd)
         except e:
             _close_all(sys, listeners)
-            raise e^
+            raise Error(String(e))
     config.http_port = port
     var parent = sys.pid()
     var pids = List[Int]()

@@ -139,4 +139,4 @@ def huff_text(data: Span[UInt8, _]) raises -> String:
     var out = List[UInt8]()
     if not huffman_decode(data, out):
         raise Error("invalid Huffman code")
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)

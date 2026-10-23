@@ -92,8 +92,8 @@ def compose_contract(
             )
         )
         index += 1
-    var marked_subgraphs = _mark_empty_types(filtered^, trackers, applied)
-    var result = compose_subgraphs(marked_subgraphs^)
+    var marked_subgraphs = _mark_empty_types(filtered, trackers, applied)
+    var result = compose_subgraphs(marked_subgraphs)
     if len(result.errors) > 0:
         return result^
     var marked = _mark_unreachable(result.supergraph_sdl, result.public_sdl)

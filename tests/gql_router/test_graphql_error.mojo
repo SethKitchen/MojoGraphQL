@@ -108,7 +108,7 @@ def test_extra_keys_are_alphabetical_and_an_entity_path_expands() raises:
     var paths = List[ErrorPath]()
     paths.append(_path(user^))
     paths.append(_path(friends^))
-    var expanded = normalize_entity_error(error, indexes^, paths^)
+    var expanded = normalize_entity_error(error, indexes, paths)
     assert_equal(len(expanded), 2)
     assert_equal(
         error_json(expanded[0]),
@@ -139,7 +139,7 @@ def test_subgraph_errors_gain_a_service_and_can_expand() raises:
     var paths = List[ErrorPath]()
     paths.append(ErrorPath(user^))
     handle_subgraph_errors(
-        errors, "users", True, "user", incoming^, True, indexes^, paths^
+        errors, "users", True, "user", incoming^, True, indexes, paths
     )
     assert_equal(len(errors), 2)
     assert_equal(errors[0].message, "kept")

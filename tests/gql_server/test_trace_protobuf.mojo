@@ -245,7 +245,7 @@ def test_base64_padding() raises:
         var part = String(text[byte=0:length])
         assert_equal(base64_encode(part.as_bytes()), expected[length])
         var decoded = base64_decode(expected[length])
-        assert_equal(String(unsafe_from_utf8=decoded^), part)
+        assert_equal(String(unsafe_from_utf8=decoded), part)
 
 
 def test_base64_alphabet() raises:

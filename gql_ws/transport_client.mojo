@@ -125,7 +125,7 @@ def subscribe_payload(
         out.extend(StaticString(',"extensions":').as_bytes())
         out.extend(extensions.as_bytes())
     out.append(125)
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 comptime TransportClient = TransportClientOf[WsClient]

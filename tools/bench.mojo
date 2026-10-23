@@ -45,8 +45,9 @@ comptime TOOL_PATH = (
 """A shell prefix that adds the usual toolchain locations to `PATH`."""
 
 comptime HTTP_LOADGEN_BUILD = (
-    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
-    " .cache/bin/http_loadgen bench/gql_http/_loadgen.mojo > /dev/null)"
+    "(cd ../../.. && ([ -x .cache/bin/http_loadgen ] || (mkdir -p .cache/bin &&"
+    " .venv/bin/mojo build -I . -o .cache/bin/http_loadgen"
+    " bench/gql_http/_loadgen.mojo > /dev/null)))"
 )
 """The shell command that builds the gql_http load generator, from a
 baseline directory."""
@@ -57,8 +58,9 @@ comptime HTTP_LOADGEN = (
 """The load generator and its workload; the server command follows."""
 
 comptime H2_LOADGEN_BUILD = (
-    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
-    " .cache/bin/h2load bench/gql_http2/_h2load.mojo > /dev/null)"
+    "(cd ../../.. && ([ -x .cache/bin/h2load ] || (mkdir -p .cache/bin &&"
+    " .venv/bin/mojo build -I . -o .cache/bin/h2load"
+    " bench/gql_http2/_h2load.mojo > /dev/null)))"
 )
 """The shell command that builds the gql_http2 h2c load generator, from a
 baseline directory."""
@@ -67,15 +69,17 @@ comptime H2_LOADGEN = "../../../.cache/bin/h2load http2/roundtrip-small-json"
 """The h2c load generator and its workload; the server command follows."""
 
 comptime MCP_DRIVER_BUILD = (
-    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
-    " .cache/bin/mcp_driver bench/gql_mcp/_driver.mojo > /dev/null)"
+    "(cd ../../.. && ([ -x .cache/bin/mcp_driver ] || (mkdir -p .cache/bin &&"
+    " .venv/bin/mojo build -I . -o .cache/bin/mcp_driver"
+    " bench/gql_mcp/_driver.mojo > /dev/null)))"
 )
 """The shell command that builds the gql_mcp stdio driver, from a baseline
 directory."""
 
 comptime WS_LOAD_BUILD = (
-    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
-    " .cache/bin/ws_load bench/gql_ws/_wsload.mojo > /dev/null)"
+    "(cd ../../.. && ([ -x .cache/bin/ws_load ] || (mkdir -p .cache/bin &&"
+    " .venv/bin/mojo build -I . -o .cache/bin/ws_load"
+    " bench/gql_ws/_wsload.mojo > /dev/null)))"
 )
 """The shell command that builds the gql_ws load generator, from a baseline
 directory."""
@@ -84,8 +88,9 @@ comptime WS_LOAD = "../../../.cache/bin/ws_load"
 """The gql_ws load generator; the workload and the server command follow."""
 
 comptime H2WS_LOAD_BUILD = (
-    "(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o"
-    " .cache/bin/h2ws_load bench/gql_ws_http2/_h2wsload.mojo > /dev/null)"
+    "(cd ../../.. && ([ -x .cache/bin/h2ws_load ] || (mkdir -p .cache/bin &&"
+    " .venv/bin/mojo build -I . -o .cache/bin/h2ws_load"
+    " bench/gql_ws_http2/_h2wsload.mojo > /dev/null)))"
 )
 """The shell command that builds the gql_ws_http2 load generator, from a
 baseline directory."""
@@ -627,29 +632,57 @@ def run_mojo(mojo: String, program: String) raises -> List[Measurement]:
     Raises:
         Error: If the build fails, the program fails, or it prints no results.
     """
-    var binary = ".cache/bin/" + program.replace("/", "__").removesuffix(
-        ".mojo"
-    )
+    var name = program.replace("/", "__").removesuffix(".mojo")
+    var binary = ".cache/bin/" + name
     print("building", program)
     var built = shell(
-        "mkdir -p .cache/bin && "
+        "([ -x "
+        + quote(binary)
+        + " ] && [ "
+        + quote(binary)
+        + " -nt "
+        + quote(program)
+        + " ]) || (mkdir -p .cache/bin && "
         + quote(mojo)
         + " build -I . -o "
         + quote(binary)
         + " "
         + quote(program)
+        + ")"
     )
     if built[0] != 0:
         print(built[1], end="")
         raise Error("BUILD FAILED: " + program)
     print("running ", program)
-    var ran = shell(quote(binary) + " < /dev/null")
+    var ran = shell(
+        "([ ! -x .cache/bin-mojo12/mcp_server ] || cp"
+        " .cache/bin-mojo12/mcp_server .cache/bin/mcp_server) && ([ ! -x"
+        " .cache/bin-mojo12/gql_seamstress ] || cp"
+        " .cache/bin-mojo12/gql_seamstress .cache/bin/gql_seamstress) && "
+        + quote(binary)
+        + " < /dev/null"
+    )
     if ran[0] != 0:
         print(ran[1], end="")
         raise Error("FAILED: " + program)
     var results = parse_results("Mojo", ran[1])
     if len(results) == 0:
         raise Error(program + " printed no BENCH lines")
+    var binary11 = ".cache/bin-mojo11/" + name
+    if isdir(".cache/bin-mojo11"):
+        print("running  Mojo 1.1.0", program)
+        var ran11 = shell(
+            "([ ! -x .cache/bin-mojo11/mcp_server ] || cp"
+            " .cache/bin-mojo11/mcp_server .cache/bin/mcp_server) && ([ ! -x"
+            " .cache/bin-mojo11/gql_seamstress ] || cp"
+            " .cache/bin-mojo11/gql_seamstress .cache/bin/gql_seamstress) && "
+            + quote(binary11)
+            + " < /dev/null"
+        )
+        if ran11[0] != 0:
+            print(ran11[1], end="")
+            raise Error("FAILED: " + binary11)
+        results.extend(parse_results("Mojo 1.1.0", ran11[1]))
     return results^
 
 
@@ -759,6 +792,15 @@ def machine(mojo: String) raises -> String:
     out += "- CPU: " + cpu + ", " + first_line("nproc") + " logical cores\n"
     out += "- OS: " + first_line("uname -sr") + "\n"
     out += "- Mojo: " + first_line(quote(mojo) + " --version") + "\n"
+    if isdir(".cache/bin-mojo11"):
+        out += (
+            "- Mojo 1.1: "
+            + first_line(
+                "env -u PYTHONPATH -u VIRTUAL_ENV .venv-mojo11/bin/mojo"
+                " --version"
+            )
+            + "\n"
+        )
     out += "- Node.js: " + first_line(TOOL_PATH + "node --version") + "\n"
     out += "- Rust: " + first_line(TOOL_PATH + "rustc --version") + "\n"
     out += (
@@ -1300,20 +1342,44 @@ def report(
         + ".\n"
     )
 
+    var has_11 = find(results, "Mojo 1.1.0", workloads[0]) >= 0
     out += "\n## Summary\n"
     var suite = String("")
     for ref workload in workloads:
         if suite_of(workload) != suite:
             suite = suite_of(workload)
-            out += "\n### " + suite + "\n\n| Workload | Mojo (µs) |"
+            if has_11:
+                out += (
+                    "\n### "
+                    + suite
+                    + "\n\n| Workload | Mojo 1.2 (µs) | Mojo 1.1 (µs) | 1.2 vs"
+                    " 1.1 |"
+                )
+            else:
+                out += "\n### " + suite + "\n\n| Workload | Mojo (µs) |"
             for ref name in names:
                 out += " " + name + " |"
-            out += "\n|---|---:|"
+            if has_11:
+                out += "\n|---|---:|---:|---:|"
+            else:
+                out += "\n|---|---:|"
             for _ in range(len(names)):
                 out += "---:|"
             out += "\n"
         var mojo = find(results, "Mojo", workload)
         out += "| `" + workload + "` | " + fixed(mojo / 1000.0, 2) + " |"
+        if has_11:
+            var mojo11 = find(results, "Mojo 1.1.0", workload)
+            if mojo11 < 0:
+                out += " n/a | n/a |"
+            else:
+                out += (
+                    " "
+                    + fixed(mojo11 / 1000.0, 2)
+                    + " | "
+                    + fixed(mojo11 / mojo, 2)
+                    + "x |"
+                )
         for ref name in names:
             var other = find(results, name, workload)
             if other < 0:
@@ -1374,7 +1440,25 @@ def report(
         out += "\n### `" + workload + "`\n\n"
         out += "| Implementation | Time (µs) | Speedup of Mojo |\n"
         out += "|---|---:|---:|\n"
-        out += "| MojoGraphQL (Mojo) | " + fixed(mojo / 1000.0, 2) + " | |\n"
+        if has_11:
+            out += (
+                "| MojoGraphQL (Mojo 1.2.0) | "
+                + fixed(mojo / 1000.0, 2)
+                + " | |\n"
+            )
+            var mojo11 = find(results, "Mojo 1.1.0", workload)
+            if mojo11 >= 0:
+                out += (
+                    "| MojoGraphQL (Mojo 1.1.0) | "
+                    + fixed(mojo11 / 1000.0, 2)
+                    + " | "
+                    + fixed(mojo11 / mojo, 2)
+                    + "x |\n"
+                )
+        else:
+            out += (
+                "| MojoGraphQL (Mojo) | " + fixed(mojo / 1000.0, 2) + " | |\n"
+            )
         for ref name in names:
             var other = find(results, name, workload)
             if other < 0:
@@ -1448,9 +1532,10 @@ def main() raises:
     for ref package in packages:
         for ref program in mojo_benches(package):
             for ref result in run_mojo(mojo, program):
-                if result.workload in workloads:
-                    raise Error("two programs measure " + result.workload)
-                workloads.append(result.workload)
+                if result.implementation == "Mojo":
+                    if result.workload in workloads:
+                        raise Error("two programs measure " + result.workload)
+                    workloads.append(result.workload)
                 results.append(result.copy())
     workloads = in_suite_order(workloads)
     if len(workloads) == 0:

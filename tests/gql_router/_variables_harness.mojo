@@ -105,7 +105,7 @@ def _quote(mut out: String, text: String):
     """Append a JSON string."""
     var bytes = List[UInt8]()
     write_string(bytes, text.as_bytes())
-    out += String(unsafe_from_utf8=bytes^)
+    out += String(unsafe_from_utf8=bytes)
 
 
 def _members(document: JsonDocument, node: Int) -> List[Int]:

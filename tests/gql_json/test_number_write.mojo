@@ -28,7 +28,7 @@ def _hex(text: StringSlice) -> UInt64:
 def _number(value: Float64) -> String:
     var out = List[UInt8]()
     write_number(out, value)
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def test_write_number_matches_node() raises:
@@ -52,7 +52,7 @@ def test_write_int() raises:
     out.append(UInt8(ord(" ")))
     write_int(out, Int64.MIN)
     assert_equal(
-        String(unsafe_from_utf8=out^),
+        String(unsafe_from_utf8=out),
         "0 -5 9223372036854775807 -9223372036854775808",
     )
 

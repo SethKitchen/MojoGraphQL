@@ -44,11 +44,11 @@ def test_jwt_rules_apply_only_when_enforced() raises:
     var rule = AuthRule(True, False, scopes^, False, policies^)
     var anonymous = _user(False, List[String](), List[String]())
     var signed = _user(True, List[String](), List[String]())
-    assert_false(authorization_allows(rule.copy(), anonymous^, True))
-    assert_true(authorization_allows(rule.copy(), signed^, True))
+    assert_false(authorization_allows(rule.copy(), anonymous, True))
+    assert_true(authorization_allows(rule.copy(), signed, True))
     assert_true(
         authorization_allows(
-            rule^, _user(False, List[String](), List[String]()), False
+            rule, _user(False, List[String](), List[String]()), False
         )
     )
 
@@ -78,7 +78,7 @@ def test_one_scope_group_must_match_entirely() raises:
     )
     assert_true(
         authorization_allows(
-            rule^, _user(False, _one("read"), List[String]()), False
+            rule, _user(False, _one("read"), List[String]()), False
         )
     )
 
@@ -95,7 +95,7 @@ def test_policies_apply_even_when_jwt_is_off() raises:
     )
     assert_true(
         authorization_allows(
-            rule^, _user(True, List[String](), _one("internal")), False
+            rule, _user(True, List[String](), _one("internal")), False
         )
     )
 
@@ -106,7 +106,7 @@ def test_no_groups_do_not_match_and_an_empty_group_matches() raises:
     )
     assert_false(
         authorization_allows(
-            no_groups^, _user(False, _one("read"), List[String]()), True
+            no_groups, _user(False, _one("read"), List[String]()), True
         )
     )
     var empty = List[List[String]]()
@@ -114,7 +114,7 @@ def test_no_groups_do_not_match_and_an_empty_group_matches() raises:
     var empty_group = AuthRule(False, True, empty^, False, List[List[String]]())
     assert_true(
         authorization_allows(
-            empty_group^, _user(False, List[String](), List[String]()), True
+            empty_group, _user(False, List[String](), List[String]()), True
         )
     )
 
@@ -125,7 +125,7 @@ def test_an_element_without_a_rule_is_allowed() raises:
     var rule = AuthRule(True, False, scopes^, False, policies^)
     var user = _user(False, List[String](), List[String]())
     assert_true(element_authorized(False, rule.copy(), user.copy(), True))
-    assert_false(element_authorized(True, rule^, user^, True))
+    assert_false(element_authorized(True, rule, user, True))
 
 
 def main() raises:

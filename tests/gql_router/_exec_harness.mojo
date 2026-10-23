@@ -60,7 +60,7 @@ def run_router(
         query, operation_name, document^, root, is_get, prefer_ok
     )
     return (
-        String(response.status) + " " + String(unsafe_from_utf8=response.body^)
+        String(response.status) + " " + String(unsafe_from_utf8=response.body)
     )
 
 
@@ -157,4 +157,4 @@ def project(
         1024,
         metadata,
     )
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)

@@ -172,7 +172,7 @@ def test_fall_back_when_udp_is_silent() raises:
     var config = fallback_config()
     config.enable_h3 = True
     config.h3_timeout_ms = 200
-    var client = FallbackClient(config^)
+    var client = FallbackClient(config)
     var url = "https://localhost:" + String(https[1]) + "/y"
     var response = client.get(url)
     assert_equal(client.protocol, Protocol.HTTPS1)
@@ -236,7 +236,7 @@ def test_retry_after_rest() raises:
     var config = fallback_config()
     config.enable_h3 = True
     config.h3_retry_after_s = 0
-    var client = FallbackClient(config^)
+    var client = FallbackClient(config)
     var url = "https://localhost:" + String(https[1]) + "/z"
     var other = "https://127.0.0.1:" + String(https[1]) + "/z"
     _ = client.get(other)

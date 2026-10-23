@@ -28,10 +28,10 @@ COPY --from=ghcr.io/astral-sh/uv:0.9.0 /uv /usr/local/bin/uv
 COPY . /src
 WORKDIR /src
 
-# The pinned toolchain, as README.md installs it: a uv venv and Mojo 1.1.0.
+# The pinned toolchain, as README.md installs it: a uv venv and Mojo 1.2.0.
 # The Makefile expects .venv/bin/mojo.
 RUN uv venv --python 3.12 \
-    && uv pip install "mojo==1.1.0" \
+    && uv pip install "mojo==1.2.0" \
     && .venv/bin/mojo --version
 
 # Run the cheap checks so the image is known to work. A failure here must not

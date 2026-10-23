@@ -1062,7 +1062,7 @@ def _write_inspected(
     elif kind == JsonKind.STRING:
         var bytes = List[UInt8]()
         write_string(bytes, document.string_value(node).as_bytes())
-        out += String(unsafe_from_utf8=bytes^)
+        out += String(unsafe_from_utf8=bytes)
     elif kind == JsonKind.ARRAY:
         var item = document.first(node)
         if item == NO_NODE:

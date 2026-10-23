@@ -48,7 +48,7 @@ def exchange[
         else:
             quiet += 1
     sys.close(fd)
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def post(

@@ -52,7 +52,7 @@ Then import the modules as usual:
 from gql_language.parser import parse
 ```
 
-A precompiled package loads only in the Mojo version that built it. Build it with the pinned Mojo `1.1.0`, and use the same version in your project.
+A precompiled package loads only in the Mojo version that built it. Build it with the pinned Mojo `1.2.0`, and use the same version in your project.
 
 ## Use the sources instead
 
@@ -62,7 +62,7 @@ On another Mojo version, a `.mojoc` file does not load. Copy the source director
 2. Copy each directory in the closure into your project, such as `gql_language/`.
 3. Put the folder that holds those directories on the import path with `-I`.
 
-The project supports only Mojo `1.1.0`. The sources can need changes for another version.
+The project supports only Mojo `1.2.0`. The sources can need changes for another version.
 
 ## Why the closure is enough
 

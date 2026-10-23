@@ -1698,7 +1698,7 @@ def _record_import_names(mut groups: List[_ImportNames], graph: GraphFacts):
         var local = String(item.name)
         if item.alias:
             local = String(item.alias.value())
-        _add_import_name(groups, String(item.name), local^, graph.graph_name)
+        _add_import_name(groups, String(item.name), local, graph.graph_name)
 
 
 def _add_import_name(

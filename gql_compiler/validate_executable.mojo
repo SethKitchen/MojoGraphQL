@@ -34,7 +34,7 @@ Apache-2.0 license.
   levels of wrappers can compare as the same shape.
 """
 
-from std.hashlib import Hasher
+from std.hash import Hasher
 
 from gql_language.ast import Document, Kind, NO_NODE, OperationType, Role
 from gql_language.directive_location import DirectiveLocation

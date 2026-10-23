@@ -253,7 +253,7 @@ def test_hex_and_codepoints() raises:
     append_codepoint(out, 0xE9)
     append_codepoint(out, 0x20AC)
     append_codepoint(out, 0x1F600)
-    assert_equal(String(unsafe_from_utf8=out^), "Aé€\U0001F600")
+    assert_equal(String(unsafe_from_utf8=out), "Aé€\U0001F600")
 
 
 def test_decode_string() raises:
@@ -263,7 +263,7 @@ def test_decode_string() raises:
     var out = List[UInt8]()
     decode_string(text.as_bytes(), 0, text.byte_length(), out)
     assert_equal(
-        String(unsafe_from_utf8=out^),
+        String(unsafe_from_utf8=out),
         'ab"\\/\x08\x0c\n\r\té\U0001F600z',
     )
     var plain = List[UInt8]()

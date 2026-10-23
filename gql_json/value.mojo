@@ -313,7 +313,7 @@ struct JsonDocument(Copyable, Movable):
             return String(self.raw_key(node))
         var out = List[UInt8](capacity=end - start)
         decode_string(Span(self.bytes), start, end, out)
-        return String(unsafe_from_utf8=out^)
+        return String(unsafe_from_utf8=out)
 
     def key_equals(self, node: Int, key: StringSlice) -> Bool:
         """Return True if a member's decoded key equals some text.
@@ -406,7 +406,7 @@ struct JsonDocument(Copyable, Movable):
         var found = self._node(node)
         var out = List[UInt8](capacity=Int(found.end - found.start))
         decode_string(Span(self.bytes), Int(found.start), Int(found.end), out)
-        return String(unsafe_from_utf8=out^)
+        return String(unsafe_from_utf8=out)
 
     def is_integer(self, node: Int) -> Bool:
         """Return True if a number's exact value is an integer.

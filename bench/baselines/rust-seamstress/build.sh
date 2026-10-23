@@ -20,5 +20,5 @@ export CARGO_TARGET_DIR="$PWD/target"
 if [ ! -x target/release/rover ]; then
   (cd upstream && cargo build --release --locked --quiet -j 6 --bin rover)
 fi
-(cd ../../.. && mkdir -p .cache/bin && .venv/bin/mojo build -I . -o \
-  .cache/bin/seamstress_driver bench/gql_seamstress/_driver.mojo > /dev/null)
+(cd ../../.. && ([ -x .cache/bin/seamstress_driver ] || (mkdir -p .cache/bin && .venv/bin/mojo build -I . -o \
+  .cache/bin/seamstress_driver bench/gql_seamstress/_driver.mojo > /dev/null)))

@@ -386,7 +386,7 @@ def _router_from(document: JsonDocument, node: Int) raises -> RouterCacheConfig:
     var runtime_node = document.find(node, "plugin_supergraph_runtimes")
     if runtime_node != NO_NODE:
         runtimes = Int(document.as_int64(runtime_node))
-    return RouterCacheConfig(parsing^, runtimes)
+    return RouterCacheConfig(parsing, runtimes)
 
 
 def _supergraph_from(
@@ -423,7 +423,7 @@ def _supergraph_from(
     var plans_node = document.find(node, "query_plans")
     if plans_node != NO_NODE:
         query_plans = _limits_from(document, plans_node)
-    return SupergraphCacheConfig(validation^, normalization^, query_plans^)
+    return SupergraphCacheConfig(validation, normalization, query_plans)
 
 
 def cache_config_from_json(text: String) raises -> CacheConfig:
@@ -458,7 +458,7 @@ def cache_config_from_json(text: String) raises -> CacheConfig:
     var supergraph_node = document.find(0, "supergraph")
     if supergraph_node != NO_NODE:
         supergraph = _supergraph_from(document, supergraph_node)
-    return CacheConfig(router^, supergraph^)
+    return CacheConfig(router, supergraph)
 
 
 @fieldwise_init

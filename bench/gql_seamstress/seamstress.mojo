@@ -97,9 +97,11 @@ def main() raises:
         "seamstress/supergraph-compose-stars-stuff", Compose(_stars_config())
     )
     var built = run(
-        "mkdir -p .cache/bin && .venv/bin/mojo build -I . -o "
+        "([ -x "
         + PROGRAM
-        + " bench/gql_seamstress/_seamstress.mojo > /dev/null 2>&1 && cp "
+        + " ] || (mkdir -p .cache/bin && .venv/bin/mojo build -I . -o "
+        + PROGRAM
+        + " bench/gql_seamstress/_seamstress.mojo > /dev/null 2>&1)) && cp "
         + PROGRAM
         + " "
         + SCRATCH

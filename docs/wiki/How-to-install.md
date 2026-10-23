@@ -5,7 +5,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 # How to install
 
-Install Mojo `1.1.0` into a virtual environment in the repository, then run `make check`. The project needs no other toolchain.
+Install Mojo `1.2.0` into a virtual environment in the repository, then run `make check`. The project needs no other toolchain.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ The project does not need a GPU, MAX or Python code of its own. `uv` installs Mo
 2. Install the pinned toolchain:
 
    ```bash
-   uv venv && uv pip install "mojo==1.1.0"
+   uv venv && uv pip install "mojo==1.2.0"
    ```
 
 3. Check the installation:
@@ -37,7 +37,7 @@ The project does not need a GPU, MAX or Python code of its own. `uv` installs Mo
    make check
    ```
 
-The version must be `1.1.0` (`8189361e`). The pin is exact. Mojo `1.0` does not compile the project, and the project does not support other versions.
+The version must be `1.2.0` (`2016d0cd`). The pin is exact. Earlier Mojo versions do not compile the project, and the project does not support other versions.
 
 ## Install on Windows
 

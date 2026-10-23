@@ -32,7 +32,7 @@ def test_a_nullable_denial_does_not_remove_its_parent() raises:
     nodes.append(_node("user", -1, False, False))
     nodes.append(_node("nickname", 0, False, True))
     nodes.append(_node("name", 0, False, False))
-    assert_equal(_joined(bubble_null_removals(nodes^)), "nickname")
+    assert_equal(_joined(bubble_null_removals(nodes)), "nickname")
 
 
 def test_a_non_null_denial_stops_at_the_nullable_ancestor() raises:
@@ -42,7 +42,7 @@ def test_a_non_null_denial_stops_at_the_nullable_ancestor() raises:
     nodes.append(_node("profile", 1, True, False))
     nodes.append(_node("email", 2, True, True))
     nodes.append(_node("name", 1, False, False))
-    var removed = bubble_null_removals(nodes^)
+    var removed = bubble_null_removals(nodes)
     assert_equal(_joined(removed), "user profile email")
 
 
@@ -50,11 +50,11 @@ def test_typename_and_a_non_null_root_follow_the_filter() raises:
     var skipped = List[BubbleNode]()
     skipped.append(_node("user", -1, False, False))
     skipped.append(_node("__typename", 0, True, True))
-    assert_equal(len(bubble_null_removals(skipped^)), 0)
+    assert_equal(len(bubble_null_removals(skipped)), 0)
     var root = List[BubbleNode]()
     root.append(_node("id", -1, True, True))
     root.append(_node("name", -1, False, False))
-    assert_equal(_joined(bubble_null_removals(root^)), "id")
+    assert_equal(_joined(bubble_null_removals(root)), "id")
 
 
 def test_an_empty_selection_removes_nothing() raises:

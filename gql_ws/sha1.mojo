@@ -168,7 +168,7 @@ def base64_encode(data: Span[UInt8, _]) -> String:
         out.append(alphabet[Int((block >> 12) & 63)])
         out.append(alphabet[Int((block >> 6) & 63)] if rest == 2 else 61)
         out.append(61)
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def base64_value(byte: UInt8) -> Int:

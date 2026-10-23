@@ -20,7 +20,7 @@ from gql_json.writer import JsonWriter, stringify, stringify_bytes, write_string
 def _escaped(text: StringSlice) -> String:
     var out = List[UInt8]()
     write_string(out, text.as_bytes())
-    return String(unsafe_from_utf8=out^)
+    return String(unsafe_from_utf8=out)
 
 
 def test_write_string_escapes() raises:
@@ -104,7 +104,7 @@ def test_writer_clear_and_bytes() raises:
     writer.clear()
     writer.int(-7)
     var bytes = writer^.take_bytes()
-    assert_equal(String(unsafe_from_utf8=bytes^), "-7")
+    assert_equal(String(unsafe_from_utf8=bytes), "-7")
 
 
 def test_writer_value() raises:

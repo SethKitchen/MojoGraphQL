@@ -49,7 +49,7 @@ def _project(
     )
     if not projected:
         return NONE_TEXT
-    return String(unsafe_from_utf8=buffer^)
+    return String(unsafe_from_utf8=buffer)
 
 
 def _keys(type_name: String, var fields: List[String]) -> KeysByType:

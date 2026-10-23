@@ -866,7 +866,9 @@ struct Sys(Copyable, Movable):
         """
         var info = stack_allocation[128, UInt8]()
         var rc = _result(
-            external_call["read", Int](fd, info.unsafe_bitcast[NoneType](), 128)
+            external_call["read", Int](
+                Int32(fd), info.unsafe_bitcast[NoneType](), 128
+            )
         )
         if rc < 0:
             return rc
@@ -921,7 +923,7 @@ struct Sys(Copyable, Movable):
         """
         return _result(
             external_call["read", Int](
-                fd, data.unsafe_bitcast[NoneType](), size
+                Int32(fd), data.unsafe_bitcast[NoneType](), size
             )
         )
 
@@ -938,7 +940,7 @@ struct Sys(Copyable, Movable):
         """
         return _result(
             external_call["write", Int](
-                fd, data.unsafe_bitcast[NoneType](), size
+                Int32(fd), data.unsafe_bitcast[NoneType](), size
             )
         )
 

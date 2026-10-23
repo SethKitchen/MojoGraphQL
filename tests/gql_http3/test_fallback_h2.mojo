@@ -176,14 +176,14 @@ def test_h3_fails_then_h2_then_https1() raises:
     var config = fallback_config()
     config.enable_h3 = True
     config.h3_timeout_ms = 200
-    var client = FallbackClient(config^)
+    var client = FallbackClient(config)
     var url = "https://localhost:" + String(https[1]) + "/b"
     assert_equal(client.get(url).text(), "/b")
     assert_equal(client.protocol, Protocol.HTTPS2)
     # Without h2 in the handshake, the same server speaks HTTPS/1.1.
     var old = fallback_config()
     old.enable_h2 = False
-    var plain = FallbackClient(old^)
+    var plain = FallbackClient(old)
     assert_equal(plain.get(url).text(), "/b")
     assert_equal(plain.protocol, Protocol.HTTPS1)
     kill(https[0])
@@ -194,7 +194,7 @@ def test_h2c_then_http1() raises:
     var http1 = start_http1()
     var config = fallback_config()
     config.enable_h2c = True
-    var client = FallbackClient(config^)
+    var client = FallbackClient(config)
     var response = client.post(
         "http://127.0.0.1:" + String(h2c[1]) + "/c", "text/plain", "x"
     )

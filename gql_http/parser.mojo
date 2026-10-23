@@ -69,6 +69,7 @@ from gql_http.status import Method, Status, Version
 
 comptime _MORE = 1
 """The private code of `_parse_fields` for incomplete input."""
+comptime _ = String().as_bytes()
 
 
 @fieldwise_init

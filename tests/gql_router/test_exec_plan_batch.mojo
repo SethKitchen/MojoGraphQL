@@ -242,7 +242,7 @@ def test_a_batch_without_representations_sends_nothing() raises:
         BATCH_QUERY, None, JsonDocument(), NO_NODE, False, True
     )
     assert_equal(
-        String(unsafe_from_utf8=response.body^), '{"data":{"u1":[],"u2":[]}}'
+        String(unsafe_from_utf8=response.body), '{"data":{"u1":[],"u2":[]}}'
     )
     assert_equal(len(router.executor.transport.requests), 1)
 

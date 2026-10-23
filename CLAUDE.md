@@ -43,16 +43,19 @@ MojoGraphQL ports MIT licensed GraphQL libraries to Mojo. Read the [README](READ
 
 ## Toolchain
 
-The pin is exact: Mojo `1.1.0` (`8189361e`), installed with
-`uv venv && uv pip install "mojo==1.1.0"`. It is a pin and not a floor,
-because one source cannot serve both 1.0 and 1.1. These three things moved
-in 1.1, and they are easy to write back the old way by habit:
+The pin is exact: Mojo `1.2.0` (`2016d0cd`), installed with
+`uv venv && uv pip install "mojo==1.2.0"`. It is a pin and not a floor,
+because one source cannot serve two minor versions. These things moved in 1.1
+and 1.2, and they are easy to write back the old way by habit:
 
 - `TaskGroup` is `from std.runtime._asyncrt import TaskGroup`. The public
   `std.runtime` keeps only `parallelism_level` and `initialize_runtime`, and
   nothing public in `std` runs work on a thread pool. This is one of two places
-  the project reaches past a leading underscore. 1.0 has no `_asyncrt`; 1.1
-  has no `asyncrt`.
+  the project reaches past a leading underscore. 1.0 has no `_asyncrt`; 1.1 and
+  1.2 have no `asyncrt`.
+- `Hasher` is `from std.hash import Hasher`. In 1.1 it was in `std.hashlib`.
+- A transfer sigil (`^`) on a value passed to a borrowed (`imm`) argument is a
+  compile error in 1.2, including `String(unsafe_from_utf8=bytes)`.
 - A module beside the file being compiled is found before any `-I` path.
   That is why `make coverage` runs the suites from inside `coverage/build/`,
   beside the instrumented copies.
