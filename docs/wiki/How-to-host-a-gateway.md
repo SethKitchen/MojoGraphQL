@@ -29,7 +29,7 @@ The command writes `dist/scorchql`, `dist/scorchql-demo` and `dist/seamstress`.
 2. Read the address in the first line of the output, such as `http://my-vm:4000/`.
 3. Open that address in a browser on another machine.
 
-The gateway listens on every IPv4 address, on port 4000. It keeps the published subgraphs in `.scorchql/`. Use `--registry` to put them in another directory. The `--token` value protects publishing; keep it to publish later.
+This command starts only the gateway. It starts no subgraph. The gateway listens on every IPv4 address, on port 4000. It keeps the published subgraphs in `.scorchql/`. Use `--registry` to put them in another directory. The `--token` value protects publishing; keep it to publish later.
 
 If the browser cannot connect, open the port in the firewall of the machine:
 
@@ -63,14 +63,13 @@ curl http://my-vm:4000/scorchql/publish -H 'content-type: application/json' \
 
 ## Try the demo subgraphs
 
-The demo serves two subgraphs of a fire gear shop: `products` on port 4001 and `reviews` on port 4002.
+The default start runs only the gateway. `--demo` also starts two subgraphs of a fire gear shop and publishes them. `products` serves the catalog on port 4001. `reviews` serves the reviews and a `reviewAdded` subscription on port 4002.
 
 ```bash
-dist/scorchql-demo &
-dist/scorchql --config examples/scorchql/supergraph.yaml
+dist/scorchql --demo
 ```
 
-`--config` reads a Rover `supergraph.yaml` at start, and publishes each subgraph in it. Then open the explorer, and run this operation:
+`PRODUCTS_PORT` and `REVIEWS_PORT` change the ports. Open the explorer. Run this operation:
 
 ```graphql
 query {
@@ -79,6 +78,14 @@ query {
 ```
 
 The **Query plan** tab shows the fetch to `products`, then the entity fetch to `reviews`.
+
+`dist/scorchql-demo` serves the same two subgraphs and does not start the gateway. Start that program. Publish them with the gateway:
+
+```bash
+dist/scorchql --config examples/scorchql/supergraph.yaml
+```
+
+`--config` reads a Rover `supergraph.yaml` at start, and publishes each subgraph in it.
 
 You can also run a subscription or a query with `@defer` in the explorer:
 

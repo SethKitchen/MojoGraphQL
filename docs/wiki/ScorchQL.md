@@ -17,7 +17,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_scorchql.explorer` | `explorer_page`, `EXPLORER_HTML`, `FAVICON_SVG`, `escape_html`, `script_json` |
 | `gql_scorchql.cli` | `parse_cli`, `CliOptions`, `CommandKind`, `SubscriptionMode`, `gateway_config`, `admin_request`, `send_admin`, `USAGE` |
 
-`bin/scorchql.mojo` is the `scorchql` program. `bin/scorchql_demo.mojo` serves two demo subgraphs. `make scorchql` builds both into `dist/`.
+`bin/scorchql.mojo` is the `scorchql` program. A start with no `--demo` flag serves only the gateway. `--demo` starts the `products` and `reviews` subgraphs and publishes them. `bin/scorchql_demo.mojo` serves those subgraphs with no gateway. `make scorchql` builds both programs into `dist/`.
 
 ## Registry
 

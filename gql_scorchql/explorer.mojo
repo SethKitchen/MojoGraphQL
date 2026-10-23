@@ -1684,9 +1684,11 @@ function renderSubgraphs() {
   if (g.loadError) page.append(el("div", { class: "errors", style: "margin-bottom:14px", text: g.loadError }));
   if (g.mode === "registry") {
     const host = endpointUrl().replace(BOOT.graphqlPath, "");
+    const seamstress = (g.publishRequiresToken ? "SCORCHQL_TOKEN=<token> " : "") + "seamstress subgraph publish " + host + " --name products --routing-url http://localhost:4001/";
+    const curl = "curl " + host + "/scorchql/publish -H 'content-type: application/json' \\\n  " + (g.publishRequiresToken ? "-H 'authorization: Bearer <token>' " : "") + "--data '{\"name\":\"products\",\"url\":\"http://localhost:4001/\"}'";
     page.append(el("div", { class: "callout" }, el("h3", { text: g.subgraphs.length ? "Publish another subgraph" : "Publish your first subgraph" }),
-      el("div", { class: "lead", text: "Use the Publish button, the scorchql program, or one HTTP request. Without an SDL, the gateway reads it from the subgraph with { _service { sdl } }." }),
-      el("pre", { text: "scorchql publish --gateway " + host + " --name products --url http://localhost:4001/\n\ncurl " + host + "/scorchql/publish -H 'content-type: application/json' \\\n  " + (g.publishRequiresToken ? "-H 'authorization: Bearer <token>' " : "") + "--data '{\"name\":\"products\",\"url\":\"http://localhost:4001/\"}'" }),
+      el("div", { class: "lead", text: "Use the Publish button, or seamstress. Without an SDL, the gateway reads it from the subgraph with { _service { sdl } }." }),
+      el("pre", { text: seamstress + "\n\n" + curl }),
       el("button", { class: "btn fire", text: "Publish subgraph", onclick: () => publishDialog() })));
   }
   const cards = el("div", { class: "cards" });

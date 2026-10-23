@@ -54,6 +54,14 @@ def test_explorer_page() raises:
     assert_false(BOOT_MARKER in page)
 
 
+def test_the_publish_hint_uses_seamstress() raises:
+    assert_true("seamstress subgraph publish " in EXPLORER_HTML)
+    assert_true("--routing-url " in EXPLORER_HTML)
+    assert_true("SCORCHQL_TOKEN=<token> " in EXPLORER_HTML)
+    assert_false("scorchql publish" in EXPLORER_HTML)
+    assert_false("the scorchql program" in EXPLORER_HTML)
+
+
 def test_the_page_needs_no_network_resource() raises:
     assert_false("<script src" in EXPLORER_HTML)
     assert_false("stylesheet" in EXPLORER_HTML)

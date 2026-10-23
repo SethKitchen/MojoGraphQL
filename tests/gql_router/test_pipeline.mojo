@@ -98,6 +98,53 @@ def test_an_unknown_operation_does_not_normalize() raises:
     )
 
 
+def test_a_subscription_without_a_root_sends_both_errors() raises:
+    var out = run_router(
+        simple_requires.sdl(),
+        CannedTransport(),
+        "subscription Example {\n  __typename\n}\n",
+    )
+    assert_true(out.startswith("200 "))
+    assert_true(
+        'Subscription \\"Example\\" must not select an introspection top'
+        + " level field."
+        in out
+    )
+    assert_true("SingleFieldSubscriptions" in out)
+    assert_true(
+        "Schema is not configured to execute subscription operation." in out
+    )
+    assert_true("OPERATION_NOT_SUPPORTED" in out)
+    var anonymous = run_router(
+        simple_requires.sdl(), CannedTransport(), "subscription { __typename }"
+    )
+    assert_true(
+        "Anonymous Subscription must not select an introspection top level"
+        + " field."
+        in anonymous
+    )
+    var field = run_router(
+        simple_requires.sdl(),
+        CannedTransport(),
+        "subscription { products { upc } }",
+    )
+    assert_true("OPERATION_NOT_SUPPORTED" in field)
+    assert_false("introspection" in field)
+    var spread = run_router(
+        simple_requires.sdl(),
+        CannedTransport(),
+        "subscription { ... on Query { products { upc } } }",
+    )
+    assert_true("OPERATION_NOT_SUPPORTED" in spread)
+    assert_false("introspection" in spread)
+    var query = run_router(
+        simple_requires.sdl(),
+        CannedTransport(),
+        "fragment P on Product { upc } { products { ...P } }",
+    )
+    assert_false("OPERATION_NOT_SUPPORTED" in query)
+
+
 def test_a_subscription_is_not_supported() raises:
     assert_equal(
         run_router(

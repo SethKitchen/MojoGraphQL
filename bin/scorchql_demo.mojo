@@ -14,11 +14,11 @@ into `products`, so a query plan or subscription has entity fetches in
 both directions.
 
     make scorchql
-    dist/scorchql-demo &
-    dist/scorchql --config examples/scorchql/supergraph.yaml
+    dist/scorchql --demo
 
-`PRODUCTS_PORT` and `REVIEWS_PORT` change the ports. The program runs
-until it gets `SIGINT` or `SIGTERM`.
+`dist/scorchql --demo` starts these subgraphs and the gateway. This
+program starts only the subgraphs. `PRODUCTS_PORT` and `REVIEWS_PORT`
+change the ports. The program runs until it gets `SIGINT` or `SIGTERM`.
 """
 
 from std.os import getenv
@@ -440,6 +440,81 @@ struct SubgraphHooks(Hooks):
         pass
 
 
+struct DemoServer(Movable):
+    """One running demo subgraph."""
+
+    var name: String
+    """The subgraph name, `products` or `reviews`."""
+    var url: String
+    """The routing URL, such as `http://127.0.0.1:4001/`."""
+    var sdl: String
+    """The subgraph SDL."""
+    var pool: WorkerPool
+    """The process that serves the subgraph."""
+
+    def __init__(
+        out self, name: String, url: String, sdl: String, var pool: WorkerPool
+    ):
+        """Record a subgraph that is already listening.
+
+        Args:
+            name: The subgraph name.
+            url: The routing URL.
+            sdl: The subgraph SDL.
+            pool: The process that serves it.
+        """
+        self.name = name
+        self.url = url
+        self.sdl = sdl
+        self.pool = pool^
+
+
+def start_demo() raises -> List[DemoServer]:
+    """Start the `products` and `reviews` subgraphs.
+
+    `products` listens on `PRODUCTS_PORT`, or 4001. `reviews` listens on
+    `REVIEWS_PORT`, or 4002. Each process ends when its parent ends.
+
+    Returns:
+        The two servers, products first.
+
+    Raises:
+        Error: When a subgraph cannot listen.
+    """
+    var servers = List[DemoServer]()
+    var products = _start(
+        "products",
+        PRODUCTS_SDL,
+        products_resolvers(),
+        Int(getenv("PRODUCTS_PORT", "4001")),
+    )
+    var products_port = products.port
+    servers.append(
+        DemoServer(
+            "products",
+            "http://127.0.0.1:" + String(products_port) + "/",
+            String(PRODUCTS_SDL),
+            products^,
+        )
+    )
+    var reviews = _start(
+        "reviews",
+        REVIEWS_SDL,
+        reviews_resolvers(),
+        Int(getenv("REVIEWS_PORT", "4002")),
+    )
+    var reviews_port = reviews.port
+    servers.append(
+        DemoServer(
+            "reviews",
+            "http://127.0.0.1:" + String(reviews_port) + "/",
+            String(REVIEWS_SDL),
+            reviews^,
+        )
+    )
+    return servers^
+
+
 def _start(
     name: String, sdl: StringSlice, var resolvers: SubgraphResolvers, port: Int
 ) raises -> WorkerPool:
@@ -493,17 +568,8 @@ def _start(
 
 def main() raises:
     """Serve both subgraphs until the process is stopped."""
-    var products = _start(
-        "products",
-        PRODUCTS_SDL,
-        products_resolvers(),
-        Int(getenv("PRODUCTS_PORT", "4001")),
-    )
-    var reviews = _start(
-        "reviews",
-        REVIEWS_SDL,
-        reviews_resolvers(),
-        Int(getenv("REVIEWS_PORT", "4002")),
-    )
-    _ = products.wait()
-    _ = reviews.wait()
+    var servers = start_demo()
+    var index = 0
+    while index < len(servers):
+        _ = servers[index].pool.wait()
+        index += 1

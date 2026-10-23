@@ -77,6 +77,7 @@ def test_serve_defaults() raises:
     assert_equal(options.registry, ".scorchql")
     assert_false(options.supergraph)
     assert_false(options.config)
+    assert_false(options.demo)
     assert_true(options.host == IPv4Address.ANY)
     assert_equal(options.host_text, "0.0.0.0")
     assert_equal(options.port, 4000)
@@ -134,6 +135,10 @@ def test_serve_flags() raises:
     )
     var fixed = parse_cli(_args("--supergraph", "s.graphql"))
     assert_equal(fixed.supergraph.value(), "s.graphql")
+    var demo = parse_cli(_args("--demo", "--port", "4000"))
+    assert_true(demo.demo)
+    assert_equal(demo.port, 4000)
+    assert_true("--demo" in USAGE)
 
 
 def test_the_token_comes_from_the_environment() raises:
@@ -253,6 +258,12 @@ def test_errors() raises:
         _ = parse_cli(_args("publish", "--port", "1"))
     with assert_raises(contains="cannot be used together"):
         _ = parse_cli(_args("--supergraph", "a", "--config", "b"))
+    with assert_raises(contains="'--demo' and '--supergraph'"):
+        _ = parse_cli(_args("--demo", "--supergraph", "a"))
+    with assert_raises(contains="'--demo' and '--config'"):
+        _ = parse_cli(_args("--config", "b", "--demo"))
+    with assert_raises(contains="unknown option '--demo' for 'publish'"):
+        _ = parse_cli(_args("publish", "--demo", "--gateway", "http://g"))
     with assert_raises(contains="'--gateway <URL>' is required"):
         _ = parse_cli(_args("refresh"))
     with assert_raises(contains="'--name <NAME>' is required"):

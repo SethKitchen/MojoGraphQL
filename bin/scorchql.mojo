@@ -6,15 +6,15 @@
 """The `scorchql` program: a federated GraphQL gateway with an explorer.
 
     make scorchql
-    dist/scorchql --config examples/scorchql/supergraph.yaml
-    dist/scorchql publish --gateway http://localhost:4000 \\
-        --name products --url http://localhost:4001/
+    dist/scorchql
+    dist/scorchql --demo
 
 `serve` (the default command) forks the worker processes of the gateway,
-then stays in the foreground. Every `--poll` seconds it reads the SDL of
-each published subgraph again, and publishes each change, so a subgraph
-that deploys a new schema reaches the gateway without a publish. Stop the
-program with `SIGINT` or `SIGTERM`.
+then stays in the foreground. It starts no subgraph. `--demo` also starts
+the products and reviews subgraphs and publishes them. Every `--poll`
+seconds it reads the SDL of each published subgraph again, and publishes
+each change, so a subgraph that deploys a new schema reaches the gateway
+without a publish. Stop the program with `SIGINT` or `SIGTERM`.
 
 `--config` reads a Rover `supergraph.yaml` at start, and publishes each
 subgraph with its `routing_url`. A subgraph that cannot be read is skipped
@@ -39,6 +39,7 @@ from gql_http.server import (
 from gql_http.socket import Sys
 from gql_http3.quic import Quic
 from gql_router_stream.server import router_server_config
+from scorchql_demo import DemoServer, start_demo
 from gql_scorchql.cli import (
     CliOptions,
     CommandKind,
@@ -150,6 +151,63 @@ def _hostname() -> String:
     while length < 255 and buffer[length] != 0:
         length += 1
     return String(StringSlice(unsafe_from_utf8=Span(buffer)[:length]))
+
+
+def _publish_demo(mut registry: Registry, servers: List[DemoServer]) raises:
+    """Publish the running demo subgraphs.
+
+    Args:
+        registry: The gateway registry.
+        servers: The subgraphs from `start_demo`.
+
+    Raises:
+        Error: When a registry file cannot be read or written.
+    """
+    var index = 0
+    while index < len(servers):
+        var name = servers[index].name
+        var result = registry.publish(
+            servers[index].name, servers[index].url, servers[index].sdl
+        )
+        if result.accepted:
+            print(
+                "🔥 published "
+                + name
+                + (" (changed)" if result.changed else " (unchanged)")
+            )
+        else:
+            print(
+                "warning: "
+                + name
+                + " was refused:\n  "
+                + String("\n  ").join(result.errors),
+                file=stderr,
+            )
+        index += 1
+
+
+def _reap(mut pool: WorkerPool, label: String):
+    """Drop each ended process of a pool, and report it.
+
+    Args:
+        pool: The processes.
+        label: The name in the warning.
+    """
+    var index = len(pool.pids) - 1
+    while index >= 0:
+        var ended = pool.sys.wait(pool.pids[index], False)
+        if ended[0] == pool.pids[index]:
+            print(
+                "warning: "
+                + label
+                + " "
+                + String(ended[0])
+                + " ended with code "
+                + String(ended[1]),
+                file=stderr,
+            )
+            _ = pool.pids.pop(index)
+        index -= 1
 
 
 def _seed(path: String, mut registry: Registry, mut client: Client) raises:
@@ -405,8 +463,13 @@ def main() raises:
     var registry = Registry(options.registry)
     var client_config = ClientConfig()
     client_config.timeout_ms = 5000
+    var demos = List[DemoServer]()
+    if options.demo:
+        demos = start_demo()
     if not static:
         registry.open()
+        if options.demo:
+            _publish_demo(registry, demos)
         if options.config:
             var seed_client = Client(client_config)
             _seed(options.config.value(), registry, seed_client)
@@ -489,6 +552,8 @@ def main() raises:
                 + String(options.poll_seconds)
                 + " s."
             )
+    if options.demo:
+        print("   Demo:      products and reviews are running.")
 
     var client = Client(client_config)
     var elapsed = 0
@@ -507,6 +572,10 @@ def main() raises:
                 )
                 _ = pool.pids.pop(index)
             index -= 1
+        var demo_index = 0
+        while demo_index < len(demos):
+            _reap(demos[demo_index].pool, demos[demo_index].name + " subgraph")
+            demo_index += 1
         elapsed += 1
         if static or options.poll_seconds == 0:
             continue

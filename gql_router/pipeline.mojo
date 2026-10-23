@@ -28,13 +28,19 @@ three results, keyed by the operation name and the document text.
 There are no plugins,
 coprocessors, persisted documents, authorization, progressive override
 labels, demand control, CSRF prevention, or subscriptions. A parse error
-message is the `gql_language` text.
+message is the `gql_language` text. A subscription on a schema with no
+subscription root returns `Schema is not configured to execute
+subscription operation.` with code `OPERATION_NOT_SUPPORTED`. When that
+operation also selects an introspection root field, the same response
+includes the `SingleFieldSubscriptions` error. Upstream reports only
+`Failed to normalize GraphQL operation`.
 """
 
 from std.time import perf_counter_ns
 
 from gql_json.value import NO_NODE, JsonDocument
-from gql_language.ast import Document
+from gql_language.ast import NO_NODE as NO_AST
+from gql_language.ast import Document, Kind, OperationType, Role
 from gql_language.parser import parse
 from gql_router.ast import NONE
 from gql_router.cache import CacheLimits, OperationCache, default_cache_limits
@@ -531,6 +537,71 @@ struct Router[T: SubgraphTransport](Movable):
         if body.byte_length() > 0:
             raise validation_error(body)
 
+    def _missing_subscription(self, document: Document) raises PipelineError:
+        """Report a subscription when the schema has no subscription root.
+
+        The response has `OPERATION_NOT_SUPPORTED`. It also has
+        `SingleFieldSubscriptions` for each introspection root field.
+
+        Args:
+            document: The parsed operation document.
+
+        Raises:
+            PipelineError: Those errors, as a validation body, when the
+                document has a subscription.
+        """
+        if self.schema.planner.state.subscription_type != NONE:
+            return
+        var errors = List[GraphQLError]()
+        var definition = document.child(document.root, Role.DEFINITION)
+        while definition != NO_AST:
+            if (
+                document.kind(definition) == Kind.OPERATION_DEFINITION
+                and document.operation(definition) == OperationType.SUBSCRIPTION
+            ):
+                var name = document.child(definition, Role.NAME)
+                var selection = document.child(
+                    document.child(definition, Role.SELECTION_SET),
+                    Role.SELECTION,
+                )
+                while selection != NO_AST:
+                    if document.kind(selection) == Kind.FIELD and String(
+                        document.name(selection)
+                    ).startswith("__"):
+                        var message: String
+                        if name != NO_AST:
+                            message = (
+                                'Subscription "'
+                                + String(document.text(name))
+                                + '" must not select an introspection top'
+                                + " level field."
+                            )
+                        else:
+                            message = (
+                                "Anonymous Subscription must not select an"
+                                + " introspection top level field."
+                            )
+                        var located = document.location(selection)
+                        var error = error_with_code(
+                            message, "SingleFieldSubscriptions"
+                        )
+                        error.lines.append(located.line)
+                        error.columns.append(located.column)
+                        errors.append(error^)
+                    selection = document.next_with_role(selection)
+                var root = document.location(definition)
+                var missing = error_with_code(
+                    "Schema is not configured to execute subscription"
+                    + " operation.",
+                    "OPERATION_NOT_SUPPORTED",
+                )
+                missing.lines.append(root.line)
+                missing.columns.append(root.column)
+                errors.append(missing^)
+            definition = document.next_with_role(definition)
+        if len(errors) > 0:
+            raise validation_error(errors_json(errors))
+
     def prepare(
         mut self,
         query: String,
@@ -574,6 +645,7 @@ struct Router[T: SubgraphTransport](Movable):
             )
         if validate:
             self.validate(query, document, now)
+            self._missing_subscription(document)
         var operation: OperationDefinition
         try:
             operation = normalize_operation(

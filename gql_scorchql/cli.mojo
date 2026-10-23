@@ -6,8 +6,8 @@
 """The command line of the `scorchql` program.
 
     scorchql [serve] [--registry DIR | --supergraph FILE] [--config YAML]
-             [--host ADDRESS] [--port PORT] [--workers N] [--path PATH]
-             [--title TEXT] [--token TOKEN] [--poll SECONDS]
+             [--demo] [--host ADDRESS] [--port PORT] [--workers N]
+             [--path PATH] [--title TEXT] [--token TOKEN] [--poll SECONDS]
              [--subscriptions ws|http|off]
              [--tls-cert FILE --tls-key FILE] [--https-port PORT] [--h3 on|off]
     scorchql publish --gateway URL --name NAME --url URL [--schema FILE]
@@ -52,6 +52,9 @@ Serve options:
   --registry <DIR>       The registry directory [default: .scorchql]
   --supergraph <FILE>    Serve a fixed supergraph SDL, without a registry
   --config <YAML>        Publish the subgraphs of a supergraph.yaml at start
+  --demo                 Also start the products and reviews demo subgraphs,
+                         and publish them. The default start runs only the
+                         gateway
   --host <ADDRESS>       The IPv4 address to listen on [default: 0.0.0.0]
   --port <PORT>          The port [default: 4000]
   --workers <N>          The worker processes [default: 1]
@@ -207,6 +210,8 @@ struct CliOptions(Copyable, Movable):
     """`--supergraph`."""
     var config: Optional[String]
     """`--config`."""
+    var demo: Bool
+    """`--demo`: start the products and reviews subgraphs."""
     var host: IPv4Address
     """`--host`."""
     var host_text: String
@@ -248,6 +253,7 @@ struct CliOptions(Copyable, Movable):
         self.registry = ".scorchql"
         self.supergraph = None
         self.config = None
+        self.demo = False
         self.host = IPv4Address.ANY
         self.host_text = "0.0.0.0"
         self.port = 4000
@@ -331,6 +337,15 @@ def parse_cli(args: List[String]) raises -> CliOptions:
         if arg == "--version" or arg == "-V":
             options.command = CommandKind.VERSION
             return options^
+        if arg == "--demo":
+            if options.command != CommandKind.SERVE:
+                raise Error(
+                    "unknown option '--demo' for '"
+                    + String(options.command)
+                    + "'"
+                )
+            options.demo = True
+            continue
         if not arg.startswith("--"):
             raise Error("unexpected argument '" + arg + "'")
         var flag = arg
@@ -417,6 +432,10 @@ def parse_cli(args: List[String]) raises -> CliOptions:
     if options.command == CommandKind.SERVE:
         if options.supergraph and options.config:
             raise Error("'--supergraph' and '--config' cannot be used together")
+        if options.demo and options.supergraph:
+            raise Error("'--demo' and '--supergraph' cannot be used together")
+        if options.demo and options.config:
+            raise Error("'--demo' and '--config' cannot be used together")
         if Bool(options.tls_cert) != Bool(options.tls_key):
             raise Error("'--tls-cert' and '--tls-key' must be used together")
         if options.tls_cert and options.https_port == options.port:

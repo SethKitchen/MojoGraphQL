@@ -1,4 +1,6 @@
-# The supergraph of the ScorchQL demo. Start the subgraphs first:
+# The supergraph of the ScorchQL demo subgraphs.
+# `dist/scorchql --demo` starts these subgraphs and the gateway.
+# This file is for the separate subgraph program:
 #
 #     dist/scorchql-demo &
 #     dist/scorchql --config examples/scorchql/supergraph.yaml
