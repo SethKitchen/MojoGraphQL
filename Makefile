@@ -65,7 +65,7 @@ out=$$($(1) 2>&1); rc=$$?; printf '%s\n' "$$out" | sed '/Crashpad/d'
 endef
 
 .PHONY: help check test lint fmt fmt-check packages-check docs-check \
-        coverage bench bench-check package scorchql clean
+        coverage bench bench-check package scorchql forge clean
 
 help:
 	@echo "MojoGraphQL tasks ($(words $(SELECTED)) packages selected)"
@@ -78,6 +78,7 @@ help:
 	@echo "  make bench-check     fail when Mojo is not the fastest"
 	@echo "  make package         one precompiled .mojoc per package, into dist/"
 	@echo "  make scorchql        the ScorchQL gateway, its demo and seamstress, into dist/"
+	@echo "  make forge           the Forge control plane, into dist/"
 	@echo "  make fmt             reformat the sources"
 	@echo "  make packages-check  enforce the package graph in packages.toml"
 	@echo "  make docs-check      check the documentation writing rules"
@@ -173,6 +174,11 @@ scorchql:
 	  [ $$rc -eq 0 ] || exit 1; echo "dist/scorchql-demo"
 	@$(call run,$(MOJO) build $(MOJOFLAGS) -o dist/seamstress bench/gql_seamstress/_seamstress.mojo); \
 	  [ $$rc -eq 0 ] || exit 1; echo "dist/seamstress"
+
+forge:
+	@mkdir -p dist
+	@$(call run,$(MOJO) build $(MOJOFLAGS) -o dist/forge bin/forge.mojo); \
+	  [ $$rc -eq 0 ] || exit 1; echo "dist/forge"
 
 clean:
 	@rm -rf coverage/build .cache dist

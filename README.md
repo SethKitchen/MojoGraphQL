@@ -12,7 +12,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 MojoGraphQL is a GraphQL library written from scratch in Mojo. It ports MIT licensed GraphQL projects: graphql-js, apollo-rs, Apollo Server, Apollo Client, Hive Router and others. Each part is a separate Mojo package, so you install only the parts that you need. Each port must be faster than its upstream, and a benchmark proves it.
 
-The project has thirty-two finished packages.
+The project has thirty-three finished packages.
 
 `gql_language` has the lexer, parser, printer and visitor. `gql_json` reads and writes JSON. `gql_schema` holds the type system. `gql_validation` checks operations, and `gql_execution` runs them. `gql_http` is an HTTP/1.1 server and client. `gql_client` is the Apollo Client normalized cache.
 
@@ -23,6 +23,8 @@ Subscriptions and streams go through the whole stack. `gql_stream` holds the eve
 `gql_server_ws` adds subscriptions to `gql_server`, and `gql_router_stream` adds subscriptions and streamed `@defer` to `gql_router`. A user who needs no streams does not build these packages.
 
 `gql_scorchql` is ScorchQL, a federated gateway. Subgraphs publish to it, and it composes them and serves the supergraph with `gql_router`. Its web explorer shows the schema, runs operations and draws query plans.
+
+`gql_forge` is Forge, a control plane for those graphs. People and companies register the endpoints that they already host. Forge does not host the graphs. It stores telemetry, compares environments, and answers questions about the schemas.
 
 The [feature checklist](#features) shows what is done and what is planned.
 
@@ -74,6 +76,7 @@ The wiki holds the documentation. Its source is in `docs/wiki/`.
 - [How to install](https://github.com/SethKitchen/MojoGraphQL/wiki/How-to-install): install the toolchain and run the checks.
 - [How to pick packages](https://github.com/SethKitchen/MojoGraphQL/wiki/How-to-pick-packages): build and use only the packages that you need.
 - [How to host a gateway](https://github.com/SethKitchen/MojoGraphQL/wiki/How-to-host-a-gateway): run ScorchQL, publish subgraphs, and open its explorer.
+- [How to run Forge](https://github.com/SethKitchen/MojoGraphQL/wiki/How-to-run-Forge): start Forge and register a customer-hosted supergraph.
 - [Language](https://github.com/SethKitchen/MojoGraphQL/wiki/Language): the `gql_language` reference.
 - [Benchmarks](https://github.com/SethKitchen/MojoGraphQL/wiki/Benchmarks): how the benchmarks measure speed.
 - [Coverage tool](https://github.com/SethKitchen/MojoGraphQL/wiki/Coverage-tool): how `make coverage` measures the tests.
@@ -140,6 +143,7 @@ Port of graphql-js 16.14.2 `src/type` and the schema utilities of `src/utilities
 - [x] [`gql_mcp`](https://github.com/SethKitchen/MojoGraphQL/wiki/Mcp): a port of Apollo MCP Server.
 - [x] [`gql_seamstress`](https://github.com/SethKitchen/MojoGraphQL/wiki/Seamstress): `seamstress`, a port of the MIT parts of the Rover CLI: `supergraph compose`, `subgraph introspect` and `graph introspect`.
 - [x] [`gql_scorchql`](https://github.com/SethKitchen/MojoGraphQL/wiki/ScorchQL): ScorchQL, a federated gateway. It keeps a registry of published subgraphs, composes them on each publish, and reloads every worker without a restart. Its web explorer builds operations, runs them and draws query plans.
+- [x] [`gql_forge`](https://github.com/SethKitchen/MojoGraphQL/wiki/Forge): Forge, a control plane for customer-hosted supergraphs. It records endpoints, pulls or stores schemas, compares environments, ingests telemetry and answers questions about the graph.
 - [x] [Compatibility](https://github.com/SethKitchen/MojoGraphQL/wiki/Compatibility): the Apollo Federation subgraph compatibility suite, as tests of `gql_subgraph`. Every check passes, federated tracing (`ftv1`) included.
 
 The `@apollo/subgraph` port does not use `@apollo/federation-internals`, which is Elastic licensed. It implements the public federation specification instead, with Hive Federation Composition as the MIT reference.
@@ -190,6 +194,7 @@ The command writes one precompiled `dist/<package>.mojoc` file for the package a
 | `gql_mcp` | Done | `gql_validation`, `gql_http` | Apollo MCP Server 2.0.0 |
 | `gql_seamstress` | Done | `gql_composition`, `gql_execution`, `gql_http` | Rover 1.0.0, MIT parts |
 | `gql_scorchql` | Done | `gql_router_stream`, `gql_composition`, `gql_ws` | None: original work |
+| `gql_forge` | Done | `gql_schema`, `gql_http` | None: original work |
 
 The dependencies of a planned package can change before it is written. `packages.toml` is the record for each package that exists.
 

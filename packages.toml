@@ -181,3 +181,8 @@ upstream = ["Hive Router 1a29df9 (MIT) bin/router/src: config/subscriptions.rs, 
 summary = "ScorchQL: a federated gateway with a subgraph registry, hot reload, subscriptions, @defer and a web explorer"
 depends = ["gql_language", "gql_json", "gql_http", "gql_composition", "gql_router", "gql_router_stream", "gql_ws"]
 upstream = ["none: ScorchQL is original work; it joins gql_router, gql_router_stream, gql_composition, gql_ws and gql_http, and follows the public documentation of rover subgraph publish and the Apollo Federation subgraph specification (_service { sdl })"]
+
+[packages.gql_forge]
+summary = "Forge: a control plane for customer-hosted supergraphs, with telemetry, schema diffs and an analyst"
+depends = ["gql_language", "gql_json", "gql_http", "gql_schema"]
+upstream = ["none: Forge is original work; it joins gql_schema, gql_http and gql_json. It does not host customer graphs"]
