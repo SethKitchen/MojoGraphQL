@@ -27,6 +27,7 @@ from std.ffi import external_call
 from std.os import makedirs, remove
 from std.os.path import exists
 
+from gql_forge.names import is_valid_slug, slug_error
 from gql_json.parser import parse as parse_json
 from gql_json.value import JsonDocument, JsonKind
 
@@ -201,6 +202,27 @@ def parse_object(text: StringSlice) raises -> JsonDocument:
     return document^
 
 
+def checked_slug(kind: StringSlice, name: StringSlice) raises -> String:
+    """Return a name for a path, or raise when it is not a valid slug.
+
+    Each path of the store goes through this check, so a name from a
+    request, such as `../../x`, cannot reach a file outside the directory.
+
+    Args:
+        kind: `organization`, `graph` or `variant`.
+        name: The name.
+
+    Returns:
+        The name.
+
+    Raises:
+        Error: When the name is not a valid slug.
+    """
+    if not is_valid_slug(name):
+        raise Error(slug_error(kind, name))
+    return String(name)
+
+
 comptime _LOCK_EX: Int32 = 2
 """The `flock` operation that takes an exclusive lock."""
 
@@ -296,7 +318,7 @@ struct Store(Copyable, Movable):
         """
         return self.directory + "/advertise_ip"
 
-    def org_path(self, slug: StringSlice) -> String:
+    def org_path(self, slug: StringSlice) raises -> String:
         """Return the file of an organization.
 
         Args:
@@ -304,10 +326,34 @@ struct Store(Copyable, Movable):
 
         Returns:
             `<directory>/orgs/<slug>.json`.
-        """
-        return self.directory + "/orgs/" + String(slug) + ".json"
 
-    def graph_path(self, org: StringSlice, graph_key: StringSlice) -> String:
+        Raises:
+            Error: When the slug is not valid.
+        """
+        return (
+            self.directory
+            + "/orgs/"
+            + checked_slug("organization", slug)
+            + ".json"
+        )
+
+    def graphs_dir(self, org: StringSlice) raises -> String:
+        """Return the directory of the graphs of an organization.
+
+        Args:
+            org: The organization slug.
+
+        Returns:
+            `<directory>/graphs/<org>`.
+
+        Raises:
+            Error: When the slug is not valid.
+        """
+        return self.directory + "/graphs/" + checked_slug("organization", org)
+
+    def graph_path(
+        self, org: StringSlice, graph_key: StringSlice
+    ) raises -> String:
         """Return the file of a graph.
 
         Args:
@@ -316,19 +362,43 @@ struct Store(Copyable, Movable):
 
         Returns:
             `<directory>/graphs/<org>/<key>.json`.
+
+        Raises:
+            Error: When a name is not valid.
+        """
+        return (
+            self.graphs_dir(org)
+            + "/"
+            + checked_slug("graph", graph_key)
+            + ".json"
+        )
+
+    def variants_dir(
+        self, org: StringSlice, graph: StringSlice
+    ) raises -> String:
+        """Return the directory of the variants of a graph.
+
+        Args:
+            org: The organization slug.
+            graph: The graph ref.
+
+        Returns:
+            `<directory>/variants/<org>/<graph>`.
+
+        Raises:
+            Error: When a name is not valid.
         """
         return (
             self.directory
-            + "/graphs/"
-            + String(org)
+            + "/variants/"
+            + checked_slug("organization", org)
             + "/"
-            + String(graph_key)
-            + ".json"
+            + checked_slug("graph", graph)
         )
 
     def variant_path(
         self, org: StringSlice, graph: StringSlice, name: StringSlice
-    ) -> String:
+    ) raises -> String:
         """Return the file of a variant.
 
         Args:
@@ -338,21 +408,32 @@ struct Store(Copyable, Movable):
 
         Returns:
             `<directory>/variants/<org>/<graph>/<name>.json`.
+
+        Raises:
+            Error: When a name is not valid.
         """
         return (
-            self.directory
-            + "/variants/"
-            + String(org)
+            self.variants_dir(org, graph)
             + "/"
-            + String(graph)
-            + "/"
-            + String(name)
+            + checked_slug("variant", name)
             + ".json"
+        )
+
+    def _variant_part(
+        self, org: StringSlice, graph: StringSlice, variant: StringSlice
+    ) raises -> String:
+        """Return `<org>/<graph>/<variant>`, each name checked."""
+        return (
+            checked_slug("organization", org)
+            + "/"
+            + checked_slug("graph", graph)
+            + "/"
+            + checked_slug("variant", variant)
         )
 
     def schema_dir(
         self, org: StringSlice, graph: StringSlice, variant: StringSlice
-    ) -> String:
+    ) raises -> String:
         """Return the directory of schema snapshots for a variant.
 
         Args:
@@ -362,15 +443,14 @@ struct Store(Copyable, Movable):
 
         Returns:
             `<directory>/schemas/<org>/<graph>/<variant>`.
+
+        Raises:
+            Error: When a name is not valid.
         """
         return (
             self.directory
             + "/schemas/"
-            + String(org)
-            + "/"
-            + String(graph)
-            + "/"
-            + String(variant)
+            + self._variant_part(org, graph, variant)
         )
 
     def schema_path(
@@ -379,7 +459,7 @@ struct Store(Copyable, Movable):
         graph: StringSlice,
         variant: StringSlice,
         revision: Int,
-    ) -> String:
+    ) raises -> String:
         """Return the file of one schema snapshot.
 
         Args:
@@ -390,6 +470,9 @@ struct Store(Copyable, Movable):
 
         Returns:
             `<directory>/schemas/<org>/<graph>/<variant>/<revision>.graphql`.
+
+        Raises:
+            Error: When a name is not valid.
         """
         return (
             self.schema_dir(org, graph, variant)
@@ -400,7 +483,7 @@ struct Store(Copyable, Movable):
 
     def current_schema_path(
         self, org: StringSlice, graph: StringSlice, variant: StringSlice
-    ) -> String:
+    ) raises -> String:
         """Return the file that names the current schema revision.
 
         Args:
@@ -410,12 +493,15 @@ struct Store(Copyable, Movable):
 
         Returns:
             `<directory>/schemas/<org>/<graph>/<variant>/current`.
+
+        Raises:
+            Error: When a name is not valid.
         """
         return self.schema_dir(org, graph, variant) + "/current"
 
     def telemetry_path(
         self, org: StringSlice, graph: StringSlice, variant: StringSlice
-    ) -> String:
+    ) raises -> String:
         """Return the file of rolled-up telemetry for a variant.
 
         Args:
@@ -425,15 +511,14 @@ struct Store(Copyable, Movable):
 
         Returns:
             `<directory>/telemetry/<org>/<graph>/<variant>.json`.
+
+        Raises:
+            Error: When a name is not valid.
         """
         return (
             self.directory
             + "/telemetry/"
-            + String(org)
-            + "/"
-            + String(graph)
-            + "/"
-            + String(variant)
+            + self._variant_part(org, graph, variant)
             + ".json"
         )
 

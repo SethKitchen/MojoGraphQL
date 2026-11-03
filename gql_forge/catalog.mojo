@@ -361,9 +361,13 @@ struct Catalog(Copyable, Movable):
             slug: The organization slug.
 
         Returns:
-            Whether the catalog file exists.
+            Whether the catalog file exists. False for a name that is
+            not valid.
         """
-        return self.store.exists_file(self.store.org_path(slug))
+        try:
+            return self.store.exists_file(self.store.org_path(slug))
+        except:
+            return False
 
     def create_organization(
         mut self, slug: StringSlice, name: StringSlice
@@ -410,7 +414,7 @@ struct Catalog(Copyable, Movable):
             Error: When a catalog file cannot be read.
         """
         var out = List[Graph]()
-        var directory = self.store.directory + "/graphs/" + String(org)
+        var directory = self.store.graphs_dir(org)
         for ref name in list_json_files(directory):
             out.append(parse_graph(read_file(directory + "/" + name)))
         return out^
@@ -440,9 +444,13 @@ struct Catalog(Copyable, Movable):
             graph_key: The graph key.
 
         Returns:
-            Whether the catalog file exists.
+            Whether the catalog file exists. False for a name that is
+            not valid.
         """
-        return self.store.exists_file(self.store.graph_path(org, graph_key))
+        try:
+            return self.store.exists_file(self.store.graph_path(org, graph_key))
+        except:
+            return False
 
     def create_graph(
         mut self,
@@ -514,13 +522,7 @@ struct Catalog(Copyable, Movable):
             Error: When a catalog file cannot be read.
         """
         var out = List[Variant]()
-        var directory = (
-            self.store.directory
-            + "/variants/"
-            + String(org)
-            + "/"
-            + String(graph)
-        )
+        var directory = self.store.variants_dir(org, graph)
         for ref name in list_json_files(directory):
             out.append(parse_variant(read_file(directory + "/" + name)))
         return out^
@@ -556,9 +558,15 @@ struct Catalog(Copyable, Movable):
             name: The variant name.
 
         Returns:
-            Whether the catalog file exists.
+            Whether the catalog file exists. False for a name that is
+            not valid.
         """
-        return self.store.exists_file(self.store.variant_path(org, graph, name))
+        try:
+            return self.store.exists_file(
+                self.store.variant_path(org, graph, name)
+            )
+        except:
+            return False
 
     def create_variant(
         mut self,

@@ -142,5 +142,25 @@ def test_write_leaves_no_temporary() raises:
     assert_equal(store.revision(), 7)
 
 
+def test_paths_refuse_names_that_are_not_slugs() raises:
+    var store = Store(fresh_directory("slugs"))
+    with assert_raises(contains="Invalid organization name '..'"):
+        _ = store.org_path("..")
+    with assert_raises(contains="Invalid graph name"):
+        _ = store.graph_path("acme", "../x")
+    with assert_raises(contains="Invalid organization name"):
+        _ = store.graphs_dir("a/b")
+    with assert_raises(contains="Invalid graph name"):
+        _ = store.variants_dir("acme", "")
+    with assert_raises(contains="Invalid variant name"):
+        _ = store.variant_path("acme", "shop", "../../../victim")
+    with assert_raises(contains="Invalid variant name"):
+        _ = store.schema_path("acme", "shop", ".", 1)
+    with assert_raises(contains="Invalid organization name"):
+        _ = store.current_schema_path("/etc", "shop", "prod")
+    with assert_raises(contains="Invalid graph name"):
+        _ = store.telemetry_path("acme", "s/..", "prod")
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

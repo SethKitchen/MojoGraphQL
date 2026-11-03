@@ -246,8 +246,8 @@ def current_schema_sdl(
     Returns:
         The SDL, or none when no snapshot is stored.
     """
-    var path = catalog.store.current_schema_path(org, graph, variant)
     try:
+        var path = catalog.store.current_schema_path(org, graph, variant)
         var revision = atol(String(read_file(path).strip()))
         if revision <= 0:
             return None
