@@ -204,7 +204,7 @@ function qs(extra) {
   return p.toString();
 }
 async function api(path, opt) {
-  const res = await fetch(path, opt);
+  const res = await fetch(path, { headers: auth(), ...opt });
   const text = await res.text();
   let json = null;
   try { json = JSON.parse(text); } catch (e) { json = { raw: text }; }
@@ -238,7 +238,7 @@ function setSelectors() {
   dot.className = "dot" + (v && v.lastPullOk ? " ok" : v && v.lastPullError ? " bad" : "");
 }
 async function loadState() {
-  state.data = await api("/forge/state", { headers: auth() });
+  state.data = await api("/forge/state");
   setSelectors();
 }
 function banner() {
@@ -248,7 +248,7 @@ function banner() {
 }
 function renderOverview() {
   const v = currentVariant();
-  const cards = variants().map(x => `<div class="card"><h2>${esc(x.name)}</h2><div class="kpi">${x.schemaRevision || 0}</div><div class="row"><span>Endpoint</span><span>${esc(x.endpointUrl)}</span></div><div class="row"><span>Last pull</span><span>${x.lastPullOk ? "ok" : (x.lastPullError || "never")}</span></div></div>`).join("");
+  const cards = variants().map(x => `<div class="card"><h2>${esc(x.name)}</h2><div class="kpi">${x.schemaRevision || 0}</div><div class="row"><span>Endpoint</span><span>${esc(x.endpointUrl)}</span></div><div class="row"><span>Last pull</span><span>${x.lastPullOk ? "ok" : esc(x.lastPullError || "never")}</span></div></div>`).join("");
   document.getElementById("content").innerHTML = `
     ${banner()}
     <h1>${esc(state.graph || "No graph")}</h1>
@@ -350,7 +350,7 @@ async function renderAnalyst() {
     <div id="ans"></div>`;
   document.getElementById("ask").onclick = async () => {
     try {
-      const data = await api("/forge/analyze", { method: "POST", headers: auth(), body: JSON.stringify({ org: state.org, graph: state.graph, question: document.getElementById("q").value, from: state.variant }) });
+      const data = await api("/forge/analyze", { method: "POST", body: JSON.stringify({ org: state.org, graph: state.graph, question: document.getElementById("q").value, from: state.variant }) });
       document.getElementById("ans").innerHTML = `<div class="card"><h2>${esc(data.title)}</h2><p class="lead">${esc(data.summary)}</p>${(data.findings||[]).map(f=>`<div class="finding">${esc(f)}</div>`).join("")}</div>`;
     } catch (e) {
       document.getElementById("ans").innerHTML = `<div class="empty">${esc(e.message)}</div>`;
@@ -375,17 +375,26 @@ function renderConnect() {
       <button class="btn" id="mk-var">Create variant</button>
       <label>Schema SDL<textarea id="c-sdl" rows="8" placeholder="type Query { health: String }"></textarea></label>
       <div><button class="btn ghost" id="up">Upload SDL</button> <button class="btn ghost" id="pull">Pull schema</button></div>
+      <div id="c-msg" class="lead"></div>
       <pre>${v ? "Ingest token\\n" + esc(v.ingestToken) : "Create a variant to get an ingest token."}</pre>
       <p class="lead">Send one event after each operation. Use the ingest token, not the admin token:</p>
       <pre>curl /forge/telemetry -H 'content-type: application/json' \\
   -H 'authorization: Bearer &lt;INGEST_TOKEN&gt;' --data '{"org":"acme","graph":"shop","variant":"prod","name":"Hero","durationMs":12}'</pre>
     </div>`;
-  const post = (path, body) => api(path, { method: "POST", headers: auth(), body: JSON.stringify(body) });
-  document.getElementById("mk-org").onclick = async () => { await post("/forge/orgs", { slug: val("c-org"), name: val("c-org-name") }); await reload(); };
-  document.getElementById("mk-graph").onclick = async () => { await post("/forge/graphs", { org: val("c-org"), ref: val("c-graph"), name: val("c-graph-name") }); await reload(); };
-  document.getElementById("mk-var").onclick = async () => { await post("/forge/variants", { org: val("c-org"), graph: val("c-graph"), name: val("c-var"), endpointUrl: val("c-url") }); await reload(); };
-  document.getElementById("up").onclick = async () => { await post("/forge/schema", { org: state.org, graph: state.graph, name: state.variant, sdl: val("c-sdl") }); await reload(); };
-  document.getElementById("pull").onclick = async () => { await post("/forge/pull", { org: state.org, graph: state.graph, name: state.variant }); await reload(); };
+  // Each action reloads on success, and shows the error of a refusal.
+  const post = (path, body) => async () => {
+    try {
+      await api(path, { method: "POST", body: JSON.stringify(body()) });
+      await reload();
+    } catch (e) {
+      document.getElementById("c-msg").textContent = e.message;
+    }
+  };
+  document.getElementById("mk-org").onclick = post("/forge/orgs", () => ({ slug: val("c-org"), name: val("c-org-name") }));
+  document.getElementById("mk-graph").onclick = post("/forge/graphs", () => ({ org: val("c-org"), ref: val("c-graph"), name: val("c-graph-name") }));
+  document.getElementById("mk-var").onclick = post("/forge/variants", () => ({ org: val("c-org"), graph: val("c-graph"), name: val("c-var"), endpointUrl: val("c-url") }));
+  document.getElementById("up").onclick = post("/forge/schema", () => ({ org: state.org, graph: state.graph, name: state.variant, sdl: val("c-sdl") }));
+  document.getElementById("pull").onclick = post("/forge/pull", () => ({ org: state.org, graph: state.graph, name: state.variant }));
 }
 function val(id) { return document.getElementById(id).value.trim(); }
 async function render() {

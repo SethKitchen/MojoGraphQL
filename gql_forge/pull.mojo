@@ -180,7 +180,8 @@ def upload_schema(
         sdl: The SDL.
 
     Returns:
-        A JSON object with `revision`, or `error`.
+        A JSON object with `revision` and `changed`, which is false when
+        the SDL is the current snapshot, or `error`.
 
     Raises:
         Error: When a catalog file cannot be read or written.
@@ -193,12 +194,13 @@ def upload_schema(
         writer.end_object()
         return writer^.take_string()
     var variant = catalog.get_variant(org, graph, name)
+    var before = variant.schema_revision
     try:
         var revision = store_schema_sdl(catalog, variant, sdl)
         writer.key("revision")
         writer.int(Int64(revision))
         writer.key("changed")
-        writer.bool(revision != variant.schema_revision or True)
+        writer.bool(revision != before)
         writer.end_object()
         return writer^.take_string()
     except error:
@@ -245,7 +247,8 @@ def pull_variant(
             + variant.endpoint_url
             + "'."
         )
-        record_pull_error(catalog, variant, message)
+        with catalog.store.lock():
+            record_pull_error(catalog, variant, message)
         writer.key("error")
         writer.string(message)
         writer.end_object()
@@ -272,13 +275,19 @@ def pull_variant(
         var sdl = read_introspection_sdl(
             response.status.code, List[UInt8](response.body())
         )
-        var revision = store_schema_sdl(catalog, variant, sdl)
-        writer.key("revision")
-        writer.int(Int64(revision))
+        # Hold the store lock only after the pull, so a slow graph does
+        # not stop the other workers. Read the variant again: it can change
+        # during the pull.
+        with catalog.store.lock():
+            variant = catalog.get_variant(org, graph, name)
+            var revision = store_schema_sdl(catalog, variant, sdl)
+            writer.key("revision")
+            writer.int(Int64(revision))
         writer.end_object()
         return writer^.take_string()
     except error:
-        record_pull_error(catalog, variant, String(error))
+        with catalog.store.lock():
+            record_pull_error(catalog, variant, String(error))
         writer.key("error")
         writer.string(String(error))
         writer.end_object()

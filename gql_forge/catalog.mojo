@@ -609,7 +609,7 @@ struct Catalog(Copyable, Movable):
             String(name),
             String(endpoint_url),
             String(pull_token),
-            make_ingest_token(org, graph, name, at),
+            make_ingest_token(),
             0,
             0,
             String(""),

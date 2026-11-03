@@ -15,7 +15,10 @@
     <directory>/telemetry/<org>/<graph>/<variant>.json
 
 Each file is written to a temporary name and then renamed, so a reader
-never sees part of a file.
+never sees part of a file. Each worker process has its own temporary
+names. A change that reads a file and writes it again holds `Store.lock`,
+an advisory `flock` on the directory, so two workers do not lose each
+other's changes.
 
 Differences from upstream: none; there is no upstream.
 """
@@ -62,7 +65,10 @@ def write_file_atomic(path: String, text: StringSlice) raises:
     Raises:
         Error: When the file cannot be written or renamed.
     """
-    var temporary = path + ".tmp"
+    # The process id keeps the temporary names of two workers apart.
+    var temporary = (
+        path + "." + String(external_call["getpid", Int32]()) + ".tmp"
+    )
     var target = path.copy()
     with open(temporary, "w") as file:
         file.write(text)
@@ -195,6 +201,51 @@ def parse_object(text: StringSlice) raises -> JsonDocument:
     return document^
 
 
+comptime _LOCK_EX: Int32 = 2
+"""The `flock` operation that takes an exclusive lock."""
+
+
+struct StoreLock(Movable):
+    """An exclusive advisory lock on a Forge data directory.
+
+    Use it in a `with` statement. `__enter__` waits for the lock, and
+    `__exit__` gives it back, also when the body raises. The lock is
+    between processes. Do not take it again in the same process while it
+    is held: a second `flock` on a new descriptor waits forever.
+    """
+
+    var directory: String
+    """The directory to lock."""
+    var file: Optional[FileHandle]
+    """The open directory while the lock is held."""
+
+    def __init__(out self, directory: String):
+        """Name the directory to lock. `__enter__` takes the lock.
+
+        Args:
+            directory: The data directory.
+        """
+        self.directory = directory
+        self.file = None
+
+    def __enter__(mut self) raises:
+        """Open the directory and wait for the lock.
+
+        A `flock` that fails leaves the directory open but not locked, as
+        Forge was before it took locks.
+
+        Raises:
+            Error: When the directory cannot be opened.
+        """
+        var file = open(self.directory, "r")
+        _ = external_call["flock", Int32](Int32(file.handle), _LOCK_EX)
+        self.file = file^
+
+    def __exit__(mut self):
+        """Close the directory, which gives the lock back."""
+        self.file = None
+
+
 struct Store(Copyable, Movable):
     """A Forge data directory."""
 
@@ -220,6 +271,14 @@ struct Store(Copyable, Movable):
         makedirs(self.directory + "/variants", exist_ok=True)
         makedirs(self.directory + "/schemas", exist_ok=True)
         makedirs(self.directory + "/telemetry", exist_ok=True)
+
+    def lock(self) -> StoreLock:
+        """Return the lock of the directory, for a `with` statement.
+
+        Returns:
+            The lock. It is not held until `__enter__`.
+        """
+        return StoreLock(self.directory)
 
     def revision_path(self) -> String:
         """Return the file of the catalog revision.

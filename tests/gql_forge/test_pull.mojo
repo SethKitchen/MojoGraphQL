@@ -55,8 +55,11 @@ def test_upload_and_store() raises:
     assert_true(bad.find("error") >= 0)
     var ok = upload_schema(catalog, "acme", "shop", "prod", PRODUCTS_SDL)
     assert_true(ok.find("revision") >= 0)
+    assert_true(ok.find('"changed":true') >= 0)
     var again = upload_schema(catalog, "acme", "shop", "prod", PRODUCTS_SDL)
     assert_true(again.find("revision") >= 0)
+    # The same SDL again keeps the current snapshot.
+    assert_true(again.find('"changed":false') >= 0)
     var prod = catalog.get_variant("acme", "shop", "prod")
     assert_true(prod.last_pull_ok)
     assert_true(prod.schema_revision >= 1)

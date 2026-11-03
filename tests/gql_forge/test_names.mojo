@@ -9,7 +9,6 @@ from gql_forge.names import (
     ascii_lower,
     contains_folded,
     endpoint_error,
-    fnv1a,
     hex16,
     is_http_endpoint,
     is_valid_endpoint_url,
@@ -17,6 +16,7 @@ from gql_forge.names import (
     make_ingest_token,
     slug_error,
     sort_strings,
+    tokens_equal,
 )
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
@@ -70,12 +70,11 @@ def test_hash_and_sort() raises:
     assert_equal(hex16(0), "0000000000000000")
     assert_equal(hex16(0xFFFFFFFFFFFFFFFF), "ffffffffffffffff")
     assert_equal(hex16(0x10), "0000000000000010")
-    var token = make_ingest_token("acme", "shop", "prod", 1)
+    var token = make_ingest_token()
     assert_true(token.startswith("frg_"))
     assert_equal(token.byte_length(), 4 + 32)
-    assert_equal(token, make_ingest_token("acme", "shop", "prod", 1))
-    assert_true(token != make_ingest_token("acme", "shop", "prod", 2))
-    _ = fnv1a("", 0)
+    # Each token is new: two variants never share one.
+    assert_true(token != make_ingest_token())
     var names = List[String]()
     names.append("shop")
     names.append("acme")
@@ -89,6 +88,15 @@ def test_hash_and_sort() raises:
     var empty = List[String]()
     sort_strings(empty)
     assert_equal(len(empty), 0)
+
+
+def test_tokens_equal() raises:
+    assert_true(tokens_equal("frg_abc", "frg_abc"))
+    assert_true(tokens_equal("", ""))
+    assert_false(tokens_equal("frg_abd", "frg_abc"))
+    assert_false(tokens_equal("frg_ab", "frg_abc"))
+    assert_false(tokens_equal("frg_abcd", "frg_abc"))
+    assert_false(tokens_equal("", "frg_abc"))
 
 
 def main() raises:
