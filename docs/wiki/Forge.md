@@ -98,3 +98,4 @@ The Connect view states that Forge does not host the graph. The customer keeps t
 - Forge does not serve GraphQL operations to clients.
 - Forge does not compose subgraphs. ScorchQL does that on the customer side.
 - A schema pull over TLS is not in this package.
+- The telemetry of a variant keeps at most 500 operation names. Later names count as `(other)`. A name, signature or client name keeps at most 256 bytes. Each operation keeps its last 64 durations, the log keeps the last 50 events, and the insights keep the last 60 one-minute windows. An event with an older `at` goes into the window of its own minute.
