@@ -288,6 +288,20 @@ def test_a_projection_failure_is_an_internal_error() raises:
     )
 
 
+def test_no_name_and_an_empty_name_are_cached_apart() raises:
+    # No name picks the first operation; an empty name names none.
+    var router = Router(RouterSchema(simple_requires.sdl()), CannedTransport())
+    var query = String(
+        "query A { products { upc } } query B { products { upc } }"
+    )
+    _ = router.execute(query, None, JsonDocument(), NO_NODE, False, False)
+    var empty = router.execute(
+        query, Optional[String](""), JsonDocument(), NO_NODE, False, False
+    )
+    assert_equal(empty.status, 400)
+    assert_true("OPERATION_RESOLUTION_FAILURE" in _body(empty^.take_body()))
+
+
 def test_pipeline_errors_report_their_kind_and_status() raises:
     var internal = internal_error("plan broke", "QUERY_PLAN_BUILD_FAILED")
     assert_equal(internal.client_message(), "Internal server error")

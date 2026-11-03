@@ -624,8 +624,10 @@ struct Router[T: SubgraphTransport](Movable):
         Raises:
             PipelineError: When the document does not parse or normalize.
         """
+        # A name and no name differ: `""` names no operation, and gets an
+        # error, while no name picks the only operation.
         var key = (
-            (operation_name.value() if operation_name else String())
+            ("=" + operation_name.value() if operation_name else String("-"))
             + "\n"
             + query
         )
@@ -685,7 +687,9 @@ struct Router[T: SubgraphTransport](Movable):
         """Return a slot whose operation left the cache, or a new slot."""
         var index = 0
         while index < len(self.slot_keys):
-            if self.pins[index] == 0 and not self.cache.get(
+            # `contains` does not count as a read, so the scan does not keep
+            # every entry from idling out.
+            if self.pins[index] == 0 and not self.cache.contains(
                 self.slot_keys[index], now
             ):
                 return index

@@ -70,6 +70,15 @@ def test_an_entry_expires_after_it_is_idle() raises:
     assert_false(cache.get("1", 40))
 
 
+def test_contains_does_not_count_as_a_read() raises:
+    var cache = OperationCache(default_cache_limits().with_time_to_idle_ms(30))
+    cache.insert("1", "1", 0)
+    assert_true(cache.contains("1", 20))
+    assert_false(cache.contains("2", 20))
+    # A read at 20 would keep the entry until 50.
+    assert_false(cache.contains("1", 40))
+
+
 def test_a_full_cache_drops_the_oldest_entry() raises:
     var cache = OperationCache(default_cache_limits().with_max_entries(1))
     cache.insert("a", "1", 0)
