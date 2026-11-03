@@ -597,11 +597,14 @@ struct DeferredResponse(Movable):
             response.full_body = router.run_prepared(full).take_body()
             first = response.full_body.copy()
         else:
+            # Pin the full document first: without a cache, the primary
+            # document would take its slot, and the later payloads would run
+            # the primary document.
+            router.pin(full.slot)
             var primary = router.prepare_coerced(
                 plan.primary, operation_name, full.variables, False
             )
             first = router.run_prepared(primary).take_body()
-            router.pin(full.slot)
             response.full = full^
         response.first = first^
         response.sites = plan.sites.copy()

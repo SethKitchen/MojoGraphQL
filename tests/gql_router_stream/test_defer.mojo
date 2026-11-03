@@ -384,6 +384,30 @@ def test_query_through_the_router() raises:
     )
 
 
+def test_query_through_the_router_without_a_cache() raises:
+    # With the cache off, the primary document must not take the slot of
+    # the full document, which the later payloads run.
+    var bodies = List[String]()
+    bodies.append(
+        '{"data":{"topProducts":[{"upc":"1","__typename":"Product"}]}}'
+    )
+    bodies.append('{"data":{"topProducts":[{"upc":"1","name":"A"}]}}')
+    var router = _router(bodies^)
+    router.cache.limits.max_entries = 0
+    var response = DeferredResponse.start(
+        router,
+        "{ topProducts { upc ... @defer { name } } }",
+        None,
+        JsonDocument(),
+        NO_NODE,
+        False,
+    )
+    response.write_initial(router.schema.metadata.possible_types)
+    var out = List[UInt8]()
+    assert_true(response.next(router, out) == BodyPoll.READY)
+    assert_true('"data":{"name":"A"}' in _text(out), _text(out))
+
+
 def test_one_response_and_inactive_defer() raises:
     var bodies = List[String]()
     bodies.append('{"data":{"topProducts":[{"upc":"1","name":"A"}]}}')
