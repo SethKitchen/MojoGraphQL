@@ -659,6 +659,7 @@ def test_text_writes_a_parent_type_condition() raises:
             condition,
             False,
             List[Int](),
+            False,
         )
     )
     plan.fields.append(
@@ -671,6 +672,7 @@ def test_text_writes_a_parent_type_condition() raises:
             either,
             False,
             List[Int](),
+            False,
         )
     )
     plan.roots.append(0)

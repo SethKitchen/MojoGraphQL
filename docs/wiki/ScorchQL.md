@@ -99,4 +99,5 @@ The explorer reads `/scorchql/state` every 5 seconds. When the revision changes,
 ## Limits
 
 - The gateway does not send client headers to the subgraphs.
+- The gateway has no identity source, so each request is anonymous. A field with `@authenticated`, `@requiresScopes` or `@policy` is `null`, with an `UNAUTHORIZED_FIELD_OR_TYPE` error. See [Router authorization](Router#authorization).
 - Composition and the router support Apollo Federation 2.
