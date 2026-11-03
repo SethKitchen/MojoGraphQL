@@ -18,7 +18,7 @@ the AST in place, which the Mojo AST does not support. The last tests
 check the branches that the upstream tests do not reach.
 """
 
-from gql_language.parser import parse
+from gql_language.parser import ParseOptions, parse
 from gql_compiler.diagnostics import DiagnosticList
 from gql_compiler.executable import ExecutableDocument
 from gql_compiler.from_ast import SchemaBuilder
@@ -1241,11 +1241,14 @@ def test_deep_selections_stop_the_walks() raises:
     assert_equal(
         _count(errors, "Error: parser recursion limit reached\n"), 1, errors
     )
-    # The gql_language parser has no such limit, so the walks reach theirs.
+    # The gql_language parser stops at 500 too; with a higher max_depth
+    # the document reaches the walks, which stop at their own limit.
     var builder = SchemaBuilder()
     builder.add_ast(parse(types))
     var schema = builder^.build()
-    var built = ExecutableDocument.from_ast(schema, parse(deep))
+    var options = ParseOptions()
+    options.max_depth = 1000
+    var built = ExecutableDocument.from_ast(schema, parse(deep, options))
     errors = String(validate_executable(schema, built[0]))
     assert_equal(_count(errors, "Error: too much recursion\n"), 3, errors)
 
