@@ -154,18 +154,8 @@ def percentile(samples: List[Int], n: Int) -> Int:
         rank = 0
     if rank > 100:
         rank = 100
-    var ordered = List[Int]()
-    for sample in samples:
-        ordered.append(sample)
-    var i = 1
-    while i < len(ordered):
-        var j = i
-        while j > 0 and ordered[j] < ordered[j - 1]:
-            var tmp = ordered[j]
-            ordered[j] = ordered[j - 1]
-            ordered[j - 1] = tmp
-            j -= 1
-        i += 1
+    var ordered = samples.copy()
+    sort(ordered)
     var index = (rank * (count - 1)) // 100
     return ordered[index]
 
