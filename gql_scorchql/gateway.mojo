@@ -60,7 +60,7 @@ from gql_http.body import BodyPoll
 from gql_http.client import Client, ClientConfig
 from gql_http.parser import Request
 from gql_http.server import Handler, ResponseWriter
-from gql_http.socket import EPOLL_CTL_ADD, EPOLLIN, Sys
+from gql_http.socket import EPOLL_CTL_ADD, EPOLL_CTL_DEL, EPOLLIN, Sys
 from gql_http.status import Method, Status
 from gql_http.url import parse_query, query_value
 from gql_json.parser import parse_bytes
@@ -389,6 +389,9 @@ struct Gateway(Handler):
     var streams: List[RouterStreamHandler[HttpTransport]]
     """The stream handler and hub of the current supergraph; empty before
     the first publish."""
+    var retired: List[RouterStreamHandler[HttpTransport]]
+    """The handlers of earlier supergraphs that still serve subscriptions
+    or held responses. `prune` drops each one when it has none."""
     var sdl: String
     """The current supergraph SDL; empty before the first publish."""
     var revision: Int
@@ -424,6 +427,7 @@ struct Gateway(Handler):
         self.config = config^
         self.registry = None
         self.streams = List[RouterStreamHandler[HttpTransport]]()
+        self.retired = List[RouterStreamHandler[HttpTransport]]()
         self.sdl = ""
         self.revision = -1
         self.load_error = ""
@@ -466,7 +470,7 @@ struct Gateway(Handler):
             _ = self.sys.epoll_ctl(
                 self.epoll, EPOLL_CTL_ADD, hub[].fd(), EPOLLIN
             )
-            self.streams.clear()
+            self._retire()
             self.streams.append(
                 RouterStreamHandler(hub, self.config.graphql_path)
             )
@@ -487,11 +491,41 @@ struct Gateway(Handler):
         self.revision = revision
         var sdl = self.registry.value().supergraph()
         if not sdl:
-            self.streams.clear()
+            self._retire()
             self.sdl = ""
             self.load_error = ""
             return
         self._load(sdl.value())
+
+    def _retire(mut self):
+        """Keep the current handler while its streams run, and make room
+        for the next one."""
+        if len(self.streams) > 0:
+            self.retired.append(self.streams.pop())
+        self.prune()
+
+    def prune(mut self):
+        """Drop each retired handler that has no open subscription and no
+        held response, and stop watching its hub."""
+        var index = 0
+        while index < len(self.retired):
+            ref handler = self.retired[index]
+            if handler.hub[].active > 0 or handler.streams() > 0:
+                index += 1
+                continue
+            _ = self.sys.epoll_ctl(
+                self.epoll, EPOLL_CTL_DEL, handler.hub[].fd(), 0
+            )
+            _ = self.retired.pop(index)
+
+    def pump(mut self):
+        """Read the subgraph sockets of every hub, the current one and the
+        retired ones, and wake their subscriptions."""
+        if len(self.streams) > 0:
+            self.streams[0].hub[].pump()
+        for index in range(len(self.retired)):
+            self.retired[index].hub[].pump()
+        self.prune()
 
     def maybe_reload(mut self):
         """Reload when `reload_interval_ms` has passed since the last read."""
@@ -882,6 +916,11 @@ struct Gateway(Handler):
         Raises:
             Error: When the response of a deferred operation is not JSON.
         """
+        # A response held before a reload stays with its supergraph.
+        for index in range(len(self.retired)):
+            ref held = self.retired[index].held
+            if id < len(held) and held[id]:
+                return self.retired[index].poll_body(id, out)
         if len(self.streams) == 0:
             return BodyPoll.DONE
         return self.streams[0].poll_body(id, out)
@@ -892,6 +931,8 @@ struct Gateway(Handler):
         Args:
             id: The connection.
         """
+        for index in range(len(self.retired)):
+            self.retired[index].body_closed(id)
         if len(self.streams) > 0:
             self.streams[0].body_closed(id)
 
@@ -1087,8 +1128,8 @@ struct GatewayWsHandler(WsHandler):
         self.transport.on_close(sockets, id, code, reason)
 
     def on_tick(mut self, mut sockets: Sockets) raises:
-        """Read the subgraph sockets of the active hub, wake its
-        subscriptions, and send their results.
+        """Read the subgraph sockets of each hub, wake their subscriptions,
+        and send their results.
 
         Args:
             sockets: The open connections.
@@ -1096,8 +1137,7 @@ struct GatewayWsHandler(WsHandler):
         Raises:
             Error: The errors of the protocol server.
         """
-        if len(self.gateway[].streams) > 0:
-            self.gateway[].streams[0].hub[].pump()
+        self.gateway[].pump()
         self.transport.on_tick(sockets)
 
     def fd(self) -> Int:

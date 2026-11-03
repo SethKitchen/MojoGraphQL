@@ -57,6 +57,8 @@ When `GatewayConfig.publish_token` is set, the last three requests need `Authori
 
 Before each request, at most once every 250 milliseconds, each worker reads the registry revision. When it has changed, the worker builds a new stream hub and router. So a publish reaches every worker without a restart. When the new supergraph cannot be served, the worker keeps the old router and reports the error in `loadError`.
 
+A subscription or a held SSE or multipart response that started before the change keeps its old hub and router until it ends. Each tick reads the subgraph sockets of every hub. The worker drops an old hub when it has no open subscription and no held response.
+
 Before the first publish, a GraphQL request answers `503` with the code `NO_SUPERGRAPH`.
 
 ### Subscriptions and @defer

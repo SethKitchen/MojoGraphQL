@@ -12,6 +12,7 @@ gateway and a fake pair of subgraphs over HTTP, SSE, multipart and
 """
 
 from std.memory import ArcPointer
+from std.time import sleep
 
 from _fixtures import (
     CONFLICT_SDL,
@@ -42,6 +43,7 @@ from gql_scorchql.registry import Registry, write_file_atomic
 from gql_ws.graphql_ws import parse_message
 from gql_ws.server import ServerConfig as WsServerConfig
 from gql_ws.server import Sockets
+from gql_stream.waker import Waker
 from gql_ws.transport_server import OperationKind
 from std.testing import (
     TestSuite,
@@ -735,6 +737,89 @@ def test_websocket_executor_and_handler() raises:
     var out = List[UInt8]()
     assert_true(http_shared.poll_body(99, out) == BodyPoll.DONE)
     http_shared.body_closed(99)
+    shared[].client.close_idle()
+    assert_equal(subgraphs.stop(), 0)
+
+
+def test_streams_survive_a_reload() raises:
+    # A publish loads a new supergraph. The subscriptions and the held
+    # responses of the old one keep running on its hub until they end.
+    var subgraphs = start_fake_subgraphs()
+    var base = "http://127.0.0.1:" + String(subgraphs.port)
+    var shared = ArcPointer(Gateway(_registry_config("reload_streams")))
+    var executor = GatewayWsExecutor(shared)
+    var handler = GatewayWsHandler(shared)
+    var sockets = Sockets(WsServerConfig().ws, 1000)
+    for name in ["products", "reviews"]:
+        _ = (
+            shared[]
+            .registry.value()
+            .publish(
+                name,
+                base + "/" + name,
+                String(PRODUCTS_SDL if name == "products" else REVIEWS_SDL),
+            )
+        )
+    shared[].reload()
+    var subscription = executor.operation(
+        1,
+        parse_message(
+            '{"id":"2","type":"subscribe","payload":{"query":"subscription {'
+            ' reviewAdded { id body } }"}}'
+        ),
+    )
+    assert_true(subscription.kind == OperationKind.STREAM)
+    var held = shared[].answer_stream(
+        Method.POST,
+        "/graphql",
+        "",
+        Optional[String]("application/json"),
+        Optional[String]("text/event-stream"),
+        None,
+        List[UInt8](
+            StaticString(
+                '{"query":"subscription { reviewAdded { id } }"}'
+            ).as_bytes()
+        ),
+    )
+    shared[].streams[0].hold(7, held^)
+    # Another worker publishes a change, and this worker reloads.
+    _ = (
+        shared[]
+        .registry.value()
+        .publish("products", base + "/products", String(PRODUCTS_SDL) + "\n")
+    )
+    shared[].reload()
+    assert_equal(len(shared[].retired), 1)
+    var waker = Waker.noop()
+    var event = String()
+    var body = String()
+    var sys = Sys()
+    var ready = List[UInt8](length=256, fill=0)
+    var busy = 0
+    for _ in range(300):
+        handler.on_tick(sockets)
+        if sys.epoll_wait(shared[].epoll, ready.unsafe_ptr(), 8, 0) > 0:
+            busy += 1
+        if event.byte_length() == 0:
+            var poll = subscription.stream.value().poll_next(waker)
+            if poll.is_ready():
+                event = poll.value().to_json()
+        var out = List[UInt8]()
+        _ = shared[].poll_body(7, out)
+        body += String(unsafe_from_utf8=Span(out))
+        if event.byte_length() > 0 and '"id":"r1"' in body:
+            break
+        sleep(0.01)
+    assert_equal(event, '{"data":{"reviewAdded":{"id":"r1","body":"Hot!"}}}')
+    assert_true('{"data":{"reviewAdded":{"id":"r1"}}}' in body, body)
+    # The old hub is read on each tick, so the loop does not spin on it.
+    assert_true(busy < 10, String(busy))
+    # When both end, the old handler goes.
+    subscription.stream.value().close()
+    shared[].body_closed(7)
+    handler.on_tick(sockets)
+    assert_equal(len(shared[].retired), 0)
     shared[].client.close_idle()
     assert_equal(subgraphs.stop(), 0)
 
