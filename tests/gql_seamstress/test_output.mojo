@@ -183,13 +183,16 @@ def test_output_file() raises:
     var json = failure.render(OutputFormat.JSON, None)
     assert_equal(json.stdout, RoverError.of("boom").json() + "\n")
     assert_equal(json.stderr, "first\n")
+    # A directory under a regular file cannot be made, even by root.
+    var blocker = path + ".file"
+    with open(blocker, "w") as file:
+        file.write("x")
     try:
-        _ = _schema().render(
-            OutputFormat.PLAIN, String("/nonexistent/dir/out.txt")
-        )
+        _ = _schema().render(OutputFormat.PLAIN, blocker + "/dir/out.txt")
         raise Error("wrote into a missing directory")
     except e:
         assert_true(String(e) != "wrote into a missing directory")
+    remove(blocker)
 
 
 def main() raises:
