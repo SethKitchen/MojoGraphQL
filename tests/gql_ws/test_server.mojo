@@ -333,6 +333,38 @@ def test_timeouts() raises:
     assert_equal(server.handler.code, 1006)
     quiet.close()
     peer.close()
+    # A close that the server starts when the handler raises has the
+    # same deadline.
+    var failing = listen(Echo(), Plain(), c)
+    var boom = Peer(failing.port)
+    boom.upgrade(failing)
+    boom.send_ws_text("boom")
+    turn = 0
+    while turn < 300 and failing.open_connections > 0:
+        _ = failing.poll(10)
+        turn += 1
+    assert_equal(failing.open_connections, 0)
+    assert_equal(failing.handler.closed, 1)
+    boom.close()
+
+
+def test_http_is_chosen_from_the_head() raises:
+    # The HTTP server gets a request once its head is there: it answers
+    # `Expect: 100-continue`, and it reads the content itself.
+    var server = listen(Echo(), Plain(), config())
+    var peer = Peer(server.port)
+    peer.send(
+        StaticString(
+            "POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n"
+            "Expect: 100-continue\r\n\r\n"
+        ).as_bytes()
+    )
+    peer.pump(server)
+    assert_true(peer.text().startswith("HTTP/1.1 100 Continue"), peer.text())
+    peer.send(StaticString("hello").as_bytes())
+    peer.pump(server)
+    assert_true(peer.text().endswith("http /x"), peer.text())
+    peer.close()
 
 
 def test_close_all() raises:

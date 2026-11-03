@@ -799,9 +799,12 @@ struct Server[W: WsHandler, H: Handler](Movable):
 
     def _detect(mut self, fd: Int):
         """Choose WebSocket or HTTP/1.1 from the first request."""
+        # The head decides, as the `upgrade` event of Node.js: an HTTP
+        # request goes to the HTTP server before its content comes, so that
+        # server reads the content, answers `Expect` and keeps the deadlines.
         self._probe.reset()
         self._probe.append(self.sockets.conns[fd].detect)
-        var result = self._probe.next()
+        var result = self._probe.next_head()
         if result.state == ParseState.INCOMPLETE:
             return
         if result.state == ParseState.ERROR or not self._wants(
@@ -882,6 +885,13 @@ struct Server[W: WsHandler, H: Handler](Movable):
         refuses. A connection with output waits for `EPOLLOUT` and is not
         read: that is the back pressure of a slow peer."""
         ref ws = self.sockets.conns[fd].ws
+        # A connection that cannot write any more waits for the reply to its
+        # close frame, or for its output to go: either ends after
+        # close_timeout_ms, as the close timer of `ws`.
+        if not ws.can_write() and self.sockets.conns[fd].deadline_ms == Int.MAX:
+            self.sockets.conns[fd].deadline_ms = (
+                self.sockets.now_ms + self.sockets.close_timeout_ms
+            )
         var total = ws.pending()
         if total > 0:
             var sent = self.sys.send(fd, ws.output(), total)

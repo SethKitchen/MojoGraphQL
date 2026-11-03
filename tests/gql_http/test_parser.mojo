@@ -389,6 +389,24 @@ comptime CHUNKED = (
 """A request head with a chunked body after it."""
 
 
+def test_next_head() raises:
+    # The head is enough to read the request line and the fields.
+    var reader = _reader(
+        "POST /ws HTTP/1.1\r\nHost: x\r\nContent-Length: 9\r\n"
+    )
+    assert_equal(_code(reader.next_head()), 1)
+    reader.append(StaticString("\r\nabc").as_bytes())
+    var head = reader.next_head()
+    assert_equal(_code(head), 0)
+    assert_equal(head.size, 49)
+    assert_equal(reader.request.path(), "/ws")
+    assert_equal(reader.request.header("host").value(), "x")
+    # The content is not there yet.
+    assert_equal(_code(reader.next()), 1)
+    var no_host = _reader("GET / HTTP/1.1\r\n\r\n")
+    assert_equal(_code(no_host.next_head()), 400)
+
+
 def test_chunked() raises:
     var reader = _reader(
         CHUNKED + "5\r\nhello\r\n6;ext=1\r\n world\r\n0\r\nX-T: 1\r\n\r\nGET"

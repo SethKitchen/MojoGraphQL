@@ -1329,6 +1329,29 @@ struct RequestReader(Movable):
         self.request._base = _untracked(address)
         return ParseResult.complete(self._size)
 
+    def next_head(mut self) -> ParseResult:
+        """Parse only the head of the next request.
+
+        A server that picks a protocol from the head, such as a WebSocket
+        upgrade, need not wait for the content.
+
+        Returns:
+            COMPLETE with the size of the head, INCOMPLETE, or ERROR with
+            the status code to answer with. After COMPLETE, the method, the
+            target and the fields of `request` can be read; its content
+            cannot.
+        """
+        var address = Int(self.buffer.unsafe_ptr()) + self.start
+        var base = Pointer[UInt8, MutUntrackedOrigin](
+            unsafe_from_address=address
+        )
+        var head = parse_request_head(
+            base, self.end - self.start, self.limits, self.request
+        )
+        if head.state == ParseState.COMPLETE:
+            self.request._base = _untracked(address)
+        return head
+
     def reset(mut self, capacity: Int = 4096):
         """Drop every byte, for a new connection.
 
