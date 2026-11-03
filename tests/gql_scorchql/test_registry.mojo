@@ -10,7 +10,8 @@ publish cases follow the GraphOS documentation of `rover subgraph publish`:
 a publish that composes is accepted, and one that does not is refused.
 """
 
-from std.os import makedirs
+from std.ffi import external_call
+from std.os import listdir, makedirs
 from std.os.path import exists
 
 from _fixtures import CONFLICT_SDL, PRODUCTS_SDL, REVIEWS_SDL, fresh_directory
@@ -253,6 +254,53 @@ def test_remove() raises:
     assert_equal(last.revision, 4)
     assert_false(registry.supergraph())
     assert_equal(len(registry.subgraphs()), 0)
+
+
+def test_refresh_skips_a_removed_or_moved_subgraph() raises:
+    var registry = Registry(fresh_directory("refresh"))
+    _ = registry.publish("products", PRODUCTS_URL, PRODUCTS_SDL)
+    _ = registry.publish("reviews", REVIEWS_URL, REVIEWS_SDL)
+    var same = registry.refresh("products", PRODUCTS_URL, PRODUCTS_SDL)
+    assert_true(same.value().accepted)
+    assert_false(same.value().changed)
+    # Another process moved products while its SDL was fetched.
+    _ = registry.publish("products", "http://moved:4001/", PRODUCTS_SDL)
+    assert_false(registry.refresh("products", PRODUCTS_URL, PRODUCTS_SDL))
+    # Another process removed reviews while its SDL was fetched.
+    _ = registry.remove("reviews")
+    var revision = registry.revision()
+    assert_false(registry.refresh("reviews", REVIEWS_URL, REVIEWS_SDL))
+    assert_equal(registry.revision(), revision)
+    assert_equal(len(registry.subgraphs()), 1)
+    assert_equal(registry.subgraphs()[0].url, "http://moved:4001/")
+
+
+def _try_lock(directory: String) raises -> Bool:
+    """Try to take the lock on a new descriptor, without waiting."""
+    var file = open(directory, "r")
+    # LOCK_EX | LOCK_NB. The close keeps the file open until flock ran.
+    var rc = external_call["flock", Int32](Int32(file.handle), Int32(6))
+    file.close()
+    return rc == 0
+
+
+def test_the_lock_is_between_processes() raises:
+    var registry = Registry(fresh_directory("lock"))
+    registry.open()
+    with registry.lock():
+        assert_false(_try_lock(registry.directory))
+    assert_true(_try_lock(registry.directory))
+    with assert_raises(contains="inside"):
+        with registry.lock():
+            raise Error("inside")
+    assert_true(_try_lock(registry.directory))
+    with assert_raises():
+        with Registry(registry.directory + "/missing").lock():
+            pass
+    # A publish leaves no temporary file.
+    _ = registry.publish("products", PRODUCTS_URL, PRODUCTS_SDL)
+    for name in listdir(registry.directory):
+        assert_false(name.endswith(".tmp"))
 
 
 def test_a_removal_that_does_not_compose_is_refused() raises:

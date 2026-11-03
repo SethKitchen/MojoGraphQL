@@ -189,7 +189,11 @@ def refresh_registry(
         except e:
             out.append(RefreshOutcome(subgraph.name, "failed", String(e)))
             continue
-        var result = registry.publish(subgraph.name, subgraph.url, sdl)
+        # A subgraph that was removed or moved during the fetch is left as
+        # it is, so it counts as unchanged.
+        var result = registry.refresh(subgraph.name, subgraph.url, sdl).or_else(
+            PublishResult(True, False, 0, List[String]())
+        )
         if not result.accepted:
             out.append(
                 RefreshOutcome(

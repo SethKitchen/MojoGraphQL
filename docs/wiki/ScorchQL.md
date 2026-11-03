@@ -11,7 +11,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 | Module | Contents |
 | --- | --- |
-| `gql_scorchql.registry` | `Registry`, `PublishedSubgraph`, `PublishResult`, `compose_published`, `publish_errors`, `is_valid_subgraph_name`, `is_valid_routing_url`, `write_file_atomic`, `read_file` |
+| `gql_scorchql.registry` | `Registry`, `RegistryLock`, `PublishedSubgraph`, `PublishResult`, `compose_published`, `publish_errors`, `is_valid_subgraph_name`, `is_valid_routing_url`, `write_file_atomic`, `read_file` |
 | `gql_scorchql.introspect` | `fetch_subgraph_sdl`, `read_service_sdl`, `SERVICE_QUERY` |
 | `gql_scorchql.gateway` | `Gateway`, `GatewayConfig`, `SharedGateway`, `GatewayWsExecutor`, `GatewayWsHandler`, `serve_gateway`, `refresh_registry`, `RefreshOutcome`, `wants_explorer` |
 | `gql_scorchql.explorer` | `explorer_page`, `EXPLORER_HTML`, `FAVICON_SVG`, `escape_html`, `script_json` |
@@ -33,7 +33,7 @@ A registry is a directory that every worker process shares:
 
 `Registry.remove(name)` composes the other subgraphs. It refuses the removal when they do not compose. A name starts with a letter and has only letters, digits, `_` and `-`. A routing URL starts with `http://`.
 
-Each file is written to a temporary name, then renamed. So a reader never sees part of a file. Two processes that publish at the same time can lose one publish.
+Each file is written to a temporary name, then renamed. So a reader never sees part of a file. Each process uses its own temporary names. A publish, a removal and a refresh hold an advisory `flock` on the registry directory. So two processes that publish at the same time do not lose a publish. A refresh does not bring back a subgraph that was removed while it read the SDL, and it does not write back an old URL.
 
 ## Gateway
 

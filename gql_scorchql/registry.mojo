@@ -22,8 +22,10 @@ Each file is written to a temporary name and then renamed, so a reader
 never sees part of a file. A gateway worker reads `revision` to know when
 the supergraph has changed.
 
-Two processes that publish at the same moment can lose one of the two
-publishes. A gateway publishes one request at a time in each worker.
+Each process writes its own temporary files. `publish`, `remove` and
+`refresh` hold an advisory `flock` on the directory while they read the
+subgraphs and write the new state, so two processes that publish at the
+same moment do not lose a publish.
 
 Differences from upstream: none; there is no upstream. The publish
 behavior follows the public GraphOS documentation of
@@ -155,7 +157,10 @@ def write_file_atomic(path: String, text: StringSlice) raises:
     Raises:
         Error: When the file cannot be written or renamed.
     """
-    var temporary = path + ".tmp"
+    # The process id keeps the temporary names of two workers apart.
+    var temporary = (
+        path + "." + String(external_call["getpid", Int32]()) + ".tmp"
+    )
     var target = path.copy()
     with open(temporary, "w") as file:
         file.write(text)
@@ -274,6 +279,50 @@ def compose_published(
     except e:
         errors.append(String(e))
         return (String(""), errors^)
+
+
+comptime _LOCK_EX: Int32 = 2
+"""The `flock` operation that takes an exclusive lock."""
+
+
+struct RegistryLock(Movable):
+    """An exclusive advisory lock on a registry directory.
+
+    Use it in a `with` statement. `__enter__` waits for the lock, and
+    `__exit__` gives it back, also when the body raises. The lock is
+    between processes. Do not take it again in the same process while it
+    is held: a second `flock` on a new descriptor waits forever.
+    """
+
+    var directory: String
+    """The directory to lock."""
+    var file: Optional[FileHandle]
+    """The open directory while the lock is held."""
+
+    def __init__(out self, directory: String):
+        """Name the directory to lock. `__enter__` takes the lock.
+
+        Args:
+            directory: The registry directory.
+        """
+        self.directory = directory
+        self.file = None
+
+    def __enter__(mut self) raises:
+        """Open the directory and wait for the lock.
+
+        A `flock` that fails leaves the directory open but not locked.
+
+        Raises:
+            Error: When the directory cannot be opened.
+        """
+        var file = open(self.directory, "r")
+        _ = external_call["flock", Int32](Int32(file.handle), _LOCK_EX)
+        self.file = file^
+
+    def __exit__(mut self):
+        """Close the directory, which gives the lock back."""
+        self.file = None
 
 
 struct Registry(Copyable, Movable):
@@ -404,6 +453,55 @@ struct Registry(Copyable, Movable):
         if len(errors) > 0:
             return PublishResult(False, False, self.revision(), errors^)
         self.open()
+        with self.lock():
+            return self._publish(name, url, sdl)
+
+    def lock(self) -> RegistryLock:
+        """Return the lock of the directory, for a `with` statement.
+
+        Returns:
+            The lock. It is not held until `__enter__`.
+        """
+        return RegistryLock(self.directory)
+
+    def refresh(
+        mut self, name: String, url: String, sdl: String
+    ) raises -> Optional[PublishResult]:
+        """Publish new SDL of a subgraph that is still published at `url`.
+
+        A refresh reads the SDL of each subgraph over the network, and
+        another process can remove a subgraph or change its URL meanwhile.
+        This check and the publish hold the lock, so the refresh does not
+        bring back a removed subgraph or an old URL.
+
+        Args:
+            name: A valid subgraph name.
+            url: The routing URL that the caller read the SDL from.
+            sdl: The subgraph SDL.
+
+        Returns:
+            None when the subgraph is gone or has another URL now;
+            otherwise the result of the publish.
+
+        Raises:
+            Error: When a registry file cannot be read or written.
+        """
+        self.open()
+        with self.lock():
+            if not isfile(self.subgraph_path(name)):
+                return None
+            var current = parse_subgraph_json(
+                read_file(self.subgraph_path(name))
+            )
+            if current.url != url:
+                return None
+            return self._publish(name, url, sdl)
+
+    def _publish(
+        mut self, name: String, url: String, sdl: String
+    ) raises -> PublishResult:
+        """Publish a valid name and URL. The caller holds the lock."""
+        var errors = List[String]()
         var subgraphs = self.subgraphs()
         var position = -1
         for index in range(len(subgraphs)):
@@ -442,10 +540,18 @@ struct Registry(Copyable, Movable):
         Raises:
             Error: When a registry file cannot be read or written.
         """
+        if not is_valid_subgraph_name(name):
+            var errors = List[String]()
+            errors.append("No subgraph named '" + name + "' is published.")
+            return PublishResult(False, False, self.revision(), errors^)
+        self.open()
+        with self.lock():
+            return self._remove(name)
+
+    def _remove(mut self, name: String) raises -> PublishResult:
+        """Remove a subgraph with a valid name. The caller holds the lock."""
         var errors = List[String]()
-        if not is_valid_subgraph_name(name) or not isfile(
-            self.subgraph_path(name)
-        ):
+        if not isfile(self.subgraph_path(name)):
             errors.append("No subgraph named '" + name + "' is published.")
             return PublishResult(False, False, self.revision(), errors^)
         var others = List[PublishedSubgraph]()
