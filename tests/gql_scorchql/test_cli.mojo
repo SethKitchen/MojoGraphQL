@@ -346,12 +346,14 @@ def test_admin_request() raises:
         ),
     )
     var remove = admin_request(
-        parse_cli(_args("remove", "--gateway", "http://gw", "--name", "p"))
+        parse_cli(
+            _args("remove", "--gateway", "http://gw//graphql", "--name", "p")
+        )
     )
     assert_equal(remove.url, "http://gw/scorchql/remove")
     assert_equal(remove.body, '{"name":"p"}')
     var refresh = admin_request(
-        parse_cli(_args("refresh", "--gateway", "http://gw/"))
+        parse_cli(_args("refresh", "--gateway", "http://gw/graphql/"))
     )
     assert_equal(refresh.url, "http://gw/scorchql/refresh")
     assert_equal(refresh.body, "{}")
