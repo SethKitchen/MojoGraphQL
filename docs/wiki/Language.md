@@ -55,8 +55,11 @@ var value = parse_value('{a: [1, "x", $v]}')
 | `max_tokens: Int` | `-1`, which is no limit | `maxTokens` |
 | `allow_legacy_fragment_variables: Bool` | `False` | `allowLegacyFragmentVariables` |
 | `experimental_directives_on_directive_definitions: Bool` | `False` | `experimentalDirectivesOnDirectiveDefinitions` |
+| `max_depth: Int` | `500` (`MAX_DEPTH`) | none |
 
 When a document has more tokens than `max_tokens`, `parse` raises the graphql-js error: `Document contains more that N tokens. Parsing aborted.` The spelling of that message is the graphql-js spelling.
+
+`max_depth` limits the nesting of selection sets, list and object values, and list types. A deeper document raises `Document nesting is deeper than N levels.` graphql-js has no such option. The parser calls itself once for each level, and Mojo has no stack overflow that a caller can catch. So a deep document must fail before the stack does. apollo-parser has the same default limit of 500.
 
 ## Document
 

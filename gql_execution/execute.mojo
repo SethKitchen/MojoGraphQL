@@ -34,6 +34,11 @@ the same order, and the same errors with their locations and paths.
 
 **Differences from upstream.**
 
+- An object more than `MAX_EXECUTION_DEPTH` (500) path entries deep is a
+  field error. graphql-js has no limit, and its stack overflow is a
+  `RangeError` that the caller can catch. Mojo has no catchable stack
+  overflow, so a deep operation, such as a chain of fragments, would end
+  the process.
 - Execution is synchronous: there are no promises. `execute` is
   `executeSync`. A subscription operation executes as graphql-js `execute`
   executes it; `gql_execution.subscribe` has `subscribe`, which uses
@@ -545,6 +550,11 @@ struct ExecutionResult(Movable):
             out += '"data":' + stringify(self.data, self.data.root)
         return out + "}"
 
+
+comptime MAX_EXECUTION_DEPTH = 500
+"""The longest path, fields and list items, at which an object completes.
+A deeper object is a field error: each level is a call of the recursive
+executor, and Mojo has no catchable stack overflow."""
 
 comptime TAG_SCHEMA = -1
 """The handle tag of the schema, the source of `__Schema` fields."""
@@ -1485,6 +1495,12 @@ struct _Executor[
         mut self, type: Int, group: Int, parent: Int, field: Int, result: Int
     ) raises GraphQLError -> Int:
         """Return graphql-js `completeObjectValue`."""
+        if len(self.path) > MAX_EXECUTION_DEPTH:
+            raise GraphQLError(
+                "The operation is nested deeper than "
+                + String(MAX_EXECUTION_DEPTH)
+                + " levels."
+            )
         var plan = self._subfields(type, group)
         var has_check = _slot(self.type_checks, type) >= 0
         if not has_check:

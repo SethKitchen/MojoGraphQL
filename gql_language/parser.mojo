@@ -13,6 +13,13 @@ A method adds its node as the last child of `parent`, in the role it is
 given, and returns the node's index. The node is added before its children,
 so a parsed document is in preorder. Its end offset is set when the method
 returns, from the last token read, as graphql-js `loc.end`.
+
+Differences from upstream: `ParseOptions.max_depth`, 500 at first, limits
+the nesting of selection sets, list and object values and list types, as
+the recursion limit of apollo-parser. A deeper document is a syntax error.
+graphql-js has no such limit: there a deep document overflows the stack
+with a `RangeError` that the caller can catch. Mojo has no catchable stack
+overflow, so a deep document would end the process.
 """
 
 from gql_language.ast import (
@@ -34,6 +41,13 @@ from gql_language.source import Source
 from gql_language.token_kind import TokenKind
 
 
+comptime MAX_DEPTH = 500
+"""The default nesting limit: the `DEFAULT_RECURSION_LIMIT` of apollo-parser.
+Each level is a call of the recursive-descent parser, and Mojo has no
+catchable stack overflow, so a deeper document must fail before the stack
+does."""
+
+
 @fieldwise_init
 struct ParseOptions(Copyable, ImplicitlyCopyable, Movable):
     """Options of the parser, as graphql-js `ParseOptions`."""
@@ -44,12 +58,16 @@ struct ParseOptions(Copyable, ImplicitlyCopyable, Movable):
     """Accept variable definitions on fragment definitions."""
     var experimental_directives_on_directive_definitions: Bool
     """Accept directives on directive definitions, and `extend directive`."""
+    var max_depth: Int
+    """The deepest nesting of selection sets, list and object values and
+    list types; `MAX_DEPTH` at first. Deeper text is a syntax error."""
 
     def __init__(out self):
         """Return the graphql-js defaults: no limit and no extensions."""
         self.max_tokens = -1
         self.allow_legacy_fragment_variables = False
         self.experimental_directives_on_directive_definitions = False
+        self.max_depth = MAX_DEPTH
 
 
 struct Parser(Movable):
@@ -63,6 +81,8 @@ struct Parser(Movable):
     """The options."""
     var token_count: Int
     """How many tokens were read, not counting the end of file."""
+    var depth: Int
+    """How deep the current nesting is."""
 
     def __init__(
         out self, var source: Source, options: ParseOptions = ParseOptions()
@@ -78,6 +98,7 @@ struct Parser(Movable):
         self.nodes = List[Node](capacity=capacity)
         self.options = options
         self.token_count = 0
+        self.depth = 0
 
     def finish(deinit self, root: Int) -> Document:
         """Return the parsed nodes as a document.
@@ -135,6 +156,18 @@ struct Parser(Movable):
         var node = self._open(parent, kind, role, token.start)
         self.nodes[node].end = Int32(token.end)
         return node
+
+    def _deeper(mut self, start: Int) raises GraphQLError:
+        """Go one level deeper, and refuse more than `max_depth` levels."""
+        self.depth += 1
+        if self.depth > self.options.max_depth:
+            raise syntax_error(
+                self.lexer.source,
+                start,
+                "Document nesting is deeper than "
+                + String(self.options.max_depth)
+                + " levels.",
+            )
 
     # --- tokens -----------------------------------------------------------
 
@@ -420,6 +453,7 @@ struct Parser(Movable):
         mut self, parent: Int, role: Role
     ) raises GraphQLError -> Int:
         """Parse `{ selection... }` with at least one selection."""
+        self._deeper(self.lexer.token.start)
         var node = self._open(
             parent, Kind.SELECTION_SET, role, self.lexer.token.start
         )
@@ -431,6 +465,7 @@ struct Parser(Movable):
                 _ = self._parse_field(node)
             if self._expect_optional_token(TokenKind.BRACE_R):
                 break
+        self.depth -= 1
         return self._close(node)
 
     def _parse_field(mut self, parent: Int) raises GraphQLError -> Int:
@@ -530,12 +565,15 @@ struct Parser(Movable):
         var token = self.lexer.token
         var kind = token.kind
         if kind == TokenKind.BRACKET_L:
+            self._deeper(token.start)
             var node = self._open(parent, Kind.LIST, role, token.start)
             _ = self._expect_token(TokenKind.BRACKET_L)
             while not self._expect_optional_token(TokenKind.BRACKET_R):
                 _ = self._parse_value_literal(node, Role.LIST_ITEM, is_const)
+            self.depth -= 1
             return self._close(node)
         if kind == TokenKind.BRACE_L:
+            self._deeper(token.start)
             var node = self._open(parent, Kind.OBJECT, role, token.start)
             _ = self._expect_token(TokenKind.BRACE_L)
             while not self._expect_optional_token(TokenKind.BRACE_R):
@@ -546,6 +584,7 @@ struct Parser(Movable):
                 _ = self._expect_token(TokenKind.COLON)
                 _ = self._parse_value_literal(field, Role.VALUE, is_const)
                 _ = self._close(field)
+            self.depth -= 1
             return self._close(node)
         if kind == TokenKind.INT:
             self._advance()
@@ -622,9 +661,11 @@ struct Parser(Movable):
         var start = self.lexer.token.start
         var inner: Int
         if self._expect_optional_token(TokenKind.BRACKET_L):
+            self._deeper(start)
             inner = self._open(parent, Kind.LIST_TYPE, role, start)
             _ = self._parse_type_reference(inner, Role.TYPE)
             _ = self._expect_token(TokenKind.BRACKET_R)
+            self.depth -= 1
             _ = self._close(inner)
         else:
             inner = self._parse_named_type(parent, role)

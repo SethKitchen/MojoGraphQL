@@ -34,6 +34,8 @@ no `TypeInfo` handles them, and they have no children.
   graphql-js does for a schema it built with `assumeValid` or checked
   before.
 - A rule that is in the list more than once runs once.
+- A document whose fragment spreads chain deeper than `MAX_SPREAD_DEPTH`
+  (500) gets one error, and no rule runs: see `spread_depth`.
 - `validate` takes no `TypeInfo`: the walk makes its own.
 - When `SingleFieldSubscriptionsRule` meets an `@skip` or `@include` with
   a missing or invalid `if`, graphql-js throws a `GraphQLError`; here
@@ -45,6 +47,7 @@ from gql_language.error import GraphQLError
 from gql_schema.definition import Schema
 from gql_schema.validate import assert_valid_schema
 from gql_validation.rules import ValidationRule, specified_rules
+from gql_validation.spread_depth import MAX_SPREAD_DEPTH, deepest_spread_chain
 from gql_validation.rules_arguments import (
     known_argument_names,
     known_directive_arguments,
@@ -592,6 +595,16 @@ def validate(
     if not options.assume_valid_schema:
         assert_valid_schema(schema)
     var walk = Walk(schema, options.max_errors)
+    var chain = deepest_spread_chain(document)
+    if chain[0] > MAX_SPREAD_DEPTH:
+        walk.ctx.report_error(
+            document,
+            "Fragment spreads are nested deeper than "
+            + String(MAX_SPREAD_DEPTH)
+            + " levels.",
+            chain[1],
+        )
+        return walk^.take_errors()
     var runner = _Runner(rules)
     walk.find_definitions(document)
     walk.ctx.path.append(document.root)
