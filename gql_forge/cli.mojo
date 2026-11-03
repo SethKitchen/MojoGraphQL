@@ -13,14 +13,17 @@
 the `ForgeConfig` of `serve`.
 
 A flag can also be written as `--flag=value`. `FORGE_TOKEN` is the default
-of `--token`.
+of `--token`. With neither, Forge makes a token and prints it.
+
 
 Differences from upstream: none; there is no upstream.
 """
 
 from std.os import getenv
 
+from gql_forge.names import hex16
 from gql_forge.server import ForgeConfig
+from gql_http.random import random_u64
 from gql_http.socket import IPv4Address
 
 comptime VERSION = "forge 0.1.0"
@@ -41,7 +44,8 @@ Options:
   --port <PORT>          The port [default: 4100]
   --workers <N>          The worker processes [default: 1]
   --title <TEXT>         The name in the site [default: Forge]
-  --token <TOKEN>        Require 'Authorization: Bearer <TOKEN>'
+  --token <TOKEN>        Require 'Authorization: Bearer <TOKEN>' [default:
+                         a new token, printed at the start]
   --advertise-ip <IP>    The IP that customers allowlist
   --pull-timeout <MS>    The schema pull deadline [default: 5000]
   --help                 Show this text
@@ -204,8 +208,20 @@ def parse_host(text: StringSlice) -> Optional[IPv4Address]:
     return IPv4Address.parse(text)
 
 
+def generated_token() -> String:
+    """Make an admin token for a start with no `--token`.
+
+    Returns:
+        `frg_admin_` and 32 hex digits from the operating system.
+    """
+    return "frg_admin_" + hex16(random_u64()) + hex16(random_u64())
+
+
 def forge_config(options: CliOptions) -> ForgeConfig:
     """Make the Forge configuration of parsed options.
+
+    With no `--token` and no `FORGE_TOKEN`, the admin token is a new
+    `generated_token`, which the program prints.
 
     Args:
         options: The options.
@@ -217,7 +233,9 @@ def forge_config(options: CliOptions) -> ForgeConfig:
     config.title = options.title.copy()
     config.data_directory = options.data_directory.copy()
     config.advertise_ip = options.advertise_ip.copy()
-    config.admin_token = None
+    # With no token, Forge makes one: an open catalog on every interface
+    # would let any client change it and make Forge pull any URL.
+    config.admin_token = generated_token()
     if options.token:
         config.admin_token = options.token.value().copy()
     config.pull_timeout_ms = options.pull_timeout_ms

@@ -67,7 +67,7 @@ Forge writes each file to a temporary name and then renames it. Each worker proc
 | `GET /forge/operations` | The recent events of a variant |
 | `POST /forge/analyze` | An analyst answer |
 
-When `ForgeConfig.admin_token` is set, catalog routes need `Authorization: Bearer <token>`. Telemetry accepts the variant ingest token or the admin token.
+When `ForgeConfig.admin_token` is set, catalog routes need `Authorization: Bearer <token>`. The `forge` program always sets one: without `--token`, it makes a random token and prints it at the start. Telemetry accepts the variant ingest token or the admin token.
 
 Each variant gets its ingest token when Forge creates it. The token is `frg_` and 128 random bits from the operating system, so nobody can make it from the names. Forge compares tokens in constant time, with `gql_http.auth`.
 

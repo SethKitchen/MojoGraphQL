@@ -29,7 +29,9 @@ The command writes `dist/forge`.
 2. Read the address in the first line, such as `http://my-vm:4100/`.
 3. Open that address in a browser on another machine.
 
-This command starts only the control plane. It starts no graph. Forge listens on every IPv4 address, on port 4100. It keeps the catalog in `.forge/`. Use `--data` to put it in another directory. The `--token` value protects catalog writes; keep it to register graphs later.
+This command starts only the control plane. It starts no graph. Forge listens on every IPv4 address, on port 4100. It keeps the catalog in `.forge/`. Use `--data` to put it in another directory.
+
+The `--token` value protects the catalog; keep it to register graphs later. Without `--token` and `FORGE_TOKEN`, Forge makes a new token at each start and prints it as `Admin token`.
 
 Forge does not host GraphQL traffic. The `--advertise-ip` value is the address that customers allowlist so Forge can pull schemas.
 

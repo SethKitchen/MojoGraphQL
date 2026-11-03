@@ -48,7 +48,9 @@ def main() raises:
     http.host = host.value()
     http.port = options.port
     http.workers = options.workers
-    var forge = Forge(forge_config(options))
+    var config = forge_config(options)
+    var token = config.admin_token.value().copy()
+    var forge = Forge(config^)
     print("Forge on http://" + options.host + ":" + String(options.port) + "/")
     if options.host == "0.0.0.0":
         print(
@@ -58,8 +60,9 @@ def main() raises:
     print("   Catalog:   " + options.data_directory)
     print("   Forge does not host graphs. Register a URL on the Connect page.")
     if not options.token:
+        print("   Admin token: " + token)
         print(
-            "   warning: catalog writes need no token; set --token or"
-            " FORGE_TOKEN on a shared network."
+            "   Forge made this token because no --token or FORGE_TOKEN is"
+            " set. Enter it on the site."
         )
     serve_forge(forge^, http)
