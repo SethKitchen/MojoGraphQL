@@ -29,7 +29,9 @@ The other modules port other parts of Hive Router:
 - `gql_router.headers` appends `Vary` tokens, as `http_utils/headers.rs`.
 - `gql_router.authorization`, `gql_router.policies`,
   `gql_router.auth_filter` and `gql_router.null_bubble` port
-  `pipeline/authorization/` and `executor/operation_filter.rs`.
+  `pipeline/authorization/` and `executor/operation_filter.rs`. The
+  pipeline does not call them yet: a field with `@authenticated`,
+  `@requiresScopes` or `@policy` goes to every client.
 - `gql_router.graphql_error` is a subgraph GraphQL error, as
   `executor/response/graphql_error.rs`. `handle_subgraph_errors` attaches
   those errors, as `ExecutionContext::handle_errors`.

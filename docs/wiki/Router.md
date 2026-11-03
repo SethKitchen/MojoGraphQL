@@ -160,6 +160,8 @@ The caller passes the current time in milliseconds. When the cache is full, the 
 
 ## Authorization
 
+**The request pipeline does not apply authorization yet.** `Router.execute` and `serve_graphql` take no identity, scopes or policies, and nothing calls the functions of this section. A field with `@authenticated`, `@requiresScopes` or `@policy` goes to every client. Do not rely on these directives to protect data. The functions below are the ported checks, for a pipeline that applies them later.
+
 `authorization_allows` checks `@authenticated`, `@requiresScopes`, and `@policy`. JWT rules apply only when enforcement is on. `@policy` always applies. Groups are an OR of AND lists. An empty group matches. No groups does not match.
 
 An element with no rule is allowed. `collect_required_policies` returns policy names in the order they are first seen. The result is empty when authorization is off or the schema has no `@policy`.
@@ -292,6 +294,7 @@ A flatten fetch makes the text of its path only when the subgraph returns errors
 - One operation cache keeps the parse, normalization and plan results. Upstream keeps three caches.
 - A parallel node merges its responses in plan order. Upstream merges each response when it arrives. So the errors are in plan order.
 - A transport has no tasks. `start` sends a request, and `finish` reads the oldest response.
+- The pipeline does not apply authorization. Upstream runs `apply_authorization_to_operation` on each request. See [Authorization](#authorization).
 - There are no plugins, coprocessors, persisted documents, demand control, CSRF prevention, CORS or request decompression. Subscriptions, SSE, WebSocket and multipart responses are in `gql_router_stream`.
 - Header propagation, error masking and operation name forwarding are not ported.
 - The representation hash folds eight bytes per multiply. Upstream uses XXH3. Equal representations still have equal hashes.
