@@ -39,7 +39,6 @@ Differences from upstream: none; there is no upstream.
 from gql_forge.analyze import analysis_json, analyze
 from gql_forge.catalog import Catalog, CatalogResult
 from gql_forge.compare import compare_json, compare_variants, current_schema_sdl
-from gql_forge.names import tokens_equal
 from gql_forge.page import FAVICON_SVG, forge_page
 from gql_forge.pull import pull_variant, upload_schema
 from gql_forge.schema_view import schema_index_from_sdl
@@ -55,6 +54,8 @@ from gql_forge.telemetry import (
     parse_telemetry_event,
     telemetry_json,
 )
+from gql_http.auth import bearer_matches, tokens_equal
+from gql_http.auth import bearer_token as http_bearer_token
 from gql_http.body import BodyPoll
 from gql_http.parser import Request
 from gql_http.server import Handler, ResponseWriter, ServerConfig, serve
@@ -121,12 +122,7 @@ def bearer_token(header: Optional[String]) -> String:
     Returns:
         The token, or empty.
     """
-    if not header:
-        return String("")
-    var text = header.value()
-    if text.startswith("Bearer "):
-        return String(text[byte=7:])
-    return String("")
+    return http_bearer_token(header).or_else(String(""))
 
 
 def is_authorized(expected: Optional[String], header: Optional[String]) -> Bool:
@@ -141,7 +137,7 @@ def is_authorized(expected: Optional[String], header: Optional[String]) -> Bool:
     """
     if not expected:
         return True
-    return tokens_equal(bearer_token(header), expected.value())
+    return bearer_matches(header, expected.value())
 
 
 def json_error(status: Int, message: StringSlice) -> HttpAnswer:

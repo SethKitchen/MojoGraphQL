@@ -53,7 +53,7 @@ Each file is written to a temporary name, then renamed. So a reader never sees p
 | `POST /scorchql/remove` | Remove `{name}` |
 | `POST /scorchql/refresh` | Read the SDL of each subgraph again, and publish each change |
 
-When `GatewayConfig.publish_token` is set, the last three requests need `Authorization: Bearer <token>`. In static mode, the gateway serves a fixed supergraph, and these three requests answer `409`.
+When `GatewayConfig.publish_token` is set, the last three requests need `Authorization: Bearer <token>`. The gateway compares the token in constant time. In static mode, the gateway serves a fixed supergraph, and these three requests answer `409`.
 
 Before each request, at most once every 250 milliseconds, each worker reads the registry revision. When it has changed, the worker builds a new stream hub and router. So a publish reaches every worker without a restart. When the new supergraph cannot be served, the worker keeps the old router and reports the error in `loadError`.
 

@@ -21,6 +21,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_http.socket` | `Sys`, `IPv4Address`, `Faults`, `SysCall`, and the Linux constants |
 | `gql_http.scan` | The SIMD finders for field ends, targets and bytes |
 | `gql_http.random` | `random_bytes`, `random_u64` |
+| `gql_http.auth` | `bearer_token`, `bearer_matches`, `tokens_equal` |
 
 ```mojo
 from gql_http.parser import Request
@@ -247,6 +248,16 @@ A `Request` has `method`, `version`, `content_length`, `chunked`, `keep_alive` a
 - `random_u64()` returns 64 random bits.
 
 Do not use `std.random` for these values. It has a fixed seed, so each process gets the same sequence of numbers. `gql_ws`, `gql_sse`, `gql_mcp` and `gql_forge` use `gql_http.random`.
+
+## Bearer tokens
+
+`gql_http.auth` reads and compares the tokens of an `Authorization: Bearer <token>` header (RFC 6750).
+
+- `bearer_token(header)` returns the token, or none for another scheme. The scheme is case-insensitive, as RFC 9110 section 11.1 states.
+- `bearer_matches(header, token)` returns True when the header has the `Bearer` scheme and the token.
+- `tokens_equal(given, expected)` compares two tokens in constant time.
+
+Do not compare a token from a client with `==`. `==` stops at the first byte that differs, so its time tells a client how much of a guess is correct. `gql_forge` and `gql_scorchql` use `gql_http.auth`.
 
 ## System calls
 

@@ -55,6 +55,7 @@ Differences from upstream: none; there is no upstream.
 from std.memory import ArcPointer
 from std.time import perf_counter_ns
 
+from gql_http.auth import bearer_matches
 from gql_http.body import BodyPoll
 from gql_http.client import Client, ClientConfig
 from gql_http.parser import Request
@@ -570,11 +571,7 @@ struct Gateway(Handler):
         """Return True when no token is set, or the request names it."""
         if not self.config.publish_token:
             return True
-        if not authorization:
-            return False
-        return authorization.value() == (
-            "Bearer " + self.config.publish_token.value()
-        )
+        return bearer_matches(authorization, self.config.publish_token.value())
 
     def _plan(mut self, var body: List[UInt8]) -> HttpAnswer:
         """Answer `POST /scorchql/plan`."""

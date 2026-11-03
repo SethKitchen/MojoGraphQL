@@ -16,7 +16,6 @@ from gql_forge.names import (
     make_ingest_token,
     slug_error,
     sort_strings,
-    tokens_equal,
 )
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
 
@@ -88,15 +87,6 @@ def test_hash_and_sort() raises:
     var empty = List[String]()
     sort_strings(empty)
     assert_equal(len(empty), 0)
-
-
-def test_tokens_equal() raises:
-    assert_true(tokens_equal("frg_abc", "frg_abc"))
-    assert_true(tokens_equal("", ""))
-    assert_false(tokens_equal("frg_abd", "frg_abc"))
-    assert_false(tokens_equal("frg_ab", "frg_abc"))
-    assert_false(tokens_equal("frg_abcd", "frg_abc"))
-    assert_false(tokens_equal("", "frg_abc"))
 
 
 def main() raises:

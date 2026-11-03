@@ -172,27 +172,6 @@ def make_ingest_token() -> String:
     return "frg_" + hex16(random_u64()) + hex16(random_u64())
 
 
-def tokens_equal(given: StringSlice, expected: StringSlice) -> Bool:
-    """Compare a token with the expected token in constant time.
-
-    The time depends on the lengths only, not on the first byte that
-    differs, so a client cannot find the token one byte at a time.
-
-    Args:
-        given: The token that the client sent.
-        expected: The token that Forge issued.
-
-    Returns:
-        Whether the two tokens have the same bytes.
-    """
-    var left = given.as_bytes()
-    var right = expected.as_bytes()
-    var diff = len(left) ^ len(right)
-    for index in range(min(len(left), len(right))):
-        diff |= Int(left[index] ^ right[index])
-    return diff == 0
-
-
 def sort_strings(mut names: List[String]):
     """Sort strings in place, by unsigned byte order.
 

@@ -13,7 +13,7 @@ The product value is telemetry, analytics, comparison of graphs between environm
 
 | Module | Contents |
 | --- | --- |
-| `gql_forge.names` | `is_valid_slug`, `is_valid_endpoint_url`, `is_http_endpoint`, `make_ingest_token`, `tokens_equal` |
+| `gql_forge.names` | `is_valid_slug`, `is_valid_endpoint_url`, `is_http_endpoint`, `make_ingest_token` |
 | `gql_forge.store` | `Store`, `StoreLock`, file helpers, JSON object readers |
 | `gql_forge.catalog` | `Catalog`, `Organization`, `Graph`, `Variant` |
 | `gql_forge.schema_view` | `schema_index_json`, `type_ref_text`, `write_user_types` |
@@ -69,7 +69,7 @@ Forge writes each file to a temporary name and then renames it. Each worker proc
 
 When `ForgeConfig.admin_token` is set, catalog routes need `Authorization: Bearer <token>`. Telemetry accepts the variant ingest token or the admin token.
 
-Each variant gets its ingest token when Forge creates it. The token is `frg_` and 128 random bits from the operating system, so nobody can make it from the names. Forge compares tokens in constant time.
+Each variant gets its ingest token when Forge creates it. The token is `frg_` and 128 random bits from the operating system, so nobody can make it from the names. Forge compares tokens in constant time, with `gql_http.auth`.
 
 A live pull uses `gql_http`. It can reach `http://` only. Upload SDL for `https://` endpoints.
 
