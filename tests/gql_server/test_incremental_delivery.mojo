@@ -20,10 +20,13 @@ cases show, and a real execution gets the upstream 406 error.
 """
 
 from std.testing import TestSuite, assert_equal, assert_false, assert_true
+from gql_execution.execute import ResolveInfo, Resolvers
+from gql_execution.value import Values
 from gql_http.body import BodyPoll
 from gql_server.http_types import HTTPGraphQLResponse
 from gql_server.incremental import TestingIncrementalResults
 from gql_server.plugin import NoPlugin
+from gql_server.run_http_query import initial_has_next
 from gql_server.server import ApolloServer, ApolloServerOptions
 from gql_stream.poll import Event
 from gql_stream.stream import AnyStream, ListStream
@@ -38,6 +41,7 @@ from _incremental import (
     body_of,
     incremental_resolvers,
     read_chunks,
+    test_string,
 )
 
 
@@ -222,6 +226,46 @@ def test_mocked_payloads_that_end_without_has_next_false() raises:
     # Upstream writes the delimiter from `hasNext`, so no close delimiter.
     assert_equal(len(parts), 1)
     assert_equal(parts[0], PART + '{"hasNext":true}\r\n---\r\n')
+
+
+def _false(
+    mut values: Values, source: Int, args: Int, info: ResolveInfo
+) raises -> Int:
+    return values.add_bool(False)
+
+
+def test_has_next_comes_from_the_result() raises:
+    # An alias `hasNext` in `data` does not end the stream: the first part
+    # ends with `---`, as upstream reads `initialResult.hasNext`.
+    var resolvers = Resolvers()
+    resolvers.field("Query", "flag", _false)
+    resolvers.field("Query", "testString", test_string)
+    var server = ApolloServer.from_type_defs(
+        (
+            "directive @defer(if: Boolean! = true, label: String) on"
+            " FRAGMENT_SPREAD | INLINE_FRAGMENT type Query { flag: Boolean"
+            " testString: String }"
+        ),
+        resolvers^,
+        _options(),
+        NoPlugin(),
+    )
+    server.start()
+    var response = _post(
+        server, ALPHA_9_ACCEPT, "{ hasNext: flag ... @defer { testString } }"
+    )
+    var body = body_of(server, response)
+    assert_true('{"data":{"hasNext":false}' in body, body)
+    assert_true(body.find("\r\n-----\r\n") == body.byte_length() - 9, body)
+    assert_true("it works" in body, body)
+
+
+def test_initial_has_next() raises:
+    assert_true(initial_has_next('{"hasNext":true}'))
+    assert_false(initial_has_next('{"hasNext":false}'))
+    assert_false(initial_has_next('{"data":{"hasNext":true}}'))
+    assert_false(initial_has_next('{"hasNext":1}'))
+    assert_false(initial_has_next("not json"))
 
 
 def main() raises:
