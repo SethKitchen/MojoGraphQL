@@ -35,9 +35,8 @@ Differences from upstream:
   `ws`. tungstenite refuses them with `JunkAfterRequest`.
 """
 
-from std.random import random_ui64
-
 from gql_http.parser import Request, ResponseHead
+from gql_http.random import random_bytes
 from gql_http.scan import equals_ignore_case
 from gql_http.status import Method, Status, Version
 
@@ -94,18 +93,7 @@ def generate_key() -> String:
     Returns:
         The base64 of 16 random bytes.
     """
-    var data = List[UInt8](capacity=16)
-    var high = random_ui64(0, UInt64.MAX)
-    var low = random_ui64(0, UInt64.MAX)
-    var index = 0
-    while index < 8:
-        data.append(UInt8((high >> UInt64(index * 8)) & 0xFF))
-        index += 1
-    index = 0
-    while index < 8:
-        data.append(UInt8((low >> UInt64(index * 8)) & 0xFF))
-        index += 1
-    return base64_encode(data)
+    return base64_encode(random_bytes(16))
 
 
 def has_token(value: StringSlice, token: StringSlice) -> Bool:

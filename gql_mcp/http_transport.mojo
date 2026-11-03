@@ -43,10 +43,10 @@ Differences from upstream:
 """
 
 from std.collections import Dict
-from std.random import random_ui64
 
 from gql_http.error import HttpError
 from gql_http.parser import Request
+from gql_http.random import random_u64
 from gql_http.server import Handler, ResponseWriter, Server, ServerConfig
 from gql_http.server import listen
 from gql_http.status import Method, Status
@@ -83,8 +83,8 @@ def new_session_id() -> String:
     Returns:
         Such as `3d86c4a4-f461-4a62-8dff-89bfb35aea0f`.
     """
-    var high = random_ui64(0, UInt64.MAX)
-    var low = random_ui64(0, UInt64.MAX)
+    var high = random_u64()
+    var low = random_u64()
     high = (high & ~UInt64(0xF000)) | UInt64(0x4000)
     low = (low & ~(UInt64(0xC) << 60)) | (UInt64(0x8) << 60)
     var hex = _hex(high) + _hex(low)

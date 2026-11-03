@@ -20,6 +20,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_http.error` | `HttpError`, `ErrorKind` |
 | `gql_http.socket` | `Sys`, `IPv4Address`, `Faults`, `SysCall`, and the Linux constants |
 | `gql_http.scan` | The SIMD finders for field ends, targets and bytes |
+| `gql_http.random` | `random_bytes`, `random_u64` |
 
 ```mojo
 from gql_http.parser import Request
@@ -238,9 +239,18 @@ A `Request` has `method`, `version`, `content_length`, `chunked`, `keep_alive` a
 | `LIMIT` | A message was larger than a configured limit |
 | `USAGE` | The caller gave a value that the function does not accept |
 
+## Random bytes
+
+`gql_http.random` gives random bytes from the operating system. Use it for each value that must not be predictable: session ids, tokens, stream tokens and WebSocket masking keys.
+
+- `random_bytes(count)` returns `count` bytes from `getentropy`.
+- `random_u64()` returns 64 random bits.
+
+Do not use `std.random` for these values. It has a fixed seed, so each process gets the same sequence of numbers. `gql_ws`, `gql_sse`, `gql_mcp` and `gql_forge` use `gql_http.random`.
+
 ## System calls
 
-`gql_http.socket` is the only module that calls the operating system. Each call goes through `Sys`, and returns its result or the negated error number, such as `-EAGAIN`. A port to macOS replaces only this module.
+`gql_http.socket` is the only module that does I/O through the operating system. Each call goes through `Sys`, and returns its result or the negated error number, such as `-EAGAIN`. A port to macOS replaces only this module.
 
 `Sys.faults` holds a `Faults` plan, which makes one kind of call fail. The plan lets the first `skip` calls of a `SysCall` kind run, and then fails `count` calls with an error number. The tests use it to reach the error paths of the server and the client. `Sys.peek` counts as a `RECV` call.
 

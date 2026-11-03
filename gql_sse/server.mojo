@@ -22,11 +22,11 @@ with an `ERROR` poll ends the connection without `complete`, as an
 iterator that throws does.
 """
 
-from std.random import random_ui64
 from std.time import perf_counter_ns
 
 from gql_http.body import BodyPoll
 from gql_http.parser import Request
+from gql_http.random import random_u64
 from gql_http.server import Handler, ResponseWriter
 from gql_http.status import Method, Status
 from gql_http.url import parse_query, query_value
@@ -184,14 +184,19 @@ struct SseHandler[X: SseExecutor](Handler):
                 return value.value()
         except:
             pass
-        # A random version 4 UUID, as upstream makes.
+        # A random version 4 UUID, as upstream makes. The token authorizes
+        # the event stream, so its bits come from the operating system.
         self._tokens += 1
+        var bits = random_u64()
+        var more = random_u64()
         var out = String()
         var i = 0
         while i < 32:
             if i == 8 or i == 12 or i == 16 or i == 20:
                 out += "-"
-            var digit = Int(random_ui64(0, 15))
+            var digit = Int(bits & 15)
+            bits = (bits >> 4) | ((more & 15) << 60)
+            more >>= 4
             if i == 12:
                 digit = 4
             elif i == 16:
