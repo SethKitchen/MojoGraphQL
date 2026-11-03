@@ -193,9 +193,9 @@ The parser is strict. Where RFC 9112 lets a recipient choose, the parser makes t
 - **Versions:** the parser reads `HTTP/1.0` and `HTTP/1.1`, and reads `HTTP/1.2` to `HTTP/1.9` as 1.1. Another major version gives 505.
 - **Fields:** an obsolete line fold, white space before a colon, and a control byte in a value give 400.
 - **Host:** an HTTP/1.1 request must have exactly one `Host` field, with only the bytes of a host and a port.
-- **Content-Length:** the value is digits only. A second field or a list gives 400.
+- **Content-Length:** the value is digits only. A second field or a list gives 400. Leading zeros do not count toward the 18 digits.
 - **Transfer-Encoding:** `Transfer-Encoding` with `Content-Length` gives 400. The parser reads only `chunked`, and another coding gives 501.
-- **Chunks:** a chunk size has at most 15 hexadecimal digits. The parser checks chunk extensions and trailer fields, and then drops them.
+- **Chunks:** a chunk size has at most 15 hexadecimal digits after its leading zeros. The parser checks chunk extensions and trailer fields, and then drops them. The chunk lines stay in the buffer until the message ends, so they count too: more than `max_body_bytes` plus `max_chunk_line_bytes` of chunk lines gives 413.
 - **Expect:** `Expect: 100-continue` sets `expect_continue`, and the server sends `100 Continue`. Another expectation gives 417.
 
 | `Limits` field | Default | Error |
@@ -206,6 +206,7 @@ The parser is strict. Where RFC 9112 lets a recipient choose, the parser makes t
 | `max_chunk_line_bytes` | 4 KiB | 400 |
 | `require_host` | `True` | 400 |
 
+While a response is held, the server reads no next request. When more than `max_head_bytes` plus `max_body_bytes` waits, it closes the connection. The client applies `max_head_bytes` also to a first line that has no end.
 A `Request` has `method`, `version`, `content_length`, `chunked`, `keep_alive` and `expect_continue`. Its methods are `target()`, `path()`, `query()`, `header(name)`, `find_header(name)`, `header_count()`, `header_name(index)`, `header_value(index)` and `body()`. A header name matches without regard to case.
 
 ## Headers, media types and URLs

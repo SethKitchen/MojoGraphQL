@@ -949,6 +949,10 @@ def _read_head[
     while True:
         if find_byte(data.unsafe_ptr(), scanned, end, LF) == end:
             scanned = end
+            # Without a line end the head parser does not run, so check its
+            # limit here: a server could send one endless line.
+            if end >= limits.max_head_bytes:
+                raise HttpError(ErrorKind.PROTOCOL, "invalid response head", 0)
             if source.read_more(data, end, deadline) == 0:
                 raise HttpError(
                     ErrorKind.CLOSED,

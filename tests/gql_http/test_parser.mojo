@@ -311,6 +311,12 @@ def test_content_length() raises:
     )
     assert_equal(_head(H + "Content-Length: 1234567890123456789\r\n\r\n"), 413)
     assert_equal(_head(H + "Content-Length: 123456789012345678\r\n\r\n"), 413)
+    # Leading zeros do not count, and a value that is not digits is 400.
+    assert_equal(
+        _status(H + "Content-Length: 0000000000000000005\r\n\r\nhello"), 0
+    )
+    assert_equal(_head(H + "Content-Length: 00\r\n\r\n"), 0)
+    assert_equal(_head(H + "Content-Length: 1234567890123456789x\r\n\r\n"), 400)
     assert_equal(_head(H + "Accept-Charset: x\r\n\r\n"), 0)
 
 
@@ -431,6 +437,9 @@ def test_chunk_errors() raises:
     assert_equal(_status(CHUNKED + "5 ;a\r\nhello\r\n0\r\n\r\n"), 0)
     assert_equal(_status(CHUNKED + "fffffffffffffff\r\n"), 413)
     assert_equal(_status(CHUNKED + "1000000000000000\r\n"), 413)
+    assert_equal(
+        _status(CHUNKED + "00000000000000005\r\nhello\r\n0\r\n\r\n"), 0
+    )
     assert_equal(_status(CHUNKED + "5\r\nhelloXY"), 400)
     assert_equal(_status(CHUNKED + "5\r\nhello\rX"), 400)
     assert_equal(_status(CHUNKED + "5\r\nhello\r"), 1)
@@ -447,6 +456,17 @@ def test_chunk_errors() raises:
     var small = Limits()
     small.max_body_bytes = 8
     assert_equal(_status(CHUNKED + "5\r\nhello\r\n4\r\n", small), 413)
+    # The chunk lines count too: long extensions on 1-byte chunks would
+    # fill the buffer while the content stays under the limit.
+    var lines_limit = Limits()
+    lines_limit.max_body_bytes = 64
+    lines_limit.max_chunk_line_bytes = 64
+    var long_chunk = "1;e=" + "a" * 40 + "\r\nZ\r\n"
+    # 48 bytes of lines a chunk: two fit in 64 + 64, and three do not.
+    assert_equal(
+        _status(CHUNKED + long_chunk * 2 + "0\r\n\r\n", lines_limit), 0
+    )
+    assert_equal(_status(CHUNKED + long_chunk * 3, lines_limit), 413)
     var trailer = Limits()
     trailer.max_head_bytes = 80
     assert_equal(_status(CHUNKED + "0\r\nX: " + "a" * 80, trailer), 431)
@@ -573,6 +593,20 @@ def test_response_chunked() raises:
     assert_true(head.chunked)
     assert_false(head.keep_alive)
     assert_equal(head.content_length, -1)
+    # RFC 9112 section 6.1: a Transfer-Encoding in HTTP/1.0 is faulty
+    # framing, so the connection is not used again.
+    assert_equal(
+        _response(
+            (
+                "HTTP/1.0 200 OK\r\nConnection: keep-alive\r\n"
+                "Transfer-Encoding: chunked\r\n\r\n"
+            ),
+            head,
+        ),
+        0,
+    )
+    assert_true(head.chunked)
+    assert_false(head.keep_alive)
     assert_equal(
         _response_code("HTTP/1.1 200 OK\r\nTransfer-Encoding: gzip\r\n\r\n"),
         502,
