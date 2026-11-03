@@ -783,6 +783,21 @@ def test_streams_survive_a_reload() raises:
         ),
     )
     shared[].streams[0].hold(7, held^)
+    # A held @defer response has no subscription.
+    var deferred = shared[].answer_stream(
+        Method.POST,
+        "/graphql",
+        "",
+        Optional[String]("application/json"),
+        Optional[String]("multipart/mixed"),
+        None,
+        List[UInt8](
+            StaticString(
+                '{"query":"{ products { name ... @defer { rating } } }"}'
+            ).as_bytes()
+        ),
+    )
+    shared[].streams[0].hold(8, deferred^)
     # Another worker publishes a change, and this worker reloads.
     _ = (
         shared[]
@@ -815,9 +830,23 @@ def test_streams_survive_a_reload() raises:
     assert_true('{"data":{"reviewAdded":{"id":"r1"}}}' in body, body)
     # The old hub is read on each tick, so the loop does not spin on it.
     assert_true(busy < 10, String(busy))
-    # When both end, the old handler goes.
+    # The old handler stays while it holds a response.
     subscription.stream.value().close()
     shared[].body_closed(7)
+    var none = List[UInt8]()
+    assert_true(shared[].poll_body(7, none) == BodyPoll.DONE)
+    assert_true(shared[].poll_body(99, none) == BodyPoll.DONE)
+    handler.on_tick(sockets)
+    assert_equal(len(shared[].retired), 1)
+    var parts = String()
+    for _ in range(100):
+        var out = List[UInt8]()
+        var state = shared[].poll_body(8, out)
+        parts += String(unsafe_from_utf8=Span(out))
+        if state == BodyPoll.DONE:
+            break
+    assert_true('"rating":5' in parts, parts)
+    # When it holds nothing, the old handler goes.
     handler.on_tick(sockets)
     assert_equal(len(shared[].retired), 0)
     shared[].client.close_idle()

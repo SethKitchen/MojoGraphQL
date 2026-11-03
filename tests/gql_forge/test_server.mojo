@@ -225,6 +225,8 @@ def test_catalog_http() raises:
     assert_equal(analyze_bad.status, 400)
     var method = forge.answer(Method.PUT, "/forge/state", "", None, "")
     assert_equal(method.status, 405)
+    var unknown = forge.answer(Method.GET, "/forge/nope", "", None, "")
+    assert_equal(unknown.status, 405)
     var remove = forge.answer(
         Method.DELETE,
         "/forge/variants",

@@ -56,6 +56,8 @@ def random_u64() -> UInt64:
     """
     var bytes = random_bytes(8)
     var value = UInt64(0)
-    for byte in bytes:
-        value = (value << 8) | UInt64(byte)
+    var index = 0
+    while index < 8:
+        value = (value << 8) | UInt64(bytes[index])
+        index += 1
     return value
