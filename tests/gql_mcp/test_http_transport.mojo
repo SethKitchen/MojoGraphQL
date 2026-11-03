@@ -114,6 +114,23 @@ def test_stateful_round_trip() raises:
     server.close()
 
 
+def test_failed_initialize_keeps_no_session() raises:
+    var server = listen_http(_mcp(), _config())
+    var bad = exchange(
+        server,
+        post('{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'),
+    )
+    assert_equal(_status(bad), "200")
+    assert_true(body_of(bad).find("-32602") >= 0, bad)
+    # The handshake failed, so its session is gone at once, as upstream.
+    var id = header_of(bad, "mcp-session-id")
+    assert_equal(id.byte_length(), 36)
+    var ping = exchange(server, post(_PING, id))
+    assert_equal(_status(ping), "404")
+    assert_equal(len(server.handler.sessions), 0)
+    server.close()
+
+
 def _expect(response: String, status: StringSlice, body: StringSlice) raises:
     assert_equal(_status(response), status, response)
     assert_equal(body_of(response), body)

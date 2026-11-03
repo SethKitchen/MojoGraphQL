@@ -19,10 +19,12 @@ gets 202. A request gets 200 and a `text/event-stream` with its reply.
 In stateful mode (the default) an `initialize` without `Mcp-Session-Id`
 starts a session: the reply has the new id in `mcp-session-id`, and its
 stream is `data: \\nid: 0\\nretry: 3000\\n\\n` (the priming event) and
-`data: <reply>\\n\\n`. Each later request of the session gets the stream
-`data: \\nid: 0/<n>\\nretry: 3000\\n\\n` and `data: <reply>\\nid: 1/<n>\\n\\n`,
-where `<n>` counts the session's requests from 0. Another request without a
-session gets 422, an unknown session 404. `DELETE` ends a session (202);
+`data: <reply>\\n\\n`. An `initialize` that fails keeps no session, so a
+later request with its id gets 404. Each later request of the session gets
+the stream `data: \\nid: 0/<n>\\nretry: 3000\\n\\n` and
+`data: <reply>\\nid: 1/<n>\\n\\n`, where `<n>` counts the session's
+requests from 0. Another request without a session gets 422, an unknown
+session 404. `DELETE` ends a session (202);
 without an id it gets 400. `GET` opens the server's stream of a session.
 Other methods get 405.
 
@@ -264,7 +266,10 @@ struct McpHttpHandler(Handler):
             var created = HttpSession()
             var reply = self.server.handle_message(created.session, message)
             var key = new_session_id()
-            self.sessions[key] = created^
+            # A failed handshake ends its session at once, as the upstream
+            # session ends with its service: a later request gets 404.
+            if created.session.initialized:
+                self.sessions[key] = created^
             response.add_header(SESSION_HEADER, key)
             _stream(
                 response,
