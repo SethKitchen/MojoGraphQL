@@ -350,6 +350,11 @@ struct SseHandler[X: SseExecutor](Handler):
         response.begin_chunked()
         response.write_chunk(StaticString(":\n\n").as_bytes())
         response.hold()
+        if not response.held():
+            # A HEAD response ends at once. Upstream disposes the stream
+            # when its response closes, so free the slot now.
+            self._release(slot)
+            return
         self._streams[slot].conn = fd
         self._streams[slot].last_ms = _now_ms()
         while len(self._by_conn) <= fd:
@@ -427,8 +432,9 @@ struct SseHandler[X: SseExecutor](Handler):
                 self._streams[slot].ops[i].stream.value().close()
             i += 1
         self._streams[slot].ops.clear()
-        # A stream is released only while its connection is open.
-        self._by_conn[self._streams[slot].conn] = -1
+        # A HEAD response releases its stream before it binds a connection.
+        if self._streams[slot].conn >= 0:
+            self._by_conn[self._streams[slot].conn] = -1
         self._streams[slot].conn = -1
         self._streams[slot].live = False
 

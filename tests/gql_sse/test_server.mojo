@@ -269,6 +269,27 @@ def test_distinct_connections() raises:
     assert_equal(server.handler.streams(), 0)
 
 
+def test_head_disposes_the_stream() raises:
+    # A HEAD response has no content, so it ends at once. Upstream disposes
+    # the stream when the response closes, and so does the port.
+    var server = sse_server()
+    _ = exchange(server, _request("PUT", "/", token="t"))
+    var head = exchange(server, _request("HEAD", "/", "text/event-stream", "t"))
+    assert_equal(_status(head), "200")
+    assert_equal(server.handler.streams(), 0)
+    # The token is free again: it is not stuck as an open stream.
+    var put = exchange(server, _request("PUT", "/", token="t"))
+    assert_equal(_status(put), "201")
+    var get = exchange(server, _request("GET", "/", "text/event-stream", "t"))
+    assert_equal(_status(get), "200")
+    # A distinct connection stream ends with its operation.
+    var server2 = sse_server()
+    _ = exchange(
+        server2, _request("HEAD", "/?query=forever", "text/event-stream")
+    )
+    assert_equal(server2.handler.streams(), 0)
+
+
 def test_distinct_client_goes_away() raises:
     var server = sse_server()
     var sys = Sys()
