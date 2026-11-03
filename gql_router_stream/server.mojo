@@ -267,6 +267,11 @@ struct RouterStreamHandler[T: SubgraphTransport](Handler):
             id: The connection.
         """
         if id < len(self.held):
+            # A deferred response that did not finish keeps its slot pinned.
+            if self.held[id] and self.held[id].value().deferred:
+                self.held[id].value().deferred.value().release(
+                    self.hub[].router
+                )
             self.held[id] = None
 
 

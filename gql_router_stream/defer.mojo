@@ -682,6 +682,19 @@ struct DeferredResponse(Movable):
         self.done = len(self.pending) == 0
         self.initial = out^
 
+    def release[T: SubgraphTransport](mut self, mut router: Router[T]):
+        """Unpin the full document of a response that will not finish,
+        such as one whose client went away.
+
+        Args:
+            router: The router that pinned the slot.
+
+        Parameters:
+            T: The transport of the router.
+        """
+        if self.full:
+            router.unpin(self.full.take().slot)
+
     def next[
         T: SubgraphTransport
     ](mut self, mut router: Router[T], mut out: List[UInt8]) raises -> BodyPoll:
