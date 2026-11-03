@@ -22,6 +22,7 @@ with an `ERROR` poll ends the connection without `complete`, as an
 iterator that throws does.
 """
 
+from std.collections import Dict
 from std.time import perf_counter_ns
 
 from gql_http.body import BodyPoll
@@ -103,6 +104,11 @@ struct SseHandler[X: SseExecutor](Handler):
     var ping_ms: Int
     """How often a quiet stream gets a ping; 12000 at first."""
     var _streams: List[_EventStream]
+    var _slots: Dict[String, Int]
+    """The slot of the live stream of each token. Distinct connection
+    streams have no token, and are not here."""
+    var _free: List[Int]
+    """The slots that a released stream left."""
     var _by_conn: List[Int]
     var _waker: Waker
     var _tokens: Int
@@ -119,6 +125,8 @@ struct SseHandler[X: SseExecutor](Handler):
         self.executor = executor^
         self.ping_ms = PING_MS
         self._streams = List[_EventStream]()
+        self._slots = Dict[String, Int]()
+        self._free = List[Int]()
         self._by_conn = List[Int]()
         self._waker = Waker.noop()
         self._tokens = 0
@@ -153,23 +161,19 @@ struct SseHandler[X: SseExecutor](Handler):
 
     def _find(self, token: StringSlice) -> Int:
         """Return the slot of the live stream of a token, or -1."""
-        var i = 0
-        while i < len(self._streams):
-            if self._streams[i].live and self._streams[i].token == token:
-                return i
-            i += 1
-        return -1
+        return self._slots.get(String(token)).or_else(-1)
 
     def _add(mut self, token: String) -> Int:
         """Make a stream in a free slot."""
-        var i = 0
-        while i < len(self._streams):
-            if not self._streams[i].live:
-                self._streams[i] = _EventStream(token)
-                return i
-            i += 1
-        self._streams.append(_EventStream(token))
-        return len(self._streams) - 1
+        var slot = len(self._streams)
+        if len(self._free) > 0:
+            slot = self._free.pop()
+            self._streams[slot] = _EventStream(token)
+        else:
+            self._streams.append(_EventStream(token))
+        if token.byte_length() > 0:
+            self._slots[token] = slot
+        return slot
 
     def _token(mut self, request: Request) -> String:
         """Return the token of the header or of the query, or a new one."""
@@ -437,6 +441,9 @@ struct SseHandler[X: SseExecutor](Handler):
             self._by_conn[self._streams[slot].conn] = -1
         self._streams[slot].conn = -1
         self._streams[slot].live = False
+        if self._streams[slot].token.byte_length() > 0:
+            _ = self._slots.pop(self._streams[slot].token, -1)
+        self._free.append(slot)
 
     def body_closed(mut self, id: Int):
         """Forget the stream of a connection that ended (`dispose`).

@@ -277,6 +277,10 @@ def test_head_disposes_the_stream() raises:
     var head = exchange(server, _request("HEAD", "/", "text/event-stream", "t"))
     assert_equal(_status(head), "200")
     assert_equal(server.handler.streams(), 0)
+    # The slot is free for another token, and the old token is gone.
+    _ = exchange(server, _request("PUT", "/", token="u"))
+    assert_equal(server.handler.operations("u"), 0)
+    assert_equal(server.handler.operations("t"), -1)
     # The token is free again: it is not stuck as an open stream.
     var put = exchange(server, _request("PUT", "/", token="t"))
     assert_equal(_status(put), "201")
