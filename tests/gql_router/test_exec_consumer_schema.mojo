@@ -168,6 +168,21 @@ def test_prune_removes_inaccessible_parts() raises:
     assert_true(PruneInaccessible.has_inaccessible_directive(schema, hidden))
 
 
+def test_prune_drops_references_to_hidden_types() raises:
+    # A union member or an interface with `@inaccessible` goes from the
+    # member lists and the `implements` lists too, so the consumer schema
+    # names no missing type.
+    var schema = parse(
+        "type Query { u: U a: A } type A implements I & J { id: ID }"
+        + " type B @inaccessible { b: Int } union U = A | B"
+        + " interface I @inaccessible { id: ID } interface J { id: ID }"
+    )
+    var text = print_ast(PruneInaccessible.prune(schema))
+    assert_true("union U = A\n" in text, text)
+    assert_true("type A implements J {" in text, text)
+    assert_false("interface I" in text, text)
+
+
 def test_prune_keeps_type_extensions_and_strip_refuses_them() raises:
     var schema = parse("type Query { a: Int }\nextend type Query { b: Int }")
     var pruned = PruneInaccessible.prune(schema)
