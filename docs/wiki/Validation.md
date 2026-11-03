@@ -160,6 +160,7 @@ The module also has `type_from_ast(schema, document, node)`, the port of graphql
 ## Differences from graphql-js
 
 - `validate` checks the schema on each call, unless `assume_valid_schema` is set. graphql-js keeps the result on the schema.
+- When the fragment spreads of a document chain deeper than `MAX_SPREAD_DEPTH` (500), `validate` returns one error, `Fragment spreads are nested deeper than 500 levels.`, and runs no rule. Several rules follow a spread with a call, and Mojo has no stack overflow that a caller can catch. graphql-js has no such limit.
 - A rule that is in the list more than once runs once.
 - `validate` takes no `TypeInfo`, and `TypeInfo` has no `getFieldDefFn`. A rule is a value, so there are no custom rule functions.
 - When `@skip` or `@include` on a subscription field has a missing or invalid `if`, graphql-js throws a `GraphQLError`. `validate` raises an `Error` with the same message, but with no location.

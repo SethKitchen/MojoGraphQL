@@ -26,7 +26,7 @@ parsing, normalization and query plans. This port keeps one cache with the
 three results, keyed by the operation name and the document text.
 `gql_router.validation` gives the differences of the validation step.
 There are no plugins,
-coprocessors, persisted documents, authorization, progressive override
+coprocessors, persisted documents, JWT authentication, progressive override
 labels, demand control, CSRF prevention, or subscriptions. A parse error
 message is the `gql_language` text. A subscription on a schema with no
 subscription root returns `Schema is not configured to execute
@@ -43,6 +43,14 @@ from gql_language.ast import NO_NODE as NO_AST
 from gql_language.ast import Document, Kind, OperationType, Role
 from gql_language.parser import parse
 from gql_router.ast import NONE
+from gql_router.authorization import UserAuth
+from gql_router.authorize import (
+    AuthRules,
+    DeniedElements,
+    anonymous,
+    denied_elements,
+    filter_operation,
+)
 from gql_router.cache import CacheLimits, OperationCache, default_cache_limits
 from gql_router.consumer_schema import ConsumerSchema
 from gql_router.entity_keys import EntityKeys
@@ -244,6 +252,9 @@ struct RouterSchema(Movable):
     """The entity keys of each subgraph."""
     var validation: Schema
     """The consumer schema that operations are validated against."""
+    var auth_rules: AuthRules
+    """The `@authenticated`, `@requiresScopes` and `@policy` rules of the
+    supergraph."""
     var rules: List[ValidationRule]
     """The validation rules, as upstream `validation_plan`."""
     var subgraph_names: List[String]
@@ -262,6 +273,7 @@ struct RouterSchema(Movable):
         """
         self.planner = Planner(sdl)
         var supergraph = parse(sdl)
+        self.auth_rules = AuthRules.from_supergraph(supergraph)
         self.consumer = ConsumerSchema.new_from_supergraph(supergraph)
         self.validation = validation_schema(supergraph)
         self.rules = default_rules_validation_plan()
@@ -297,6 +309,8 @@ struct CachedOperation(Movable):
     var planned: Bool
     """Whether `plan` is built; it is built after the first coercion of
     the variables, as upstream plans after coercion."""
+    var auth_errors: List[GraphQLError]
+    """One error for each field that authorization removed."""
 
     def __init__(
         out self,
@@ -322,6 +336,7 @@ struct CachedOperation(Movable):
         self.projection = projection^
         self.plan = QueryPlan()
         self.planned = False
+        self.auth_errors = List[GraphQLError]()
 
 
 struct RouterResponse(Movable):
@@ -468,6 +483,9 @@ struct Router[T: SubgraphTransport](Movable):
     var pins: List[Int]
     """How many open subscriptions use each slot. A pinned slot is not
     reused, even when its operation leaves the cache."""
+    var enforce_jwt: Bool
+    """Whether `@authenticated` and `@requiresScopes` apply; True at first.
+    `@policy` always applies."""
 
     def __init__(
         out self,
@@ -489,6 +507,7 @@ struct Router[T: SubgraphTransport](Movable):
         self.slot_keys = List[String]()
         self.validated = OperationCache(limits)
         self.pins = List[Int]()
+        self.enforce_jwt = True
 
     def pin(mut self, slot: Int):
         """Keep a slot for an open subscription.
@@ -607,6 +626,7 @@ struct Router[T: SubgraphTransport](Movable):
         query: String,
         operation_name: Optional[String],
         validate: Bool = True,
+        user: UserAuth = anonymous(),
     ) raises PipelineError -> Int:
         """Parse, normalize and partition an operation, or find it in the
         cache, as upstream `parse_operation_with_cache` and
@@ -617,6 +637,7 @@ struct Router[T: SubgraphTransport](Movable):
             operation_name: The operation to run.
             validate: False for a document derived from a valid one, such
                 as the primary part of an operation with `@defer`.
+            user: The identity, scopes and policies of the request.
 
         Returns:
             The slot of the operation.
@@ -624,11 +645,21 @@ struct Router[T: SubgraphTransport](Movable):
         Raises:
             PipelineError: When the document does not parse or normalize.
         """
+        # A name and no name differ: `""` names no operation, and gets an
+        # error, while no name picks the only operation.
+        var denied = DeniedElements()
+        if not self.schema.auth_rules.is_empty():
+            denied = denied_elements(
+                self.schema.auth_rules, user, self.enforce_jwt
+            )
         var key = (
-            (operation_name.value() if operation_name else String())
+            ("=" + operation_name.value() if operation_name else String("-"))
             + "\n"
             + query
         )
+        if not denied.is_empty():
+            # The plan depends on what the request can see.
+            key += "\n" + denied.signature
         var now = _now_ms()
         if self.cache.get(key, now):
             var found = 0
@@ -660,9 +691,21 @@ struct Router[T: SubgraphTransport](Movable):
                 "OPERATION_RESOLUTION_FAILURE",
             )
         var built = ProjectionPlan.from_operation(
-            self.schema.planner.store, operation, self.schema.metadata
+            self.schema.planner.store, operation, self.schema.metadata, denied
         )
-        var parts = partition_operation(self.schema.planner.store, operation)
+        var downstream = operation.copy()
+        var auth_errors = List[GraphQLError]()
+        if not denied.is_empty():
+            var filtered = filter_operation(
+                self.schema.planner.store,
+                self.schema.metadata,
+                operation,
+                built[0],
+                denied,
+            )
+            downstream = filtered[0].copy()
+            auth_errors = filtered[1].copy()
+        var parts = partition_operation(self.schema.planner.store, downstream)
         var cached = CachedOperation(
             parts.downstream_operation.copy(),
             parts.introspection_operation.copy(),
@@ -670,6 +713,7 @@ struct Router[T: SubgraphTransport](Movable):
             built[0],
             built[1].copy(),
         )
+        cached.auth_errors = auth_errors^
         var slot = self._free_slot(now)
         if slot == len(self.slots):
             self.slots.append(cached^)
@@ -685,7 +729,9 @@ struct Router[T: SubgraphTransport](Movable):
         """Return a slot whose operation left the cache, or a new slot."""
         var index = 0
         while index < len(self.slot_keys):
-            if self.pins[index] == 0 and not self.cache.get(
+            # `contains` does not count as a read, so the scan does not keep
+            # every entry from idling out.
+            if self.pins[index] == 0 and not self.cache.contains(
                 self.slot_keys[index], now
             ):
                 return index
@@ -700,6 +746,7 @@ struct Router[T: SubgraphTransport](Movable):
         variables_root: Int,
         is_get: Bool,
         prefer_ok: Bool,
+        user: UserAuth = anonymous(),
     ) -> RouterResponse:
         """Run one GraphQL request, as upstream `execute_pipeline`.
 
@@ -710,13 +757,15 @@ struct Router[T: SubgraphTransport](Movable):
             variables_root: The variables object, or `NO_NODE`.
             is_get: Whether the request is a `GET`.
             prefer_ok: Whether the response type is `application/json`.
+            user: The identity, scopes and policies of the request;
+                anonymous when the caller gives none.
 
         Returns:
             The status and the body.
         """
         try:
             return self._execute(
-                query, operation_name, variables^, variables_root, is_get
+                query, operation_name, variables^, variables_root, is_get, user
             )
         except error:
             return RouterResponse.from_error(error, prefer_ok)
@@ -728,10 +777,17 @@ struct Router[T: SubgraphTransport](Movable):
         var variables: JsonDocument,
         variables_root: Int,
         is_get: Bool,
+        user: UserAuth,
     ) raises PipelineError -> RouterResponse:
         """Run one request; raise its pipeline error."""
         var prepared = self.prepare_request(
-            query, operation_name, variables^, variables_root, is_get, False
+            query,
+            operation_name,
+            variables^,
+            variables_root,
+            is_get,
+            False,
+            user,
         )
         return self.run_prepared(prepared)
 
@@ -743,6 +799,7 @@ struct Router[T: SubgraphTransport](Movable):
         variables_root: Int,
         is_get: Bool,
         subscriptions: Bool,
+        user: UserAuth = anonymous(),
     ) raises PipelineError -> PreparedRequest:
         """Run the steps of a request before its execution: parse,
         validate, normalize, coerce the variables, and plan.
@@ -754,6 +811,7 @@ struct Router[T: SubgraphTransport](Movable):
             variables_root: The variables object, or `NO_NODE`.
             is_get: Whether the request is a `GET`.
             subscriptions: Whether the caller can stream a subscription.
+            user: The identity, scopes and policies of the request.
 
         Returns:
             The prepared request.
@@ -763,7 +821,7 @@ struct Router[T: SubgraphTransport](Movable):
                 for a subscription that the caller cannot stream, and the
                 errors of each step.
         """
-        var slot = self.prepare(query, operation_name)
+        var slot = self.prepare(query, operation_name, True, user)
         var kind = self.slots[slot].downstream.kind
         if kind == OperationKind.SUBSCRIPTION and not subscriptions:
             raise client_error(
@@ -797,6 +855,7 @@ struct Router[T: SubgraphTransport](Movable):
         operation_name: Optional[String],
         variables: CoerceVariablesPayload,
         validate: Bool = True,
+        user: UserAuth = anonymous(),
     ) raises PipelineError -> PreparedRequest:
         """Prepare a second document of a request with the variables that
         `prepare_request` coerced, such as the parts of an operation with
@@ -807,6 +866,7 @@ struct Router[T: SubgraphTransport](Movable):
             operation_name: The operation to run.
             variables: The coerced variables of the first document.
             validate: False for a document derived from a valid one.
+            user: The identity, scopes and policies of the request.
 
         Returns:
             The prepared request.
@@ -815,7 +875,7 @@ struct Router[T: SubgraphTransport](Movable):
             PipelineError: The errors of the parse, the validation, the
                 normalization and the plan.
         """
-        var slot = self.prepare(query, operation_name, validate)
+        var slot = self.prepare(query, operation_name, validate, user)
         var kind = self.slots[slot].downstream.kind
         self._plan(slot)
         return PreparedRequest(slot, kind, variables.copy())
@@ -878,7 +938,7 @@ struct Router[T: SubgraphTransport](Movable):
                 self.slots[slot].root_type_name,
                 arena^,
                 data,
-                List[GraphQLError](),
+                self.slots[slot].auth_errors.copy(),
             )
             var status = output.status_code
             return RouterResponse(status, output^.take_body())

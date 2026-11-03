@@ -80,8 +80,12 @@ def test_parse_cli() raises:
     var config = forge_config(ok)
     assert_equal(config.title, "Lab")
     assert_true(config.admin_token)
+    # With no token, Forge makes a new one.
     var bare = forge_config(parse_cli(List[String]()))
-    assert_false(bare.admin_token)
+    assert_true(bare.admin_token.value().startswith("frg_admin_"))
+    assert_equal(bare.admin_token.value().byte_length(), 10 + 32)
+    var again = forge_config(parse_cli(List[String]()))
+    assert_true(bare.admin_token.value() != again.admin_token.value())
     _ = default_options()
     _ = USAGE
     _ = VERSION

@@ -9,7 +9,6 @@ from gql_forge.names import (
     ascii_lower,
     contains_folded,
     endpoint_error,
-    fnv1a,
     hex16,
     is_http_endpoint,
     is_valid_endpoint_url,
@@ -70,12 +69,11 @@ def test_hash_and_sort() raises:
     assert_equal(hex16(0), "0000000000000000")
     assert_equal(hex16(0xFFFFFFFFFFFFFFFF), "ffffffffffffffff")
     assert_equal(hex16(0x10), "0000000000000010")
-    var token = make_ingest_token("acme", "shop", "prod", 1)
+    var token = make_ingest_token()
     assert_true(token.startswith("frg_"))
     assert_equal(token.byte_length(), 4 + 32)
-    assert_equal(token, make_ingest_token("acme", "shop", "prod", 1))
-    assert_true(token != make_ingest_token("acme", "shop", "prod", 2))
-    _ = fnv1a("", 0)
+    # Each token is new: two variants never share one.
+    assert_true(token != make_ingest_token())
     var names = List[String]()
     names.append("shop")
     names.append("acme")

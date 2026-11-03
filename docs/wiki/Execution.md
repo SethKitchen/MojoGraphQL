@@ -282,6 +282,7 @@ These things differ from graphql-js `buildClientSchema`:
 
 ## Differences from graphql-js
 
+- An object that is more than `MAX_EXECUTION_DEPTH` (500) path entries deep gives a field error. Fragment spreads and inline fragments that nest deeper than `MAX_COLLECT_DEPTH` (500) in one selection set give an error too. graphql-js has no limits, but its stack overflow is a `RangeError` that a caller can catch. Mojo has no such error, so a deep operation would end the process.
 - Execution is synchronous. There are no promises, so `execute` is `executeSync`. A subscription operation executes as graphql-js `execute` executes it.
 - `subscribe` returns at once, not a promise. Its response stream is a pull-based `EventStream`, not an `AsyncGenerator`, and it has no `throw()`.
 - A `subscribe` function cannot be asynchronous. It must return a stream that `Values.add_stream` made.

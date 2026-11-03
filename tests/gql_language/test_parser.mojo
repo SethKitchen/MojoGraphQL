@@ -108,6 +108,50 @@ def test_exposes_the_token_count() raises:
     assert_equal(parse('{ foo(bar: "baz") }').token_count, 8)
 
 
+def _message_of_value(text: String) -> String:
+    try:
+        _ = parse_value(text)
+    except error:
+        return error.message
+    return String()
+
+
+def _message_of_type(text: String) -> String:
+    try:
+        _ = parse_type(text)
+    except error:
+        return error.message
+    return String()
+
+
+def test_limit_the_nesting_depth() raises:
+    # Not upstream: graphql-js has no limit. Each level is a call of the
+    # parser, so a deep document must fail before the stack does.
+    comptime TOO_DEEP = (
+        "Syntax Error: Document nesting is deeper than 500 levels."
+    )
+    # Selection sets: `{ a { a ... { b } } }`.
+    _ = parse("{ a " * 499 + "{ b }" + " }" * 499)
+    expect_error_message(
+        "{ a " * 500 + "{ b }" + " }" * 500, ParseOptions(), TOO_DEEP
+    )
+    assert_equal(_message_of_value("[" * 500 + "]" * 500), "")
+    assert_equal(_message_of_value("[" * 501 + "]" * 501), TOO_DEEP)
+    # A deep value that is not closed fails at the limit, not at its end.
+    assert_equal(_message_of_value("[" * 100_000), TOO_DEEP)
+    assert_equal(_message_of_value("{a:" * 501 + "1" + "}" * 501), TOO_DEEP)
+    assert_equal(_message_of_type("[" * 500 + "Int" + "]" * 500), "")
+    assert_equal(_message_of_type("[" * 501 + "Int" + "]" * 501), TOO_DEEP)
+    var options = ParseOptions()
+    options.max_depth = 2
+    _ = parse("{ a { b } }", options)
+    expect_error_message(
+        "{ a { b { c } } }",
+        options,
+        "Syntax Error: Document nesting is deeper than 2 levels.",
+    )
+
+
 def test_limit_maximum_number_of_tokens() raises:
     var options = ParseOptions()
     options.max_tokens = 3

@@ -32,6 +32,7 @@ scope or mixed outputs without a declaration on the parent, and
 from std.collections import Set
 
 from gql_router.ast import NONE, ItemKind
+from gql_router.authorize import DeniedElements
 from gql_router.federation_spec import OperationKind
 from gql_router.operation import OperationDefinition
 from gql_router.schema_metadata import (
@@ -52,6 +53,8 @@ comptime FIELD_CHILDREN: UInt8 = 4
 """The field bit of a field with child fields."""
 comptime FIELD_CHECKED: UInt8 = 8
 """The field bit of a field with a parent scope or a condition."""
+comptime FIELD_DENIED: UInt8 = 16
+"""The field bit of a field that authorization denies: it is `null`."""
 
 
 @fieldwise_init
@@ -457,6 +460,10 @@ struct ProjField(Copyable, Movable):
     """True for upstream `Value::Children`, False for `Passthrough`."""
     var children: List[Int]
     """The child fields, by index in the arena."""
+    var denied: Bool
+    """Whether authorization denies the field: the projection writes
+    `null` and reads no data, as for a field the subgraphs did not
+    resolve."""
 
     def is_non_null(self) -> Bool:
         """Return True if a `null` of this field bubbles to the parent.
@@ -511,6 +518,8 @@ struct KeyTable(Copyable, Movable):
                 bits |= FIELD_CHILDREN
             if field.parent_scope != NO_SET or field.condition != ALWAYS:
                 bits |= FIELD_CHECKED
+            if field.denied:
+                bits |= FIELD_DENIED
             self.bits.append(bits)
         self.key_starts.append(len(self.keys))
         self.keys.resize(len(self.keys) + 16, 0)
@@ -529,6 +538,9 @@ struct ProjectionPlan(Copyable, Movable):
     var key_table: KeyTable
     """The key table of `fields`, made once by `from_operation`; empty for
     a plan made another way."""
+    var denied: DeniedElements
+    """The elements that the request of the plan cannot see; empty when
+    authorization denies nothing."""
 
     def __init__(out self):
         """Start an empty plan."""
@@ -536,6 +548,7 @@ struct ProjectionPlan(Copyable, Movable):
         self.fields = List[ProjField]()
         self.roots = List[Int]()
         self.key_table = KeyTable()
+        self.denied = DeniedElements()
 
     def is_empty(self) -> Bool:
         """Return True if the plan has no root field.
@@ -547,7 +560,10 @@ struct ProjectionPlan(Copyable, Movable):
 
     @staticmethod
     def from_operation(
-        store: Store, operation: OperationDefinition, schema: SchemaMetadata
+        store: Store,
+        operation: OperationDefinition,
+        schema: SchemaMetadata,
+        denied: DeniedElements = DeniedElements(),
     ) -> Tuple[String, ProjectionPlan]:
         """Build the plan of a normalized operation, as upstream
         `ProjectionPlan::from_operation`.
@@ -556,6 +572,8 @@ struct ProjectionPlan(Copyable, Movable):
             store: The store with the selections.
             operation: The normalized operation.
             schema: The metadata of the consumer schema.
+            denied: The elements that the request cannot see: each such
+                field is `null`.
 
         Returns:
             The root type name and the plan.
@@ -566,6 +584,7 @@ struct ProjectionPlan(Copyable, Movable):
         elif operation.kind == OperationKind.SUBSCRIPTION:
             root = schema.subscription_type_name
         var plan = ProjectionPlan()
+        plan.denied = denied.copy()
         var collected = plan._collect_set(
             store, schema, operation.selection_set, root, ALWAYS
         )
@@ -655,6 +674,7 @@ struct ProjectionPlan(Copyable, Movable):
         ref item = store.items[item_index]
         var name = String(store.name(item.name))
         var is_typename = name == "__typename"
+        var denied = False
         var output_type = String("String")
         var nullability = FieldNullability.type_name()
         if not is_typename:
@@ -665,6 +685,7 @@ struct ProjectionPlan(Copyable, Movable):
                 return
             output_type = info.value().output_type_name
             nullability = info.value().nullability.copy()
+            denied = self.denied.field_denied(parent_type, name, output_type)
         var parent_scope = self.tables.parent_type_set(parent_cond)
         var output_types = NO_SET
         var condition = parent_cond
@@ -734,6 +755,7 @@ struct ProjectionPlan(Copyable, Movable):
                     condition,
                     has_children,
                     children^,
+                    denied,
                 )
             )
         )
@@ -854,6 +876,10 @@ struct ProjectionPlan(Copyable, Movable):
         upstream `Merger::merge`."""
         self.fields[kept].condition = self.tables.or_(
             self.fields[kept].condition, self.fields[next].condition
+        )
+        # A merged field is denied when one of its fields is.
+        self.fields[kept].denied = (
+            self.fields[kept].denied or self.fields[next].denied
         )
         if (
             not self.fields[kept].has_children

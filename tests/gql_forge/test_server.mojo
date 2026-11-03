@@ -225,6 +225,8 @@ def test_catalog_http() raises:
     assert_equal(analyze_bad.status, 400)
     var method = forge.answer(Method.PUT, "/forge/state", "", None, "")
     assert_equal(method.status, 405)
+    var unknown = forge.answer(Method.GET, "/forge/nope", "", None, "")
+    assert_equal(unknown.status, 405)
     var remove = forge.answer(
         Method.DELETE,
         "/forge/variants",
@@ -237,6 +239,23 @@ def test_catalog_http() raises:
         Method.DELETE, "/forge/variants", "", None, ""
     )
     assert_equal(remove_bad.status, 400)
+    # A name with a path in it cannot reach a file outside the catalog.
+    var victim = forge.config.data_directory + "/victim.json"
+    write_file_atomic(victim, "{}")
+    var escape = forge.answer(
+        Method.DELETE,
+        "/forge/variants",
+        "",
+        None,
+        '{"org":"acme","graph":"shop","name":"../../../victim"}',
+    )
+    assert_equal(escape.status, 400)
+    assert_true(escape.body.find("Invalid variant name") >= 0)
+    assert_true(forge.catalog.store.exists_file(victim))
+    var read = forge.answer(
+        Method.GET, "/forge/schema", "org=..&graph=x&variant=y", None, ""
+    )
+    assert_true(read.status >= 400)
 
 
 def _sdl_json(sdl: String) -> String:

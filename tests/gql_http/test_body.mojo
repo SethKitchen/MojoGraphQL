@@ -507,6 +507,33 @@ def test_client_goes_away() raises:
     _drive(server, 5)
 
 
+def test_a_flood_during_a_stream_closes_it() raises:
+    # While a response is held, the server parses no request, so the
+    # limits must hold for what the client sends meanwhile.
+    var c = config()
+    c.limits.max_head_bytes = 1024
+    c.limits.max_body_bytes = 1024
+    var server = listen(Streamer(["a", "*"]), c)
+    var sys = Sys()
+    var fd = connect(sys, server.port)
+    send_text(sys, fd, GET_SSE)
+    _ = receive(server, sys, fd, 5)
+    assert_equal(server.streams(), 1)
+    # A request that fits waits for the end of the stream.
+    send_text(sys, fd, "GET /x HTTP/1.1\r\nHost: x\r\n\r\n")
+    _drive(server, 5)
+    assert_equal(server.streams(), 1)
+    # More than the largest request ends the stream and the connection.
+    send_text(sys, fd, String("a") * 3000)
+    # The client holds the bytes until the server acknowledges the small
+    # request before them (Nagle), and a delayed ACK takes up to 40 ms.
+    _drive_ms(server, 300)
+    assert_equal(server.streams(), 0)
+    assert_equal(server.open_connections, 0)
+    assert_equal(server.handler.closed, 1)
+    sys.close(fd)
+
+
 def test_shutdown_keeps_streams() raises:
     var c = config()
     c.shutdown_timeout_ms = 100

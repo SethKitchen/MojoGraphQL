@@ -13,6 +13,8 @@ conditions allow, under its response key. A `null` in a non-null position
 makes the parent `null`; at the root, `data` becomes `null`. An enum value
 that the schema does not know becomes `null` with the error `Value is not a
 valid enum value`. `__typename` is the type of its parent.
+A field that authorization denied is `null`, and the projector reads no
+value for it.
 
 The walk is one struct, `_Projector`, that holds a pointer to each input.
 The recursive steps are its methods, so each call passes one pointer and
@@ -40,6 +42,7 @@ from gql_router.exec_projection_plan import (
     ALWAYS,
     FIELD_CHECKED,
     FIELD_CHILDREN,
+    FIELD_DENIED,
     FIELD_NON_NULL,
     FIELD_TYPENAME,
     NO_SET,
@@ -96,6 +99,7 @@ comptime _NON_NULL = FIELD_NON_NULL
 comptime _TYPENAME = FIELD_TYPENAME
 comptime _CHILDREN = FIELD_CHILDREN
 comptime _CHECKED = FIELD_CHECKED
+comptime _DENIED = FIELD_DENIED
 
 
 @fieldwise_init
@@ -642,6 +646,13 @@ struct _Projector[
                 if outcome == Outcome.SKIP:
                     continue
             self.write_key(first, index)
+            if bits & _DENIED != 0:
+                # Authorization denied the field: the subgraphs did not
+                # resolve it, and any value that they sent is not shown.
+                self.put("null")
+                if bits & _NON_NULL != 0:
+                    return True
+                continue
             if outcome != Outcome.OK:
                 self.put("null")
                 if outcome == Outcome.INVALID_ENUM_VALUE:

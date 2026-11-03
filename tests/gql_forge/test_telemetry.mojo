@@ -7,11 +7,15 @@
 
 from _fixtures import seeded_catalog
 from gql_forge.telemetry import (
+    MAX_OPERATIONS,
     MAX_RECENT,
+    MAX_TEXT_BYTES,
+    OTHER_OPERATIONS,
     MAX_SAMPLES,
     MAX_WINDOWS,
     TelemetryEvent,
     apply_event,
+    clip_text,
     empty_log,
     ingest_event,
     insights_json,
@@ -136,6 +140,83 @@ def test_ingest() raises:
         apply_event(cap, ev, w * 60)
         w += 1
     assert_true(len(cap.windows) <= MAX_WINDOWS)
+
+
+def test_windows_stay_in_order() raises:
+    # Routers send `at`, so an event can be older than the last window.
+    var log = empty_log()
+    var ok = TelemetryEvent("acme", "shop", "prod", "Q", "", 4, True, 0, "", 0)
+    var bad = ok.copy()
+    bad.ok = False
+    apply_event(log, ok, 120)
+    apply_event(log, ok, 185)
+    # An older minute that has a window, and one that has none.
+    apply_event(log, bad, 130)
+    apply_event(log, ok, 60)
+    # Older than every window.
+    apply_event(log, ok, 5)
+    assert_equal(len(log.windows), 4)
+    assert_equal(log.windows[0].at, 0)
+    assert_equal(log.windows[1].at, 60)
+    assert_equal(log.windows[2].at, 120)
+    assert_equal(log.windows[2].requests, 2)
+    assert_equal(log.windows[2].errors, 1)
+    assert_equal(log.windows[2].total_ms, 8)
+    assert_equal(log.windows[3].at, 180)
+    # When the windows are full, an event older than all is dropped.
+    var full = empty_log()
+    for minute in range(MAX_WINDOWS):
+        apply_event(full, ok, 600 + minute * 60)
+    apply_event(full, ok, 0)
+    assert_equal(len(full.windows), MAX_WINDOWS)
+    assert_equal(full.windows[0].at, 600)
+
+
+def test_clip_text() raises:
+    assert_equal(clip_text("abc", 3), "abc")
+    assert_equal(clip_text("abcd", 3), "abc")
+    # "é" is two bytes: a cut inside it drops the whole character.
+    assert_equal(clip_text("aé", 2), "a")
+    assert_equal(clip_text("aé", 3), "aé")
+    # "🔥" is four bytes.
+    assert_equal(clip_text("🔥🔥", 7), "🔥")
+    assert_equal(clip_text("", 0), "")
+    var long = String("x") * (MAX_TEXT_BYTES + 10)
+    var event = parse_telemetry_event(
+        '{"org":"a","graph":"b","variant":"c","name":"'
+        + long
+        + '","signature":"'
+        + long
+        + '","clientName":"'
+        + long
+        + '"}'
+    )
+    assert_equal(event.name.byte_length(), MAX_TEXT_BYTES)
+    assert_equal(event.signature.byte_length(), MAX_TEXT_BYTES)
+    assert_equal(event.client_name.byte_length(), MAX_TEXT_BYTES)
+
+
+def test_operation_names_are_capped() raises:
+    var log = empty_log()
+    var event = TelemetryEvent("a", "b", "c", "", "", 2, True, 0, "", 0)
+    for index in range(MAX_OPERATIONS):
+        event.name = "Op" + String(index)
+        apply_event(log, event, 60)
+    assert_equal(len(log.operations), MAX_OPERATIONS)
+    # A known name still counts as itself.
+    event.name = "Op7"
+    apply_event(log, event, 60)
+    assert_equal(log.operations[7].count, 2)
+    # New names count as one more entry.
+    event.name = "New1"
+    apply_event(log, event, 60)
+    event.name = "New2"
+    apply_event(log, event, 60)
+    assert_equal(len(log.operations), MAX_OPERATIONS + 1)
+    assert_equal(log.operations[MAX_OPERATIONS].name, OTHER_OPERATIONS)
+    assert_equal(log.operations[MAX_OPERATIONS].count, 2)
+    # The recent log keeps the names that the events sent.
+    assert_equal(log.recent[len(log.recent) - 1].name, "New2")
 
 
 def main() raises:

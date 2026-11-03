@@ -31,8 +31,7 @@ caller connects again. Results come from `next`, not through sinks.
 `keepAlive` pings are the caller's, with `ping`.
 """
 
-from std.random import random_ui64
-
+from gql_http.random import random_u64
 from gql_json.writer import write_string
 
 from gql_ws.client import ClientConfig, MessageSocket, WsClient
@@ -77,8 +76,8 @@ def generate_id() -> String:
     """
     var digits = "0123456789abcdef"
     var out = String()
-    var bits = random_ui64(0, UInt64.MAX)
-    var more = random_ui64(0, UInt64.MAX)
+    var bits = random_u64()
+    var more = random_u64()
     var index = 0
     while index < 32:
         if index == 8 or index == 12 or index == 16 or index == 20:

@@ -23,6 +23,13 @@ JOBS ?= $(shell nproc 2> /dev/null || sysctl -n hw.logicalcpu 2> /dev/null || ec
 TEST_TIMEOUT := 5
 BIN := .cache/bin
 
+# A space and a newline, for $(subst).
+space := $(subst ,, )
+define newline
+
+
+endef
+
 # Build a tool from tools/<name>.mojo when it is missing or older than its
 # source. Used inside $(shell), so it runs while the Makefile is read.
 tool = $(shell [ $(BIN)/$(1) -nt tools/$(1).mojo ] || { mkdir -p $(BIN) && \
@@ -112,17 +119,25 @@ lint:
 	  || { echo "lint failed."; exit 1; }
 	@echo "No warnings: $(words $(LIB_SOURCES)) modules, $(words $(BENCHES)) benchmarks."
 
+# The list of formatted files is longer than one shell argument can be
+# (128 KiB on Linux), so the recipes read it from a file, one path a line.
+FMT_LIST := .cache/formatted.txt
+
 fmt:
-	@$(call run,$(MOJO) format -q $(FORMATTED)); exit $$rc
+	$(file >$(FMT_LIST),$(subst $(space),$(newline),$(strip $(FORMATTED))))
+	@$(call run,xargs $(MOJO) format -q < $(FMT_LIST)); exit $$rc
 
 fmt-check:
+	$(file >$(FMT_LIST),$(subst $(space),$(newline),$(strip $(FORMATTED))))
 	@tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' 0; \
-	for f in $(FORMATTED); do mkdir -p "$$tmp/$$(dirname $$f)"; cp "$$f" "$$tmp/$$f"; done; \
-	(cd "$$tmp" && $(call run,$(CURDIR)/$(MOJO) format -q $(FORMATTED)); exit $$rc) || exit 1; \
+	while read -r f; do mkdir -p "$$tmp/$$(dirname $$f)"; cp "$$f" "$$tmp/$$f"; done \
+	  < $(FMT_LIST); \
+	(cd "$$tmp" && $(call run,xargs $(CURDIR)/$(MOJO) format -q < $(CURDIR)/$(FMT_LIST)); \
+	  exit $$rc) || exit 1; \
 	fail=0; \
-	for f in $(FORMATTED); do \
+	while read -r f; do \
 	  cmp -s "$$f" "$$tmp/$$f" || { echo "needs formatting: $$f"; fail=1; }; \
-	done; \
+	done < $(FMT_LIST); \
 	if [ $$fail -ne 0 ]; then echo "Run 'make fmt'."; exit 1; fi; \
 	echo "All $(words $(FORMATTED)) files formatted."
 

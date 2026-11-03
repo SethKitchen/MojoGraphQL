@@ -12,6 +12,7 @@ Install Mojo `1.2.0` into a virtual environment in the repository, then run `mak
 - Linux on x86-64 or aarch64, macOS on Apple Silicon, or Windows with WSL 2.
 - [uv](https://docs.astral.sh/uv/), to install Mojo.
 - `git` and `make`.
+- OpenSSL 3, for the tests of `gql_tls` and `gql_https2`. The tests of `gql_quic`, `gql_http3` and `gql_ws_http3` need OpenSSL 3.5 or later. With an earlier OpenSSL, those tests fail, and each failure says that it needs OpenSSL 3.5 or newer. The other packages do not need OpenSSL.
 
 The project does not need a GPU, MAX or Python code of its own. `uv` installs Mojo from the Python package index, but the project has no Python.
 

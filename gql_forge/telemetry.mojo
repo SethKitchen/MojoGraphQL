@@ -33,6 +33,13 @@ comptime MAX_WINDOWS = 60
 """How many one-minute windows the roll-up keeps."""
 comptime WINDOW_SECONDS = 60
 """The width of one insights window."""
+comptime MAX_OPERATIONS = 500
+"""How many operation names the roll-up keeps. Later names count as
+`OTHER_OPERATIONS`."""
+comptime OTHER_OPERATIONS = "(other)"
+"""The roll-up of the names after the first `MAX_OPERATIONS`."""
+comptime MAX_TEXT_BYTES = 256
+"""The longest name, signature or client name that an event keeps."""
 
 
 @fieldwise_init
@@ -147,18 +154,8 @@ def percentile(samples: List[Int], n: Int) -> Int:
         rank = 0
     if rank > 100:
         rank = 100
-    var ordered = List[Int]()
-    for sample in samples:
-        ordered.append(sample)
-    var i = 1
-    while i < len(ordered):
-        var j = i
-        while j > 0 and ordered[j] < ordered[j - 1]:
-            var tmp = ordered[j]
-            ordered[j] = ordered[j - 1]
-            ordered[j - 1] = tmp
-            j -= 1
-        i += 1
+    var ordered = samples.copy()
+    sort(ordered)
     var index = (rank * (count - 1)) // 100
     return ordered[index]
 
@@ -182,7 +179,8 @@ def parse_telemetry_event(text: StringSlice) raises -> TelemetryEvent:
 
     Returns:
         The event. `durationMs` below 0 becomes 0. `operationName` is
-        used when `name` is missing.
+        used when `name` is missing. Each name, signature and client name keeps
+        at most `MAX_TEXT_BYTES`.
 
     Raises:
         Error: When the JSON is not an object with string `org`, `graph`
@@ -195,6 +193,7 @@ def parse_telemetry_event(text: StringSlice) raises -> TelemetryEvent:
         name = read_object_string_or(document, root, "operationName", "")
     if name.byte_length() == 0:
         name = String("(anonymous)")
+    name = clip_text(name, MAX_TEXT_BYTES)
     var duration = read_object_int(document, root, "durationMs", 0)
     if duration < 0:
         duration = 0
@@ -210,13 +209,39 @@ def parse_telemetry_event(text: StringSlice) raises -> TelemetryEvent:
         read_object_string(document, root, "graph"),
         read_object_string(document, root, "variant"),
         name^,
-        read_object_string_or(document, root, "signature", ""),
+        clip_text(
+            read_object_string_or(document, root, "signature", ""),
+            MAX_TEXT_BYTES,
+        ),
         duration,
         ok,
         errors,
-        read_object_string_or(document, root, "clientName", ""),
+        clip_text(
+            read_object_string_or(document, root, "clientName", ""),
+            MAX_TEXT_BYTES,
+        ),
         at,
     )
+
+
+def clip_text(text: String, limit: Int) -> String:
+    """Cut text to at most `limit` bytes, at a character boundary.
+
+    Args:
+        text: Valid UTF-8, such as a decoded JSON string.
+        limit: The largest number of bytes.
+
+    Returns:
+        The text, or its longest prefix of whole characters that fits.
+    """
+    var bytes = text.as_bytes()
+    if len(bytes) <= limit:
+        return text
+    # Byte 0 of valid UTF-8 starts a character, so the loop stops.
+    var end = limit
+    while (bytes[end] & 0xC0) == 0x80:
+        end -= 1
+    return String(text[byte=:end])
 
 
 def _push_sample(mut samples: List[Int], value: Int):
@@ -231,21 +256,34 @@ def _push_sample(mut samples: List[Int], value: Int):
         _ = samples.pop(0)
 
 
+def _find_operation(log: TelemetryLog, name: StringSlice) -> Int:
+    """Return the index of the stats of an operation name, or -1."""
+    for index in range(len(log.operations)):
+        if log.operations[index].name == name:
+            return index
+    return -1
+
+
 def apply_event(mut log: TelemetryLog, event: TelemetryEvent, at: Int):
     """Add one event to a roll-up.
+
+    A name after the first `MAX_OPERATIONS` counts as `OTHER_OPERATIONS`,
+    so the roll-up keeps at most `MAX_OPERATIONS + 1` names. The recent
+    log keeps the name that the event sent.
 
     Args:
         log: The roll-up.
         event: The event.
         at: The event time.
     """
-    var found = -1
-    for index in range(len(log.operations)):
-        if log.operations[index].name == event.name:
-            found = index
+    var name = event.name.copy()
+    var found = _find_operation(log, name)
+    if found < 0 and len(log.operations) >= MAX_OPERATIONS:
+        name = String(OTHER_OPERATIONS)
+        found = _find_operation(log, name)
     if found < 0:
         var stats = OperationStats(
-            event.name.copy(),
+            name^,
             event.signature.copy(),
             1,
             0 if event.ok else 1,
@@ -283,17 +321,22 @@ def apply_event(mut log: TelemetryLog, event: TelemetryEvent, at: Int):
     )
     if len(log.recent) > MAX_RECENT:
         _ = log.recent.pop(0)
+    # The client sends `at`, so an event can be older than the last window.
+    # Find its window from the newest end, and keep the windows in order.
     var start = (at // WINDOW_SECONDS) * WINDOW_SECONDS
-    if len(log.windows) == 0 or log.windows[len(log.windows) - 1].at != start:
-        log.windows.append(
-            MinuteWindow(start, 1, 0 if event.ok else 1, event.duration_ms)
-        )
-    else:
-        var last = len(log.windows) - 1
-        log.windows[last].requests += 1
+    var index = len(log.windows) - 1
+    while index >= 0 and log.windows[index].at > start:
+        index -= 1
+    if index >= 0 and log.windows[index].at == start:
+        log.windows[index].requests += 1
         if not event.ok:
-            log.windows[last].errors += 1
-        log.windows[last].total_ms += event.duration_ms
+            log.windows[index].errors += 1
+        log.windows[index].total_ms += event.duration_ms
+    else:
+        log.windows.insert(
+            index + 1,
+            MinuteWindow(start, 1, 0 if event.ok else 1, event.duration_ms),
+        )
     if len(log.windows) > MAX_WINDOWS:
         _ = log.windows.pop(0)
 

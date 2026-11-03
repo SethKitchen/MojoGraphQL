@@ -27,6 +27,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_router.cache` | `OperationCache`, `CacheLimits`, `CacheConfig`, `CacheOverride`, `cache_config_from_json` |
 | `gql_router.headers` | `HeaderMap`, `append_vary` |
 | `gql_router.authorization` | `authorization_allows`, `element_authorized` |
+| `gql_router.authorize` | `AuthRules`, `DeniedElements`, `denied_elements`, `filter_operation`, `anonymous` |
 | `gql_router.policies` | `collect_required_policies` |
 | `gql_router.auth_filter` | `authorize_fields` |
 | `gql_router.null_bubble` | `bubble_null_removals` |
@@ -160,6 +161,19 @@ The caller passes the current time in milliseconds. When the cache is full, the 
 
 ## Authorization
 
+The router applies `@authenticated`, `@requiresScopes` and `@policy` to each request. `gql_router.authorize` reads the rules of the supergraph, and `Router.prepare` removes each field that the request cannot see before it plans. A field is denied when its parent type, the field or its output type is denied. The subgraphs never resolve a denied field, so a denied mutation field does not run.
+
+The response has `null` for each denied field, and one error for it. The error is `Unauthorized field or type`, with the code `UNAUTHORIZED_FIELD_OR_TYPE`. Its `affectedPath` holds the response keys of the field, such as `me.email`. A `null` of a non-null field bubbles to the nearest nullable parent. A selection set under a field that loses every field asks the subgraph for `__typename`. A request with only denied root fields makes no fetch.
+
+Pass the identity of a request as a `UserAuth` to `Router.execute` or `Router.prepare_request`:
+
+```mojo
+var user = UserAuth(True, ["read:email"], ["audit"])
+var response = router.execute(query, None, variables^, root, False, True, user)
+```
+
+A request with no `UserAuth` is anonymous. `Router.enforce_jwt` is True at first, so an anonymous request does not see a field with `@authenticated` or `@requiresScopes`. Set it to False to apply `@policy` alone, as upstream does without JWT authentication. The operation cache keys a plan by the denied elements too, so a request never reuses the plan of a request that sees more.
+
 `authorization_allows` checks `@authenticated`, `@requiresScopes`, and `@policy`. JWT rules apply only when enforcement is on. `@policy` always applies. Groups are an OR of AND lists. An empty group matches. No groups does not match.
 
 An element with no rule is allowed. `collect_required_policies` returns policy names in the order they are first seen. The result is empty when authorization is off or the schema has no `@policy`.
@@ -292,6 +306,7 @@ A flatten fetch makes the text of its path only when the subgraph returns errors
 - One operation cache keeps the parse, normalization and plan results. Upstream keeps three caches.
 - A parallel node merges its responses in plan order. Upstream merges each response when it arrives. So the errors are in plan order.
 - A transport has no tasks. `start` sends a request, and `finish` reads the oldest response.
+- There is no JWT plugin. The caller gives the identity of a request as a `UserAuth`. `@authenticated` and `@requiresScopes` apply by default, also with no JWT configuration, where upstream skips them. Only filter mode is ported, and an authorization error has `affectedPath` but no `path`.
 - There are no plugins, coprocessors, persisted documents, demand control, CSRF prevention, CORS or request decompression. Subscriptions, SSE, WebSocket and multipart responses are in `gql_router_stream`.
 - Header propagation, error masking and operation name forwarding are not ported.
 - The representation hash folds eight bytes per multiply. Upstream uses XXH3. Equal representations still have equal hashes.

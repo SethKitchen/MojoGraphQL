@@ -30,6 +30,8 @@ The other modules port other parts of Hive Router:
 - `gql_router.authorization`, `gql_router.policies`,
   `gql_router.auth_filter` and `gql_router.null_bubble` port
   `pipeline/authorization/` and `executor/operation_filter.rs`.
+  `gql_router.authorize` applies the rules to each request of the
+  pipeline.
 - `gql_router.graphql_error` is a subgraph GraphQL error, as
   `executor/response/graphql_error.rs`. `handle_subgraph_errors` attaches
   those errors, as `ExecutionContext::handle_errors`.

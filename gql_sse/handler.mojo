@@ -20,7 +20,7 @@ from gql_http.status import Method, Status
 from gql_http.url import QueryParam, parse_query, query_value
 from gql_json.parser import parse
 from gql_json.value import NO_NODE, JsonDocument, JsonKind
-from gql_json.writer import write_string
+from gql_json.writer import stringify, write_string
 from gql_stream.stream import AnyStream
 
 
@@ -97,7 +97,9 @@ struct RequestParams(Movable):
         )
 
     def operation_id(self) -> String:
-        """Return `extensions.operationId` as text; empty when it is none.
+        """Return `extensions.operationId` as text, as upstream
+        `String(params.extensions?.operationId ?? '')`; empty when it is
+        none or `null`.
 
         Returns:
             The operation id.
@@ -107,12 +109,33 @@ struct RequestParams(Movable):
         var node = self.document.find(self.extensions, "operationId")
         if node == NO_NODE:
             return String()
-        var kind = self.document.kind(node)
-        if kind == JsonKind.STRING:
-            return self.document.string_value(node)
-        if kind == JsonKind.NUMBER:
-            return String(self.document.text(node))
+        return _js_string(self.document, node)
+
+
+def _js_string(document: JsonDocument, node: Int) -> String:
+    """Return the text of a JSON value as JavaScript `String(value)` gives
+    it: a string as it is, `null` as empty, an object as `[object Object]`,
+    an array as its items joined by commas, and a number or a boolean as
+    `JSON.stringify` writes it."""
+    var kind = document.kind(node)
+    if kind == JsonKind.STRING:
+        return document.string_value(node)
+    if kind == JsonKind.NULL:
         return String()
+    if kind == JsonKind.OBJECT:
+        return String("[object Object]")
+    if kind == JsonKind.ARRAY:
+        var out = String()
+        var item = document.first(node)
+        var first = True
+        while item != NO_NODE:
+            if not first:
+                out += ","
+            first = False
+            out += _js_string(document, item)
+            item = document.next(item)
+        return out^
+    return stringify(document, node)
 
 
 def _object_or_none(

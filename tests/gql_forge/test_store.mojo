@@ -5,7 +5,8 @@
 
 """Tests for `gql_forge.store`."""
 
-from std.os import makedirs
+from std.ffi import external_call
+from std.os import listdir, makedirs
 
 from _fixtures import fresh_directory
 from gql_forge.store import (
@@ -103,6 +104,62 @@ def test_write_file_atomic_round_trip() raises:
     with assert_raises(contains="cannot rename"):
         write_file_atomic(blocked, "x")
     _ = path
+
+
+def _try_lock(directory: String) raises -> Bool:
+    """Try to take the lock on a new descriptor, without waiting."""
+    var file = open(directory, "r")
+    # LOCK_EX | LOCK_NB. Closing the file gives the lock back. The close
+    # also keeps the file open until flock has run.
+    var rc = external_call["flock", Int32](Int32(file.handle), Int32(6))
+    file.close()
+    return rc == 0
+
+
+def test_lock() raises:
+    var store = Store(fresh_directory("lock"))
+    store.open()
+    with store.lock():
+        # Another descriptor, as another worker has, cannot take it.
+        assert_false(_try_lock(store.directory))
+    assert_true(_try_lock(store.directory))
+    # The lock is given back when the body raises.
+    with assert_raises(contains="inside"):
+        with store.lock():
+            raise Error("inside")
+    assert_true(_try_lock(store.directory))
+    with assert_raises():
+        with Store(store.directory + "/missing").lock():
+            pass
+
+
+def test_write_leaves_no_temporary() raises:
+    var store = Store(fresh_directory("tmpname"))
+    store.open()
+    write_file_atomic(store.revision_path(), "7\n")
+    for name in listdir(store.directory):
+        assert_false(name.endswith(".tmp"))
+    assert_equal(store.revision(), 7)
+
+
+def test_paths_refuse_names_that_are_not_slugs() raises:
+    var store = Store(fresh_directory("slugs"))
+    with assert_raises(contains="Invalid organization name '..'"):
+        _ = store.org_path("..")
+    with assert_raises(contains="Invalid graph name"):
+        _ = store.graph_path("acme", "../x")
+    with assert_raises(contains="Invalid organization name"):
+        _ = store.graphs_dir("a/b")
+    with assert_raises(contains="Invalid graph name"):
+        _ = store.variants_dir("acme", "")
+    with assert_raises(contains="Invalid variant name"):
+        _ = store.variant_path("acme", "shop", "../../../victim")
+    with assert_raises(contains="Invalid variant name"):
+        _ = store.schema_path("acme", "shop", ".", 1)
+    with assert_raises(contains="Invalid organization name"):
+        _ = store.current_schema_path("/etc", "shop", "prod")
+    with assert_raises(contains="Invalid graph name"):
+        _ = store.telemetry_path("acme", "s/..", "prod")
 
 
 def main() raises:

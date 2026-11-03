@@ -27,7 +27,13 @@ steps, as upstream `create_consumer_schema`:
 and an `xxh3` hash of it. This port keeps the document and its printed SDL
 text, and has no hash. Upstream panics when a supergraph has a type
 extension, or has no query type; this port raises an `Error`.
+The prune transform also removes each union member and each implemented
+interface that names an `@inaccessible` type. Upstream keeps them, so its
+consumer schema names a type that it does not define, and this port could
+not build the validation schema of such a legal supergraph.
 """
+
+from std.collections import Set
 
 from gql_language.ast import NO_NODE, Document, Kind, OperationType, Role
 from gql_language.parser import parse
@@ -246,16 +252,24 @@ def _is_member(kind: Kind) -> Bool:
     return kind == Kind.ENUM_VALUE_DEFINITION
 
 
-def _keep_child(document: Document, node: Int, prune: Bool) -> Bool:
+def _keep_child(
+    document: Document, node: Int, prune: Bool, hidden: Set[String]
+) -> Bool:
     """Return True if a transform keeps a child of a definition.
 
-    The prune transform drops a member with `@inaccessible`. The strip
+    The prune transform drops a member with `@inaccessible`, and a union
+    member or an implemented interface that names a hidden type. The strip
     transform drops a federation directive.
     """
     var kind = document.kind(node)
     if prune:
         if _is_member(kind):
             return not _has_inaccessible(document, node)
+        if kind == Kind.NAMED_TYPE and (
+            document.role(node) == Role.MEMBER_TYPE
+            or document.role(node) == Role.INTERFACE
+        ):
+            return String(document.name(node)) not in hidden
         return True
     if kind == Kind.DIRECTIVE:
         return not _is_stripped_directive(document.name(node))
@@ -281,7 +295,12 @@ def _keep_definition(document: Document, node: Int, prune: Bool) raises -> Bool:
 
 
 def _copy_definition(
-    mut out: Document, source: Document, node: Int, role: Role, prune: Bool
+    mut out: Document,
+    source: Document,
+    node: Int,
+    role: Role,
+    prune: Bool,
+    hidden: Set[String],
 ) -> Int:
     """Copy a definition and the children that a transform keeps.
 
@@ -291,6 +310,7 @@ def _copy_definition(
         node: A definition, or a field, input value or enum value.
         role: The role of the copy.
         prune: True for the prune transform, False for the strip one.
+        hidden: The types that the prune transform removes.
 
     Returns:
         The copy, with no parent.
@@ -298,11 +318,11 @@ def _copy_definition(
     var copy = out.add(source.kind(node), role, source.nodes[node].flags)
     var child = source.first_child(node)
     while child != NO_NODE:
-        if _keep_child(source, child, prune):
+        if _keep_child(source, child, prune, hidden):
             var child_copy: Int
             if _is_member(source.kind(child)):
                 child_copy = _copy_definition(
-                    out, source, child, source.role(child), prune
+                    out, source, child, source.role(child), prune, hidden
                 )
             else:
                 child_copy = out.copy_subtree(source, child, source.role(child))
@@ -314,13 +334,22 @@ def _copy_definition(
 def _transform(schema: Document, prune: Bool) raises -> Document:
     """Run one transform over every definition of a schema."""
     var out = Document()
+    var hidden = Set[String]()
+    if prune:
+        var found = schema.first_child(schema.root)
+        while found != NO_NODE:
+            if schema.kind(found).is_type_definition() and _has_inaccessible(
+                schema, found
+            ):
+                hidden.add(String(schema.name(found)))
+            found = schema.next_sibling(found)
     var definition = schema.first_child(schema.root)
     while definition != NO_NODE:
         if _keep_definition(schema, definition, prune):
             out.append_child(
                 out.root,
                 _copy_definition(
-                    out, schema, definition, Role.DEFINITION, prune
+                    out, schema, definition, Role.DEFINITION, prune, hidden
                 ),
             )
         definition = schema.next_sibling(definition)

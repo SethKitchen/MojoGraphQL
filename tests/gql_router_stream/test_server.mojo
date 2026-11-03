@@ -22,9 +22,12 @@ from gql_http.server import ServerConfig as HttpConfig
 from gql_http.server import listen as http_listen
 from gql_http.server import open_listener
 from gql_http.socket import EAGAIN, POLLIN, Faults, IPv4Address, Sys, SysCall
+from gql_json.value import NO_NODE, JsonDocument
 from gql_router.exec_http import CannedTransport
 from gql_router.pipeline import Router, RouterSchema
 from gql_router_stream.config import subscriptions_config_from_json
+from gql_router_stream.defer import DeferredResponse
+from gql_router_stream.http import StreamAnswer
 from gql_router_stream.server import (
     RouterStreamHandler,
     RouterWsExecutor,
@@ -284,6 +287,31 @@ def test_a_connection_without_a_held_response() raises:
     handler.held.append(None)
     assert_true(handler.poll_body(0, out) == BodyPoll.DONE)
     assert_equal(len(out), 0)
+
+
+def test_a_deferred_response_whose_client_goes_away_unpins() raises:
+    var handler = RouterStreamHandler(_hub("http://x"))
+    var started = DeferredResponse.start(
+        handler.hub[].router,
+        "{ topProducts { upc ... @defer { name } } }",
+        None,
+        JsonDocument(),
+        NO_NODE,
+        False,
+    )
+    var slot = started.full.value().slot
+    assert_equal(handler.hub[].router.pins[slot], 1)
+    var answer = StreamAnswer[CannedTransport](200, "multipart/mixed", [])
+    answer.deferred = started^
+    handler.hold(5, answer^)
+    handler.body_closed(5)
+    assert_equal(handler.hub[].router.pins[slot], 0)
+    # A response that has no pinned document, such as a finished one.
+    var finished = StreamAnswer[CannedTransport](200, "multipart/mixed", [])
+    finished.deferred = DeferredResponse()
+    handler.hold(6, finished^)
+    handler.body_closed(6)
+    assert_equal(handler.hub[].router.pins[slot], 0)
 
 
 def _operation(

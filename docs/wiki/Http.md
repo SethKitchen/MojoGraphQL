@@ -20,6 +20,8 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 | `gql_http.error` | `HttpError`, `ErrorKind` |
 | `gql_http.socket` | `Sys`, `IPv4Address`, `Faults`, `SysCall`, and the Linux constants |
 | `gql_http.scan` | The SIMD finders for field ends, targets and bytes |
+| `gql_http.random` | `random_bytes`, `random_u64` |
+| `gql_http.auth` | `bearer_token`, `bearer_matches`, `tokens_equal` |
 
 ```mojo
 from gql_http.parser import Request
@@ -191,9 +193,9 @@ The parser is strict. Where RFC 9112 lets a recipient choose, the parser makes t
 - **Versions:** the parser reads `HTTP/1.0` and `HTTP/1.1`, and reads `HTTP/1.2` to `HTTP/1.9` as 1.1. Another major version gives 505.
 - **Fields:** an obsolete line fold, white space before a colon, and a control byte in a value give 400.
 - **Host:** an HTTP/1.1 request must have exactly one `Host` field, with only the bytes of a host and a port.
-- **Content-Length:** the value is digits only. A second field or a list gives 400.
+- **Content-Length:** the value is digits only. A second field or a list gives 400. Leading zeros do not count toward the 18 digits.
 - **Transfer-Encoding:** `Transfer-Encoding` with `Content-Length` gives 400. The parser reads only `chunked`, and another coding gives 501.
-- **Chunks:** a chunk size has at most 15 hexadecimal digits. The parser checks chunk extensions and trailer fields, and then drops them.
+- **Chunks:** a chunk size has at most 15 hexadecimal digits after its leading zeros. The parser checks chunk extensions and trailer fields, and then drops them. The chunk lines stay in the buffer until the message ends, so they count too: more than `max_body_bytes` plus `max_chunk_line_bytes` of chunk lines gives 413.
 - **Expect:** `Expect: 100-continue` sets `expect_continue`, and the server sends `100 Continue`. Another expectation gives 417.
 
 | `Limits` field | Default | Error |
@@ -204,6 +206,7 @@ The parser is strict. Where RFC 9112 lets a recipient choose, the parser makes t
 | `max_chunk_line_bytes` | 4 KiB | 400 |
 | `require_host` | `True` | 400 |
 
+While a response is held, the server reads no next request. When more than `max_head_bytes` plus `max_body_bytes` waits, it closes the connection. The client applies `max_head_bytes` also to a first line that has no end.
 A `Request` has `method`, `version`, `content_length`, `chunked`, `keep_alive` and `expect_continue`. Its methods are `target()`, `path()`, `query()`, `header(name)`, `find_header(name)`, `header_count()`, `header_name(index)`, `header_value(index)` and `body()`. A header name matches without regard to case.
 
 ## Headers, media types and URLs
@@ -238,9 +241,28 @@ A `Request` has `method`, `version`, `content_length`, `chunked`, `keep_alive` a
 | `LIMIT` | A message was larger than a configured limit |
 | `USAGE` | The caller gave a value that the function does not accept |
 
+## Random bytes
+
+`gql_http.random` gives random bytes from the operating system. Use it for each value that must not be predictable: session ids, tokens, stream tokens and WebSocket masking keys.
+
+- `random_bytes(count)` returns `count` bytes from `getentropy`.
+- `random_u64()` returns 64 random bits.
+
+Do not use `std.random` for these values. It has a fixed seed, so each process gets the same sequence of numbers. `gql_ws`, `gql_sse`, `gql_mcp` and `gql_forge` use `gql_http.random`.
+
+## Bearer tokens
+
+`gql_http.auth` reads and compares the tokens of an `Authorization: Bearer <token>` header (RFC 6750).
+
+- `bearer_token(header)` returns the token, or none for another scheme. The scheme is case-insensitive, as RFC 9110 section 11.1 states.
+- `bearer_matches(header, token)` returns True when the header has the `Bearer` scheme and the token.
+- `tokens_equal(given, expected)` compares two tokens in constant time.
+
+Do not compare a token from a client with `==`. `==` stops at the first byte that differs, so its time tells a client how much of a guess is correct. `gql_forge` and `gql_scorchql` use `gql_http.auth`.
+
 ## System calls
 
-`gql_http.socket` is the only module that calls the operating system. Each call goes through `Sys`, and returns its result or the negated error number, such as `-EAGAIN`. A port to macOS replaces only this module.
+`gql_http.socket` is the only module that does I/O through the operating system. Each call goes through `Sys`, and returns its result or the negated error number, such as `-EAGAIN`. A port to macOS replaces only this module.
 
 `Sys.faults` holds a `Faults` plan, which makes one kind of call fail. The plan lets the first `skip` calls of a `SysCall` kind run, and then fails `count` calls with an error number. The tests use it to reach the error paths of the server and the client. `Sys.peek` counts as a `RECV` call.
 

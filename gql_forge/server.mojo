@@ -54,6 +54,8 @@ from gql_forge.telemetry import (
     parse_telemetry_event,
     telemetry_json,
 )
+from gql_http.auth import bearer_matches, tokens_equal
+from gql_http.auth import bearer_token as http_bearer_token
 from gql_http.body import BodyPoll
 from gql_http.parser import Request
 from gql_http.server import Handler, ResponseWriter, ServerConfig, serve
@@ -120,12 +122,7 @@ def bearer_token(header: Optional[String]) -> String:
     Returns:
         The token, or empty.
     """
-    if not header:
-        return String("")
-    var text = header.value()
-    if text.startswith("Bearer "):
-        return String(text[byte=7:])
-    return String("")
+    return http_bearer_token(header).or_else(String(""))
 
 
 def is_authorized(expected: Optional[String], header: Optional[String]) -> Bool:
@@ -140,7 +137,7 @@ def is_authorized(expected: Optional[String], header: Optional[String]) -> Bool:
     """
     if not expected:
         return True
-    return bearer_token(header) == expected.value()
+    return bearer_matches(header, expected.value())
 
 
 def json_error(status: Int, message: StringSlice) -> HttpAnswer:
@@ -374,12 +371,40 @@ struct Forge(Copyable, Handler, Movable):
         if not path.startswith("/forge"):
             return json_error(404, "not found")
         if path == "/forge/telemetry" and method == Method.POST:
-            return self._telemetry(authorization, body)
+            with self.catalog.store.lock():
+                return self._telemetry(authorization, body)
         var denied = self._need_admin(authorization)
         if denied:
             return denied.value().copy()
         if path == "/forge/state" and method == Method.GET:
             return json_ok(self._state())
+        if path == "/forge/pull" and method == Method.POST:
+            return self._pull(body)
+        if path == "/forge/analyze" and method == Method.POST:
+            return self._analyze(body)
+        if method == Method.GET:
+            return self._read(path, query_string)
+        # The other routes read catalog files and write them again.
+        with self.catalog.store.lock():
+            return self._change(method, path, body)
+
+    def _change(
+        mut self, method: Method, path: StringSlice, body: StringSlice
+    ) raises -> HttpAnswer:
+        """Answer a request that changes the catalog. The caller holds the
+        store lock.
+
+        Args:
+            method: The request method.
+            path: The path of the target.
+            body: The request content.
+
+        Returns:
+            The answer.
+
+        Raises:
+            Error: When a catalog file cannot be read or written.
+        """
         if path == "/forge/orgs" and method == Method.POST:
             return self._create_org(body)
         if path == "/forge/graphs" and method == Method.POST:
@@ -392,20 +417,33 @@ struct Forge(Copyable, Handler, Movable):
             return self._remove_variant(body)
         if path == "/forge/schema" and method == Method.POST:
             return self._upload(body)
-        if path == "/forge/pull" and method == Method.POST:
-            return self._pull(body)
-        if path == "/forge/schema" and method == Method.GET:
+        return json_error(405, "method not allowed")
+
+    def _read(
+        self, path: StringSlice, query_string: StringSlice
+    ) raises -> HttpAnswer:
+        """Answer a GET request that only reads the catalog.
+
+        Args:
+            path: The path of the target.
+            query_string: The text after `?`.
+
+        Returns:
+            The answer.
+
+        Raises:
+            Error: When a catalog file cannot be read.
+        """
+        if path == "/forge/schema":
             return self._schema(query_string)
-        if path == "/forge/schema-index" and method == Method.GET:
+        if path == "/forge/schema-index":
             return self._schema_index(query_string)
-        if path == "/forge/compare" and method == Method.GET:
+        if path == "/forge/compare":
             return self._compare(query_string)
-        if path == "/forge/insights" and method == Method.GET:
+        if path == "/forge/insights":
             return self._insights(query_string)
-        if path == "/forge/operations" and method == Method.GET:
+        if path == "/forge/operations":
             return self._operations(query_string)
-        if path == "/forge/analyze" and method == Method.POST:
-            return self._analyze(body)
         return json_error(405, "method not allowed")
 
     def _create_org(mut self, body: StringSlice) raises -> HttpAnswer:
@@ -782,8 +820,8 @@ struct Forge(Copyable, Handler, Movable):
             var token = bearer_token(authorization)
             var admin_ok = False
             if self.config.admin_token:
-                admin_ok = token == self.config.admin_token.value()
-            if token != variant.ingest_token and not admin_ok:
+                admin_ok = tokens_equal(token, self.config.admin_token.value())
+            if not tokens_equal(token, variant.ingest_token) and not admin_ok:
                 if (
                     self.config.admin_token
                     or variant.ingest_token.byte_length() > 0

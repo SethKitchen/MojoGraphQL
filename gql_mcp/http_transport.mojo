@@ -19,10 +19,12 @@ gets 202. A request gets 200 and a `text/event-stream` with its reply.
 In stateful mode (the default) an `initialize` without `Mcp-Session-Id`
 starts a session: the reply has the new id in `mcp-session-id`, and its
 stream is `data: \\nid: 0\\nretry: 3000\\n\\n` (the priming event) and
-`data: <reply>\\n\\n`. Each later request of the session gets the stream
-`data: \\nid: 0/<n>\\nretry: 3000\\n\\n` and `data: <reply>\\nid: 1/<n>\\n\\n`,
-where `<n>` counts the session's requests from 0. Another request without a
-session gets 422, an unknown session 404. `DELETE` ends a session (202);
+`data: <reply>\\n\\n`. An `initialize` that fails keeps no session, so a
+later request with its id gets 404. Each later request of the session gets
+the stream `data: \\nid: 0/<n>\\nretry: 3000\\n\\n` and
+`data: <reply>\\nid: 1/<n>\\n\\n`, where `<n>` counts the session's
+requests from 0. Another request without a session gets 422, an unknown
+session 404. `DELETE` ends a session (202);
 without an id it gets 400. `GET` opens the server's stream of a session.
 Other methods get 405.
 
@@ -43,10 +45,10 @@ Differences from upstream:
 """
 
 from std.collections import Dict
-from std.random import random_ui64
 
 from gql_http.error import HttpError
 from gql_http.parser import Request
+from gql_http.random import random_u64
 from gql_http.server import Handler, ResponseWriter, Server, ServerConfig
 from gql_http.server import listen
 from gql_http.status import Method, Status
@@ -83,8 +85,8 @@ def new_session_id() -> String:
     Returns:
         Such as `3d86c4a4-f461-4a62-8dff-89bfb35aea0f`.
     """
-    var high = random_ui64(0, UInt64.MAX)
-    var low = random_ui64(0, UInt64.MAX)
+    var high = random_u64()
+    var low = random_u64()
     high = (high & ~UInt64(0xF000)) | UInt64(0x4000)
     low = (low & ~(UInt64(0xC) << 60)) | (UInt64(0x8) << 60)
     var hex = _hex(high) + _hex(low)
@@ -264,7 +266,10 @@ struct McpHttpHandler(Handler):
             var created = HttpSession()
             var reply = self.server.handle_message(created.session, message)
             var key = new_session_id()
-            self.sessions[key] = created^
+            # A failed handshake ends its session at once, as the upstream
+            # session ends with its service: a later request gets 404.
+            if created.session.initialized:
+                self.sessions[key] = created^
             response.add_header(SESSION_HEADER, key)
             _stream(
                 response,

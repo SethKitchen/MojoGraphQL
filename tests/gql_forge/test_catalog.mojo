@@ -88,6 +88,10 @@ def test_catalog_refusals() raises:
     var catalog = Catalog(fresh_directory("refuse"))
     catalog.open()
     assert_false(catalog.create_organization("9", "n").accepted)
+    # A name that is not a slug is never in the catalog.
+    assert_false(catalog.has_organization(".."))
+    assert_false(catalog.has_graph("acme", "../acme"))
+    assert_false(catalog.has_variant("acme", "shop", "../../x"))
     var first = catalog.create_organization("acme", "")
     assert_true(first.accepted)
     assert_equal(catalog.get_organization("acme").name, "acme")

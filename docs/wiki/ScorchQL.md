@@ -11,7 +11,7 @@ SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
 | Module | Contents |
 | --- | --- |
-| `gql_scorchql.registry` | `Registry`, `PublishedSubgraph`, `PublishResult`, `compose_published`, `publish_errors`, `is_valid_subgraph_name`, `is_valid_routing_url`, `write_file_atomic`, `read_file` |
+| `gql_scorchql.registry` | `Registry`, `RegistryLock`, `PublishedSubgraph`, `PublishResult`, `compose_published`, `publish_errors`, `is_valid_subgraph_name`, `is_valid_routing_url`, `write_file_atomic`, `read_file` |
 | `gql_scorchql.introspect` | `fetch_subgraph_sdl`, `read_service_sdl`, `SERVICE_QUERY` |
 | `gql_scorchql.gateway` | `Gateway`, `GatewayConfig`, `SharedGateway`, `GatewayWsExecutor`, `GatewayWsHandler`, `serve_gateway`, `refresh_registry`, `RefreshOutcome`, `wants_explorer` |
 | `gql_scorchql.explorer` | `explorer_page`, `EXPLORER_HTML`, `FAVICON_SVG`, `escape_html`, `script_json` |
@@ -33,7 +33,7 @@ A registry is a directory that every worker process shares:
 
 `Registry.remove(name)` composes the other subgraphs. It refuses the removal when they do not compose. A name starts with a letter and has only letters, digits, `_` and `-`. A routing URL starts with `http://`.
 
-Each file is written to a temporary name, then renamed. So a reader never sees part of a file. Two processes that publish at the same time can lose one publish.
+Each file is written to a temporary name, then renamed. So a reader never sees part of a file. Each process uses its own temporary names. A publish, a removal and a refresh hold an advisory `flock` on the registry directory. So two processes that publish at the same time do not lose a publish. A refresh does not bring back a subgraph that was removed while it read the SDL, and it does not write back an old URL.
 
 ## Gateway
 
@@ -53,9 +53,11 @@ Each file is written to a temporary name, then renamed. So a reader never sees p
 | `POST /scorchql/remove` | Remove `{name}` |
 | `POST /scorchql/refresh` | Read the SDL of each subgraph again, and publish each change |
 
-When `GatewayConfig.publish_token` is set, the last three requests need `Authorization: Bearer <token>`. In static mode, the gateway serves a fixed supergraph, and these three requests answer `409`.
+When `GatewayConfig.publish_token` is set, the last three requests need `Authorization: Bearer <token>`. The gateway compares the token in constant time. In static mode, the gateway serves a fixed supergraph, and these three requests answer `409`.
 
 Before each request, at most once every 250 milliseconds, each worker reads the registry revision. When it has changed, the worker builds a new stream hub and router. So a publish reaches every worker without a restart. When the new supergraph cannot be served, the worker keeps the old router and reports the error in `loadError`.
+
+A subscription or a held SSE or multipart response that started before the change keeps its old hub and router until it ends. Each tick reads the subgraph sockets of every hub. The worker drops an old hub when it has no open subscription and no held response.
 
 Before the first publish, a GraphQL request answers `503` with the code `NO_SUPERGRAPH`.
 
@@ -97,4 +99,5 @@ The explorer reads `/scorchql/state` every 5 seconds. When the revision changes,
 ## Limits
 
 - The gateway does not send client headers to the subgraphs.
+- The gateway has no identity source, so each request is anonymous. A field with `@authenticated`, `@requiresScopes` or `@policy` is `null`, with an `UNAUTHORIZED_FIELD_OR_TYPE` error. See [Router authorization](Router#authorization).
 - Composition and the router support Apollo Federation 2.

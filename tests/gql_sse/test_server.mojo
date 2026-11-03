@@ -122,6 +122,10 @@ def test_event_stream_on_reservation() raises:
     assert_equal(server.handler.streams(), 0)
 
 
+def _ext(id: StringSlice) -> String:
+    return '{"query":"{ a }","extensions":{"operationId":' + String(id) + "}}"
+
+
 def test_operation_id() raises:
     var server = sse_server()
     _ = exchange(server, _request("PUT", "/", token="t"))
@@ -132,16 +136,23 @@ def test_operation_id() raises:
     assert_equal(
         _body(text), '{"errors":[{"message":"Operation ID is missing"}]}'
     )
-    text = exchange(
-        server,
-        _request(
-            "POST",
-            "/",
-            token="t",
-            body='{"query":"{ a }","extensions":{"operationId":true}}',
-        ),
-    )
+    # The id is `String(operationId ?? '')`, as upstream: `null` is missing,
+    # and other values become text.
+    text = exchange(server, _request("POST", "/", token="t", body=_ext("null")))
     assert_equal(_status(text), "400")
+    for value in ["true", "1.0", '{"a":1}', "[1,null,[2]]"]:
+        text = exchange(
+            server, _request("POST", "/", token="t", body=_ext(value))
+        )
+        assert_equal(_status(text), "202", value)
+    assert_equal(server.handler.operations("t"), 4)
+    # `1.0` is the id `1`, `{"a":1}` is `[object Object]`, and the array is
+    # `1,,2`.
+    for value in ['"1"', '"[object Object]"', '"1,,2"', '"true"']:
+        text = exchange(
+            server, _request("POST", "/", token="t", body=_ext(value))
+        )
+        assert_equal(_status(text), "409", value)
     text = exchange(server, _request("DELETE", "/?token=t"))
     assert_equal(_status(text), "400")
     assert_equal(
@@ -267,6 +278,31 @@ def test_distinct_connections() raises:
     assert_equal(_status(text), "405")
     assert_true(text.find("allow: POST") > 0, text)
     assert_equal(server.handler.streams(), 0)
+
+
+def test_head_disposes_the_stream() raises:
+    # A HEAD response has no content, so it ends at once. Upstream disposes
+    # the stream when the response closes, and so does the port.
+    var server = sse_server()
+    _ = exchange(server, _request("PUT", "/", token="t"))
+    var head = exchange(server, _request("HEAD", "/", "text/event-stream", "t"))
+    assert_equal(_status(head), "200")
+    assert_equal(server.handler.streams(), 0)
+    # The slot is free for another token, and the old token is gone.
+    _ = exchange(server, _request("PUT", "/", token="u"))
+    assert_equal(server.handler.operations("u"), 0)
+    assert_equal(server.handler.operations("t"), -1)
+    # The token is free again: it is not stuck as an open stream.
+    var put = exchange(server, _request("PUT", "/", token="t"))
+    assert_equal(_status(put), "201")
+    var get = exchange(server, _request("GET", "/", "text/event-stream", "t"))
+    assert_equal(_status(get), "200")
+    # A distinct connection stream ends with its operation.
+    var server2 = sse_server()
+    _ = exchange(
+        server2, _request("HEAD", "/?query=forever", "text/event-stream")
+    )
+    assert_equal(server2.handler.streams(), 0)
 
 
 def test_distinct_client_goes_away() raises:

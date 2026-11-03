@@ -21,7 +21,8 @@ set, which RFC 6455 section 5.2 forbids; tungstenite reads it.
 """
 
 from std.memory import bitcast
-from std.random import random_ui64
+
+from gql_http.random import random_u64
 
 
 @fieldwise_init
@@ -366,7 +367,7 @@ def random_mask() -> UInt32:
     Returns:
         32 random bits.
     """
-    return UInt32(random_ui64(0, 0xFFFFFFFF))
+    return UInt32(random_u64() & 0xFFFFFFFF)
 
 
 comptime _WIDTH = 32

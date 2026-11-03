@@ -430,6 +430,28 @@ def _get_request(
     return out^
 
 
+def initial_has_next(text: StringSlice) -> Bool:
+    """Read the `hasNext` member of the JSON text of an initial result.
+
+    Args:
+        text: The JSON text.
+
+    Returns:
+        Its `hasNext`, or False when it has none or is not JSON: upstream
+        ends the stream when `initialResult.hasNext` is not true.
+    """
+    try:
+        var document = parse_json(text)
+        var node = document.find(document.root, "hasNext")
+        return (
+            node != NO_JSON
+            and document.kind(node) == JsonKind.BOOLEAN
+            and document.bool_value(node)
+        )
+    except:
+        return False
+
+
 def _incremental_response(
     var response: GraphQLResponse, accept: Optional[String]
 ) raises ServerError -> HTTPGraphQLResponse:
@@ -459,7 +481,11 @@ def _incremental_response(
         "content-type", 'multipart/mixed; boundary="-"; ' + spec
     )
     var initial = response.to_json()
-    var has_next = initial.find('"hasNext":false') < 0
+    # Upstream reads `initialResult.hasNext`. The text holds `data`, where an
+    # alias can be `hasNext`, so read the member and not the text.
+    var has_next = Bool(response.pending)
+    if response.initial_json:
+        has_next = initial_has_next(initial)
     var head = HTTPGraphQLHead()
     swap(head, response.http)
     var out = HTTPGraphQLResponse(head^, first_part(initial, has_next))

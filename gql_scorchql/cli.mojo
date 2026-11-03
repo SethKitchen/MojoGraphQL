@@ -498,6 +498,10 @@ struct AdminRequest(Copyable, Movable):
 def _gateway_base(gateway: String) -> String:
     """Return the gateway URL without a final `/` or GraphQL path."""
     var base = gateway
+    # Strip the slashes first, so `/graphql/` loses its path too.
+    while base.endswith("/"):
+        var shorter = String(base[byte = : base.byte_length() - 1])
+        base = shorter^
     if base.endswith("/graphql"):
         var trimmed = String(base[byte = : base.byte_length() - 8])
         base = trimmed^

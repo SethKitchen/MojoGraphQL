@@ -341,18 +341,24 @@ def _incomplete(size: Int, limit: Int) -> ParseResult:
 
 def _parse_length(p: Pointer[UInt8, _], start: Int, end: Int) -> Int:
     """Read a `Content-Length` value: -1 if it is not `1*DIGIT`, -2 if it
-    has more than 18 digits, else its value."""
+    has more than 18 digits after its leading zeros, else its value."""
     if start == end:
         return -1
-    if end - start > 18:
-        return -2
-    var value = 0
     var index = start
     while index < end:
-        var byte = p[unsafe_offset=index]
-        if not _is_digit(byte):
+        if not _is_digit(p[unsafe_offset=index]):
             return -1
-        value = value * 10 + Int(byte) - 48
+        index += 1
+    # Leading zeros do not change the value (RFC 9110 section 8.6).
+    var first = start
+    while first < end - 1 and p[unsafe_offset=first] == 48:
+        first += 1
+    if end - first > 18:
+        return -2
+    var value = 0
+    index = first
+    while index < end:
+        value = value * 10 + Int(p[unsafe_offset=index]) - 48
         index += 1
     return value
 
@@ -957,6 +963,9 @@ struct ChunkedDecoder(Copyable):
     var _phase: _ChunkPhase
     var _remaining: Int
     var _trailer_start: Int
+    var _overhead: Int
+    """The chunk lines and line ends since `start`. They stay in the
+    buffer, under the content, until the message ends."""
 
     def __init__(out self):
         """Make a decoder at offset 0."""
@@ -966,6 +975,7 @@ struct ChunkedDecoder(Copyable):
         self._phase = _ChunkPhase.SIZE
         self._remaining = 0
         self._trailer_start = 0
+        self._overhead = 0
 
     def reset(mut self, start: Int):
         """Start a new chunked content.
@@ -979,6 +989,7 @@ struct ChunkedDecoder(Copyable):
         self._phase = _ChunkPhase.SIZE
         self._remaining = 0
         self._trailer_start = 0
+        self._overhead = 0
 
     def rebase(mut self) -> Int:
         """Forget the decoded content, so that the buffer can shrink.
@@ -993,6 +1004,7 @@ struct ChunkedDecoder(Copyable):
         """
         var shift = self.read
         self._trailer_start -= shift
+        self._overhead = 0
         self.read = 0
         self.write = 0
         self.start = 0
@@ -1032,6 +1044,14 @@ struct ChunkedDecoder(Copyable):
                 if size == -1:
                     return ParseResult.error(Status.BAD_REQUEST)
                 if size == -2 or self.decoded() + size > limits.max_body_bytes:
+                    return ParseResult.error(Status.CONTENT_TOO_LARGE)
+                # The lines count too: long chunk extensions on small chunks
+                # fill the buffer, and the content limit does not see them.
+                self._overhead += lf + 1 - self.read + 2
+                if (
+                    self._overhead
+                    > limits.max_body_bytes + limits.max_chunk_line_bytes
+                ):
                     return ParseResult.error(Status.CONTENT_TOO_LARGE)
                 self.read = lf + 1
                 if size == 0:
@@ -1081,19 +1101,22 @@ struct ChunkedDecoder(Copyable):
 
 def _chunk_size(p: Pointer[UInt8, _], start: Int, lf: Int) -> Int:
     """Read a chunk-size line that ends at `lf`: -1 if malformed, -2 if it
-    has more than 15 digits, else the size."""
+    has more than 15 digits after its leading zeros, else the size."""
     if lf == start:
         return -1
     var cr = lf - 1
     if p[unsafe_offset=cr] != CR:
         return -1
     var value = 0
+    var significant = 0
     var i = start
     while i < cr:
         var digit = _hex_value(p[unsafe_offset=i])
         if digit < 0:
             break
-        if i - start == 15:
+        if value > 0 or digit > 0:
+            significant += 1
+        if significant > 15:
             return -2
         value = value * 16 + digit
         i += 1
@@ -1306,6 +1329,29 @@ struct RequestReader(Movable):
         self.request._base = _untracked(address)
         return ParseResult.complete(self._size)
 
+    def next_head(mut self) -> ParseResult:
+        """Parse only the head of the next request.
+
+        A server that picks a protocol from the head, such as a WebSocket
+        upgrade, need not wait for the content.
+
+        Returns:
+            COMPLETE with the size of the head, INCOMPLETE, or ERROR with
+            the status code to answer with. After COMPLETE, the method, the
+            target and the fields of `request` can be read; its content
+            cannot.
+        """
+        var address = Int(self.buffer.unsafe_ptr()) + self.start
+        var base = Pointer[UInt8, MutUntrackedOrigin](
+            unsafe_from_address=address
+        )
+        var head = parse_request_head(
+            base, self.end - self.start, self.limits, self.request
+        )
+        if head.state == ParseState.COMPLETE:
+            self.request._base = _untracked(address)
+        return head
+
     def reset(mut self, capacity: Int = 4096):
         """Drop every byte, for a new connection.
 
@@ -1494,9 +1540,10 @@ def _response_framing(p: Pointer[UInt8, _], mut head: ResponseHead) -> Bool:
     if codings.seen:
         if codings.unknown or not codings.chunked:
             return False
-        if length_fields > 0:
+        if length_fields > 0 or not http11:
             # RFC 9112 section 6.3: the coding wins, and the connection
-            # cannot be trusted after a message with both fields.
+            # cannot be trusted after a message with both fields. Section
+            # 6.1: neither after a Transfer-Encoding in HTTP/1.0.
             head.keep_alive = False
             head.content_length = -1
         head.chunked = True

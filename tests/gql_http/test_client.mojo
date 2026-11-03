@@ -123,6 +123,16 @@ def test_head_errors() raises:
         "closed: the connection closed before the response",
     )
     _ = c.finish()
+    # One endless line: the head limit holds before the first line end.
+    var small = ClientConfig()
+    small.limits.max_head_bytes = 64
+    var short = Client(small)
+    var d = _one(
+        "HTTP/1.1 200 OK aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    )
+    assert_equal(_error(short, _url(d)), "protocol: invalid response head")
+    _ = d.finish()
 
 
 def test_length_body() raises:

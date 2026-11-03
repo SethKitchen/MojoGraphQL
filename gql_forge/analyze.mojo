@@ -256,8 +256,8 @@ def _type_names_for(
     Returns:
         Type names, or empty when no schema is stored.
     """
-    var path = catalog.store.current_schema_path(org, graph, variant)
     try:
+        var path = catalog.store.current_schema_path(org, graph, variant)
         var revision = atol(String(read_file(path).strip()))
         var sdl = read_file(
             catalog.store.schema_path(org, graph, variant, revision)

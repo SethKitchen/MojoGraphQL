@@ -1268,6 +1268,16 @@ struct Server[H: Handler](Movable):
         if self._conns[fd].lingering:
             return
         self._conns[fd].reader.commit(n)
+        # While a response is held, the reader parses nothing, so its limits
+        # do not apply to what arrives. More than the largest request can
+        # wait only when the client floods the stream: close it.
+        if self._conns[fd].streaming and (
+            self._conns[fd].reader.buffered()
+            > self.config.limits.max_head_bytes
+            + self.config.limits.max_body_bytes
+        ):
+            self._close(fd)
+            return
         self._conns[fd].deadline_ms = self._now + self.config.idle_timeout_ms
         self._process(fd)
 

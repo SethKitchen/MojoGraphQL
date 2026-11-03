@@ -14,7 +14,7 @@ The product value is telemetry, analytics, comparison of graphs between environm
 | Module | Contents |
 | --- | --- |
 | `gql_forge.names` | `is_valid_slug`, `is_valid_endpoint_url`, `is_http_endpoint`, `make_ingest_token` |
-| `gql_forge.store` | `Store`, file helpers, JSON object readers |
+| `gql_forge.store` | `Store`, `StoreLock`, file helpers, JSON object readers |
 | `gql_forge.catalog` | `Catalog`, `Organization`, `Graph`, `Variant` |
 | `gql_forge.schema_view` | `schema_index_json`, `type_ref_text`, `write_user_types` |
 | `gql_forge.pull` | `pull_variant`, `upload_schema`, `read_introspection_sdl` |
@@ -41,6 +41,8 @@ A catalog is a directory that every worker process shares:
 
 A graph is a supergraph that the customer already hosts. A variant is one environment of that graph, such as `prod` or `staging`.
 
+Forge writes each file to a temporary name and then renames it. Each worker process uses its own temporary names. A request that changes the catalog holds `Store.lock`, an advisory `flock` on the directory, so two workers do not lose a change. A pull holds the lock only after the customer graph answers.
+
 ## HTTP API
 
 `Forge` is a `gql_http` handler. It answers these requests:
@@ -53,15 +55,21 @@ A graph is a supergraph that the customer already hosts. A variant is one enviro
 | `POST /forge/orgs` | Create `{slug, name}` |
 | `POST /forge/graphs` | Create `{org, ref, name, description}` |
 | `POST /forge/variants` | Create `{org, graph, name, endpointUrl}` |
+| `PATCH /forge/variants` | Change `{org, graph, name}` to a new `endpointUrl` or `pullToken` |
+| `DELETE /forge/variants` | Remove `{org, graph, name}` |
 | `POST /forge/schema` | Store uploaded SDL |
 | `POST /forge/pull` | Pull SDL from an `http://` endpoint |
+| `GET /forge/schema` | The current SDL snapshot of a variant |
 | `GET /forge/schema-index` | Types and fields for the explorer |
 | `GET /forge/compare` | Breaking, dangerous and additive changes |
 | `POST /forge/telemetry` | One operation event |
 | `GET /forge/insights` | Request counts and percentiles |
+| `GET /forge/operations` | The recent events of a variant |
 | `POST /forge/analyze` | An analyst answer |
 
-When `ForgeConfig.admin_token` is set, catalog routes need `Authorization: Bearer <token>`. Telemetry accepts the variant ingest token or the admin token.
+When `ForgeConfig.admin_token` is set, catalog routes need `Authorization: Bearer <token>`. The `forge` program always sets one: without `--token`, it makes a random token and prints it at the start. Telemetry accepts the variant ingest token or the admin token.
+
+Each variant gets its ingest token when Forge creates it. The token is `frg_` and 128 random bits from the operating system, so nobody can make it from the names. Forge compares tokens in constant time, with `gql_http.auth`.
 
 A live pull uses `gql_http`. It can reach `http://` only. Upload SDL for `https://` endpoints.
 
@@ -90,3 +98,4 @@ The Connect view states that Forge does not host the graph. The customer keeps t
 - Forge does not serve GraphQL operations to clients.
 - Forge does not compose subgraphs. ScorchQL does that on the customer side.
 - A schema pull over TLS is not in this package.
+- The telemetry of a variant keeps at most 500 operation names. Later names count as `(other)`. A name, signature or client name keeps at most 256 bytes. Each operation keeps its last 64 durations, the log keeps the last 50 events, and the insights keep the last 60 one-minute windows. An event with an older `at` goes into the window of its own minute.

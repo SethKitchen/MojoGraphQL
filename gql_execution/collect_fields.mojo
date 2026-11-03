@@ -27,7 +27,11 @@ The `@defer` arguments are read with the upstream definition,
 `@defer(if: Boolean! = true, label: String)`, so a schema does not need
 to define the directive.
 
-**Differences from upstream.** None in behavior.
+**Differences from upstream.** Fragment spreads and inline fragments
+nested deeper than `MAX_COLLECT_DEPTH` (500) raise a `GraphQLError`.
+graphql-js has no limit: its stack overflow is a `RangeError` that the
+caller can catch, and Mojo has no catchable stack overflow. `validate`
+refuses such a document first.
 """
 
 from gql_language.ast import NO_NODE, Document, Kind, Role
@@ -36,6 +40,9 @@ from gql_schema.definition import NO_TYPE, Schema, TypeKind, TypeRef
 from gql_execution.value import UNDEFINED, ValueKind, Values
 from gql_execution.values import coerce_argument, get_directive_values
 
+comptime MAX_COLLECT_DEPTH = 500
+"""The deepest nesting of fragment spreads and inline fragments that one
+plan collects. A deeper chain is a `GraphQLError`."""
 comptime NO_DEFER: Int32 = -1
 """The defer usage of a field node that is not deferred."""
 
@@ -165,6 +172,8 @@ struct FieldCollector(Movable):
     """The `Boolean` type."""
     var string_type: Int
     """The `String` type."""
+    var _depth: Int
+    """How deep `_collect` calls itself in the current plan."""
     var _pending: List[Int32]
     var _links: List[Int32]
     var _link_defers: List[Int32]
@@ -194,6 +203,7 @@ struct FieldCollector(Movable):
         self.defer_list = List[Int32]()
         self.boolean_type = schema.type_named("Boolean")
         self.string_type = schema.type_named("String")
+        self._depth = 0
         self._pending = List[Int32](capacity=48)
         self._links = List[Int32](capacity=32)
         self._link_defers = List[Int32]()
@@ -371,6 +381,7 @@ struct FieldCollector(Movable):
 
     def _start(mut self):
         """Start a plan: no pending groups, no visited fragments."""
+        self._depth = 0
         self._pending.clear()
         self._links.clear()
         self._link_defers.clear()
@@ -447,6 +458,15 @@ struct FieldCollector(Movable):
         selection_set: Int,
     ) raises GraphQLError:
         """Return graphql-js `collectFieldsImpl`."""
+        # Each fragment spread and inline fragment is a call deeper. Mojo has
+        # no catchable stack overflow, so a long chain fails here first.
+        self._depth += 1
+        if self._depth > MAX_COLLECT_DEPTH:
+            raise GraphQLError(
+                "Fragment spreads are nested deeper than "
+                + String(MAX_COLLECT_DEPTH)
+                + " levels."
+            )
         var selection = document.child(selection_set, Role.SELECTION)
         while selection != NO_NODE:
             var kind = document.kind(selection)
@@ -496,6 +516,7 @@ struct FieldCollector(Movable):
                     schema, document, values, variables, runtime_type, selection
                 )
             selection = document.next_with_role(selection)
+        self._depth -= 1
 
     def _defer_usage(
         mut self,

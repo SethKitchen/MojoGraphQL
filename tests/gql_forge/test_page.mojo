@@ -61,5 +61,16 @@ def test_the_connect_hint_uses_curl() raises:
     assert_false("scorchql publish" in PAGE_HTML)
 
 
+def test_the_page_sends_the_token_and_escapes_errors() raises:
+    # Every API call sends the admin token, GET requests too.
+    assert_true("fetch(path, { headers: auth(), ...opt })" in PAGE_HTML)
+    assert_false("await fetch(path, opt)" in PAGE_HTML)
+    # A pull error holds text from the customer graph: escape it.
+    assert_true("esc(x.lastPullError" in PAGE_HTML)
+    assert_false('"ok" : (x.lastPullError' in PAGE_HTML)
+    # A refused Connect action shows its error.
+    assert_true('id="c-msg"' in PAGE_HTML)
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

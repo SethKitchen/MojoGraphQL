@@ -13,6 +13,7 @@ a host.
 Differences from upstream: none; there is no upstream.
 """
 
+from gql_http.random import random_u64
 from gql_language.scan import string_from_utf8
 
 
@@ -159,40 +160,16 @@ def hex16(value: UInt64) -> String:
     return string_from_utf8(Span(out))
 
 
-def fnv1a(text: StringSlice, salt: UInt64) -> UInt64:
-    """Return a FNV-1a hash of the text.
-
-    Args:
-        text: The bytes.
-        salt: A value mixed in first.
-
-    Returns:
-        The 64-bit hash.
-    """
-    var hash = UInt64(0xCBF29CE484222325) ^ salt
-    for byte in text.as_bytes():
-        hash = (hash ^ UInt64(Int(byte))) * 0x100000001B3
-    return hash
-
-
-def make_ingest_token(
-    org: StringSlice, graph: StringSlice, variant: StringSlice, at: Int
-) -> String:
+def make_ingest_token() -> String:
     """Make a bearer token that a customer router sends with telemetry.
 
-    Args:
-        org: The organization slug.
-        graph: The graph ref.
-        variant: The variant name.
-        at: Seconds since the Unix epoch, or any salt.
+    The token holds 128 random bits from the operating system, so nobody
+    can derive it from the names of the variant.
 
     Returns:
-        A token that starts with `frg_`.
+        `frg_` and 32 hex digits.
     """
-    var mixed = String(org) + "/" + String(graph) + "/" + String(variant)
-    var first = fnv1a(mixed, UInt64(at))
-    var second = fnv1a(mixed, first)
-    return "frg_" + hex16(first) + hex16(second)
+    return "frg_" + hex16(random_u64()) + hex16(random_u64())
 
 
 def sort_strings(mut names: List[String]):

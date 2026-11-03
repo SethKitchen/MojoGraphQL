@@ -265,3 +265,9 @@ go.work.sum
 # .vscode/
 # The registry of a ScorchQL gateway started in the checkout.
 .scorchql/
+
+# The project's own coverage tool is Mojo source in coverage/. The generic
+# `coverage` pattern above is for other languages' reports; it must not hide
+# the tool. Only its build directory is generated.
+!/coverage/
+/coverage/build/

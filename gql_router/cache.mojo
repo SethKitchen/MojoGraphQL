@@ -541,6 +541,19 @@ struct OperationCache(Movable):
         self._entries[found].accessed_ms = now_ms
         return self._entries[found].value
 
+    def contains(mut self, key: String, now_ms: Int) -> Bool:
+        """Return True when a key is present, without marking it as read.
+
+        Args:
+            key: The cache key.
+            now_ms: The current time in milliseconds.
+
+        Returns:
+            Whether the key is present and not expired.
+        """
+        self._drop_expired(now_ms)
+        return self._find(key) >= 0
+
     def entry_count(mut self, now_ms: Int) -> Int:
         """Return the number of entries that have not expired.
 
