@@ -122,6 +122,10 @@ def test_event_stream_on_reservation() raises:
     assert_equal(server.handler.streams(), 0)
 
 
+def _ext(id: StringSlice) -> String:
+    return '{"query":"{ a }","extensions":{"operationId":' + String(id) + "}}"
+
+
 def test_operation_id() raises:
     var server = sse_server()
     _ = exchange(server, _request("PUT", "/", token="t"))
@@ -132,16 +136,23 @@ def test_operation_id() raises:
     assert_equal(
         _body(text), '{"errors":[{"message":"Operation ID is missing"}]}'
     )
-    text = exchange(
-        server,
-        _request(
-            "POST",
-            "/",
-            token="t",
-            body='{"query":"{ a }","extensions":{"operationId":true}}',
-        ),
-    )
+    # The id is `String(operationId ?? '')`, as upstream: `null` is missing,
+    # and other values become text.
+    text = exchange(server, _request("POST", "/", token="t", body=_ext("null")))
     assert_equal(_status(text), "400")
+    for value in ["true", "1.0", '{"a":1}', "[1,null,[2]]"]:
+        text = exchange(
+            server, _request("POST", "/", token="t", body=_ext(value))
+        )
+        assert_equal(_status(text), "202", value)
+    assert_equal(server.handler.operations("t"), 4)
+    # `1.0` is the id `1`, `{"a":1}` is `[object Object]`, and the array is
+    # `1,,2`.
+    for value in ['"1"', '"[object Object]"', '"1,,2"', '"true"']:
+        text = exchange(
+            server, _request("POST", "/", token="t", body=_ext(value))
+        )
+        assert_equal(_status(text), "409", value)
     text = exchange(server, _request("DELETE", "/?token=t"))
     assert_equal(_status(text), "400")
     assert_equal(
